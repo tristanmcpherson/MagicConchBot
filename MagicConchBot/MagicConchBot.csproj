@@ -261,7 +261,8 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <DLLs Include="$(DependenciesPath)\libsodium.dll;$(DependenciesPath)\opus.dll" />
+    <DLLs Include="Dependencies\x64\libsodium.dll" />
+    <DLLs Include="Dependencies\x64\opus.dll" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ffmpeg.exe">
