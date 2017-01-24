@@ -9,6 +9,7 @@ using Discord.WebSocket;
 using log4net;
 using MagicConchBot.Handlers;
 using MagicConchBot.Resources;
+using Nito.AsyncEx;
 
 namespace MagicConchBot
 {
@@ -19,35 +20,42 @@ namespace MagicConchBot
         private static readonly ILog Log =
             LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private static DiscordSocketClient _client;
-        private static CommandHandler _handler;
+            private static DiscordSocketClient _client;
+            private static CommandHandler _handler;
 
         public static void Main()
         {
-            var cancellationTokenSource = new CancellationTokenSource();
             Console.WriteLine("Starting Magic Conch Bot. Press 'q' at any time to quit.");
+            var cts = new CancellationTokenSource();
 
-            var program = new Program();
-            Task.Factory.StartNew(async () => await program.StartAsync(cancellationTokenSource.Token), cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
-            while (true)
+            try
             {
-                if (Console.ReadKey(true).Key == ConsoleKey.Q)
+                Task.Factory.StartNew(async () => await new Program().MainAsync(cts.Token));
+
+                while (true)
                 {
-                    Console.WriteLine("Stopping bot.");
-                    cancellationTokenSource.Cancel();
-                    _client.DisconnectAsync();
-                    break;
+                    if (Console.KeyAvailable)
+                    {
+                        if (Console.ReadKey(true).Key == ConsoleKey.Q)
+                        {
+                            cts.Cancel();
+                            break;
+                        }
+                    }
                 }
             }
-
-            Thread.Sleep(1000);
-
-            Console.WriteLine("Press enter to continue . . .");
-            Console.ReadLine();
+            catch (TaskCanceledException)
+            {
+                Console.WriteLine("Bot exited successfully.");
+            }
+            finally
+            {
+                Console.WriteLine("Press enter to continue . . .");
+                Console.ReadLine();
+            }
         }
 
-        private async Task StartAsync(CancellationToken cancellationToken)
+        private async Task MainAsync(CancellationToken cancellationToken)
         {
             EnsureConfigExists();
 
@@ -64,20 +72,22 @@ namespace MagicConchBot
                 _client.Log += WriteToLog;
 
                 // Login and connect to Discord.
-                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
-                await _client.ConnectAsync();
+                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token).ConfigureAwait(false);
+                await _client.ConnectAsync().ConfigureAwait(false);
 
                 map.Add(_client);
 
                 _handler = new CommandHandler();
-                await _handler.InstallAsync(map);
+                await _handler.InstallAsync(map).ConfigureAwait(false);
                 _handler.ConfigureServices(map);
 
-                await Task.Delay(-1, cancellationToken);
+                await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
                 map.Get<Services.FfmpegMusicService>().Stop();
+                await Task.Delay(3000);
+                await _client.DisconnectAsync();
             }
         }
 

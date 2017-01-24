@@ -26,11 +26,11 @@ namespace MagicConchBot.Resources
         /// <summary>
         /// Local path to copy music to
         /// </summary>
-        public string MusicPath { get; set; }
+        public string ServerMusicPath { get; set; }
         /// <summary>
         /// Base of the url ex. https://website.com/music/
         /// </summary>
-        public string MusicUrlBase { get; set; }
+        public string ServerMusicUrlBase { get; set; }
 
         public Configuration()
         {
@@ -39,6 +39,8 @@ namespace MagicConchBot.Resources
             Token = "";
             ApplicationName = "";
             GoogleApiKey = "";
+            ServerMusicPath = "";
+            ServerMusicUrlBase = "";
         }
 
         /// <summary> Save the configuration to the specified file location. </summary>

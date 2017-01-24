@@ -15,16 +15,20 @@ using MagicConchBot.Helpers;
 using YoutubeExtractor;
 using System.IO;
 using System.Net;
+using System.Text;
+using MagicConchBot.Resources;
 
 namespace MagicConchBot.Services
 {
     public class FfmpegMusicService : IMusicService
     {
+        public bool debug = true;
+
         private IAudioClient _audio;
         private readonly ConcurrentQueue<Song> _songQueue;
 
-        private static string _serverPath = @"C:\inetpub\wwwroot\music";
-        private static string _serverUrl = @"http://pavanisagoof.tech/music/";
+        private static string _serverPath;
+        private static string _serverUrl;
 
         private ConcurrentDictionary<string, Guid> _urlToUniqueFile;
 
@@ -59,9 +63,13 @@ namespace MagicConchBot.Services
 
         public FfmpegMusicService()
         {
+            var config = Configuration.Load();
+
             _songQueue = new ConcurrentQueue<Song>();
             _playMode = PlayMode.Queue;
             _urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
+            _serverPath = config.ServerMusicPath;
+            _serverUrl = config.ServerMusicUrlBase;
         }
 
         public async Task<string> GenerateMp3Async()
@@ -102,7 +110,6 @@ namespace MagicConchBot.Services
                 });
 
                 convert.StandardOutput.ReadToEnd();
-
                 convert.WaitForExit();
 
                 using (var source = File.OpenRead(outputFile))
@@ -144,11 +151,12 @@ namespace MagicConchBot.Services
         {
             _tokenSource = new CancellationTokenSource();
 
+
             await Task.Factory.StartNew(async () =>
             {
                 try
                 {
-                    await JoinChannelAsync(msg);
+                    await JoinChannelAsync(msg).ConfigureAwait(false);
 
                     while (!_tokenSource.Token.IsCancellationRequested && !_songQueue.IsEmpty)
                     {
@@ -156,7 +164,7 @@ namespace MagicConchBot.Services
                             continue;
                         _currentSong.TokenSource = new CancellationTokenSource();
 
-                        string url;
+                        string url = null;
                         if (_directPlayFormats.Contains(_currentSong.Url.Split('.').LastOrDefault()))
                         {
                             url = _currentSong.Url;
@@ -175,30 +183,15 @@ namespace MagicConchBot.Services
                             var stopwatch = new Stopwatch();
                             stopwatch.Start();
 
-                            var youtubeDl = new ProcessStartInfo
-                            {
-                                FileName = "youtube-dl",
-                                // 
-                                Arguments = $"{_currentSong.Url} -g -f bestaudio --audio-quality 0",
-                                RedirectStandardOutput = true,
-                                RedirectStandardError = false,
-                                CreateNoWindow = true,
-                                UseShellExecute = false
-                            };
-
-                            var p = Process.Start(youtubeDl);
-                            if (youtubeDl == null)
-                            {
-                                Log.Error("Unable to create youtube-dl process");
-                                return;
-                            }
-
-
-                            url = await p.StandardOutput.ReadLineAsync();
+                            url = await GetUrlFromYoutubeDlAsync().ConfigureAwait(false);
 
                             stopwatch.Stop();
                             Log.Debug("Url source found: " + stopwatch.Elapsed);
+                        }
 
+                        if (url == null)
+                        {
+                            return;
                         }
 
                         _currentSong.DirectUrl = url;
@@ -230,7 +223,7 @@ namespace MagicConchBot.Services
                             using (var pcmStream = _audio.CreatePCMStream(SamplesPerFrame))
                             {
                                 Log.Debug("Playing song.");
-                                await PlayerAsync(msg);
+                                await PlayerAsync(msg).ConfigureAwait(false);
 
                                 while (true)
                                 {
@@ -257,7 +250,7 @@ namespace MagicConchBot.Services
                                     await pcmStream.WriteAsync(buffer, 0, byteCount, _currentSong.TokenSource.Token).ConfigureAwait(false);
                                     bytesSent += byteCount;
                                     _currentSong.CurrentTime = _currentSong.SeekTo +
-                                                               TimeSpan.FromSeconds(bytesSent /
+                                                                TimeSpan.FromSeconds(bytesSent /
                                                                                     (1000d * FrameBytes / Milliseconds));
                                 }
                             }
@@ -285,9 +278,33 @@ namespace MagicConchBot.Services
                 }
                 finally
                 {
-                    await LeaveChannelAsync();
+                    await LeaveChannelAsync().ConfigureAwait(false);
                 }
             }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        private async Task<string> GetUrlFromYoutubeDlAsync()
+        {
+            var youtubeDl = new ProcessStartInfo
+            {
+                FileName = "youtube-dl",
+                // 
+                Arguments = $"{_currentSong.Url} -g -f bestaudio --audio-quality 0",
+                RedirectStandardOutput = true,
+                RedirectStandardError = false,
+                CreateNoWindow = true,
+                UseShellExecute = false
+            };
+
+            var p = Process.Start(youtubeDl);
+
+            if (youtubeDl == null)
+            {
+                Console.WriteLine("Unable to create youtube-dl process");
+                return null;
+            }
+
+            return await p.StandardOutput.ReadLineAsync();
         }
 
         public async Task PlayerAsync(IMessage msg)

@@ -146,7 +146,7 @@ namespace MagicConchBot.Modules
             await ReplyAsync(skipped ? "Skipped current song." : "No song available to skip");
         }
 
-        [Command("volume"), Summary("Changes the volume of the current playing song and future songs.")]
+        [Command("volume"), Alias("vol"), Summary("Changes the volume of the current playing song and future songs.")]
         public async Task ChangeVolumeAsync([Summary("The volume to set the song to from between 0 and 100.")] int volume)
         {
             var currentVol = _musicService.ChangeVolume(volume);
