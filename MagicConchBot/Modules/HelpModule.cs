@@ -31,8 +31,8 @@ namespace MagicConchBot.Modules
                 string description = null;
                 foreach (var cmd in module.Commands)
                 {
-                    var result = await cmd.CheckPreconditionsAsync(Context);
-                    if (result.IsSuccess)
+                    //var result = await cmd.CheckPreconditionsAsync(Context);
+                    //if (result.IsSuccess)
                         description += $"{prefix}{cmd.Aliases.First()}" + (cmd.Parameters.Count > 0 ? " ..." : "") + "\n";
                 }
 

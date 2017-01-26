@@ -8,15 +8,16 @@ using MagicConchBot.Attributes;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Services;
+using MagicConchBot.Resources;
 
 namespace MagicConchBot.Modules
 {
     [RequireUserInVoiceChannel]
-    [RequireUserRole(Program.RequiredRoleName)]
+    [RequireUserRole(Constants.RequiredRoleName)]
     [Name("Music Commands")]
     public class MusicModule : ModuleBase
     {
-        private readonly IMusicService _musicService;
+        private readonly MusicServiceProvider _musicServiceProvider;
         private readonly GoogleApiService _googleApiService;
         private readonly List<IMusicInfoService> _musicInfoServices;
 
@@ -30,16 +31,17 @@ namespace MagicConchBot.Modules
                 map.Get<YouTubeInfoService>(),
                 map.Get<SoundCloudInfoService>()
             };
-            _musicService = map.Get<FfmpegMusicService>();
+            _musicServiceProvider = map.Get<MusicServiceProvider>();
             _googleApiService = map.Get<GoogleApiService>();
         }
         
         [Command("play"), Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
         public async Task PlayAsync()
         {
-            if (_musicService.QueuedSongs().Count > 0)
+            var service = _musicServiceProvider.GetService(Context.Guild.Id);
+            if (service.QueuedSongs().Count > 0)
             {
-                await _musicService.PlayAsync(Context.Message);
+                await service.PlayAsync(Context.Message);
                 await ReplyAsync("Resuming queue.");
             }
             else
@@ -49,8 +51,9 @@ namespace MagicConchBot.Modules
         }
         
         [Command("play"), Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
-        public async Task PlayAsync([Remainder, Summary("The url or search terms.")] string urlOrQuery)
+        public async Task PlayAsync([Remainder, Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string urlOrQuery)
         {
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
             var terms = urlOrQuery.Split(' ');
             var url = "";
             var seekTo = TimeSpan.Zero;
@@ -114,49 +117,54 @@ namespace MagicConchBot.Modules
 
             Log.Info($"Queued song: {song.Name} - {song.Url} at {song.SeekTo}.");
             // add to queue
-            _musicService.QueueSong(song);
+            musicService.QueueSong(song);
             await ReplyAsync("Queued song:", false, song.GetEmbed($"{song.Name}"));
 
             // if not playing, start playing and then the player service
-            if (_musicService.GetCurrentSong() == null)
+            if (musicService.GetCurrentSong() == null)
             {
                 Log.Info("No song currently playing, playing.");
-                await _musicService.PlayAsync(Context.Message);
+                await musicService.PlayAsync(Context.Message);
             }
         }
         
         [Command("stop"), Summary("Stops the bot if it is playing music and disconnects it from the voice channel.")]
         public async Task StopAsync()
         {
-            var stopped = _musicService.Stop();
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            var stopped = musicService.Stop();
             await ReplyAsync(stopped ? "Music stopped playing." : "No music currently playing.");
         }
         
         [Command("pause"), Summary("Pauses the current song.")]
         public async Task PauseAsync()
         {
-            var paused = _musicService.Pause();
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            var paused = musicService.Pause();
             await ReplyAsync(paused ? "Music paused successfully." : "No music currently playing.");
         }
         
         [Command("skip"), Summary("Skips the current song if one is playing.")]
         public async Task SkipAsync()
         {
-            var skipped = _musicService.Skip();
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            var skipped = musicService.Skip();
             await ReplyAsync(skipped ? "Skipped current song." : "No song available to skip");
         }
 
         [Command("volume"), Alias("vol"), Summary("Changes the volume of the current playing song and future songs.")]
         public async Task ChangeVolumeAsync([Summary("The volume to set the song to from between 0 and 100.")] int volume)
         {
-            var currentVol = _musicService.ChangeVolume(volume);
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            var currentVol = musicService.ChangeVolume(volume);
             await ReplyAsync($"Current volume set to {currentVol}.");
         }
         
         [Command("current"), Summary("Displays the current song")]
         public async Task CurrentSongAsync()
         {
-            var song = _musicService.GetCurrentSong();
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            var song = musicService.GetCurrentSong();
             if (song == null)
             {
                 await ReplyAsync("No song is currently playing.");
@@ -167,10 +175,11 @@ namespace MagicConchBot.Modules
             }
         }
 
-        [Command("mp3"), Summary("Generates a link to the mp3 of the song last played.")]
+        [Command("mp3"), Summary("Generates a link to the mp3 of the current song playing or the last song played.")]
         public async Task GenerateMp3Async()
         {
-            var url = await _musicService.GenerateMp3Async();
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            var url = await musicService.GenerateMp3Async();
             if (url == null)
             {
                 await ReplyAsync("Generating mp3 file... please wait.");
