@@ -28,7 +28,7 @@ namespace MagicConchBot
 
             try
             {
-                Task.Factory.StartNew(async () => await new Program().MainAsync(cts.Token));
+                var task = Task.Factory.StartNew(async () => await new Program().MainAsync(cts.Token));
 
                 while (true)
                 {

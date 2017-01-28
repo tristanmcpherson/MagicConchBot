@@ -39,7 +39,11 @@ namespace MagicConchBot.Modules
         public async Task PlayAsync()
         {
             var service = _musicServiceProvider.GetService(Context.Guild.Id);
-            if (service.QueuedSongs().Count > 0)
+            if (service.GetCurrentSong() != null)
+            {
+                await ReplyAsync("Song already playing.");
+            }
+            else if (service.QueuedSongs().Count > 0)
             {
                 await service.PlayAsync(Context.Message);
                 await ReplyAsync("Resuming queue.");
