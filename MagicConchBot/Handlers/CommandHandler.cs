@@ -40,12 +40,12 @@ namespace MagicConchBot.Handlers
         private async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
             var channel = arg.GetChannel(arg.DefaultChannelId) as ISocketMessageChannel;
-            await channel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a roll named '{Constants.RequiredRoleName}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
+            await channel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Constants.RequiredRoleName}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
         }
 
-        private Task HandleGuildAvailable(SocketGuild arg)
+        private Task HandleGuildAvailable(SocketGuild guild)
         {
-            _map.Get<MusicServiceProvider>().AddService(arg.Id, new FfmpegMusicService());
+            _map.Get<MusicServiceProvider>().AddService(guild.Id, new FfmpegMusicService());
             return Task.CompletedTask;
         }
 

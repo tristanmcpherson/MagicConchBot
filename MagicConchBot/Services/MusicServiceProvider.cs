@@ -22,7 +22,13 @@ namespace MagicConchBot.Services
 
         public IMusicService GetService(ulong guildId)
         {
-            _musicServices.TryGetValue(guildId, out var service);
+           
+
+            if (!_musicServices.TryGetValue(guildId, out var service))
+            {
+                service = new FfmpegMusicService();
+                _musicServices.TryAdd(guildId, service);
+            }
             return service;
         }
 

@@ -74,7 +74,9 @@ namespace MagicConchBot
                 _client.Log += WriteToLog;
 
                 // Login and connect to Discord.
-                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token).ConfigureAwait(false);
+
+                //Configuration.Load().Token
+                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
                 await _client.ConnectAsync().ConfigureAwait(false);
 
                 map.Add(_client);

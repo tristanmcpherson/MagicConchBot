@@ -6,5 +6,6 @@ namespace MagicConchBot.Resources
     {
         public static Color MaterialBlue = new Color(33, 150, 243);
         public const string RequiredRoleName = "Conch Control";
+        public const string RepoLink = "https://github.com/IlmrynX/MagicConchBot";
     }
 }

@@ -16,7 +16,7 @@ namespace MagicConchBot.Modules
     public class PublicModule : ModuleBase
     {
         [Command("info"), Summary("Get info from the server.")]
-        public async Task Info()
+        public async Task InfoAsync()
         {
             var application = await Context.Client.GetApplicationInfoAsync();
 
@@ -28,7 +28,8 @@ namespace MagicConchBot.Modules
                  .WithValue($"**Author:**\n{application.Owner.Username} (ID {application.Owner.Id})\n\n" +
                             $"**Library:**\nDiscord.Net ({DiscordConfig.Version})\n\n" +
                             $"**Runtime:**\n{RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n\n" +
-                            $"**Uptime:**\n{GetUptime()}\n\n\n\n");
+                            $"**Uptime:**\n{GetUptime()}\n\n" +
+                            $"**GitHub:**\n{Constants.RepoLink}\n\n\n\n");
             });
             embed.AddField(f =>
             {
@@ -53,13 +54,13 @@ namespace MagicConchBot.Modules
         private static int _canIHaveSomethingToEatCount;
         private static int _magicConchReplyNumber;
         [Command("conch"), Alias("magicconch"), Summary("Have the Conch declare it's reign.")]
-        public async Task MagicConch()
+        public async Task MagicConchAsync()
         {
             await ReplyAsync("All hail the magic conch.", true);
         }
 
         [Command("conch"), Alias("magicconch"), Summary("Ask the magic conch a question.")]
-        public async Task MagicConch([Remainder, Summary("The question to ask.")] string question)
+        public async Task MagicConchAsync([Remainder, Summary("The question to ask.")] string question)
         {
             if (Regex.IsMatch(question, @"can i have something to eat\?*", RegexOptions.IgnoreCase))
             {
