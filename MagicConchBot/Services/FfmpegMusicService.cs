@@ -351,10 +351,8 @@ namespace MagicConchBot.Services
 
         public bool Stop()
         {
-            if (_currentSong == null)
-                return false;
             _tokenSource.Cancel();
-            _currentSong.TokenSource.Cancel();
+            _currentSong?.TokenSource.Cancel();
             return true;
         }
 
