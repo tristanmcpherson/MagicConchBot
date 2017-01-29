@@ -11,7 +11,7 @@ namespace MagicConchBot.Common.Types
 
         public string Name { get; }
         public string Url { get; }
-        public string DirectUrl { get; set; }
+        public string StreamUrl { get; set; }
         private string ThumbnailUrl { get; }
 
         public TimeSpan SeekTo { get; set; }

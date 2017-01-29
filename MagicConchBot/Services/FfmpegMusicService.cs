@@ -16,6 +16,7 @@ using YoutubeExtractor;
 using System.IO;
 using System.Net;
 using MagicConchBot.Resources;
+using System.Net.Http;
 
 namespace MagicConchBot.Services
 {
@@ -51,7 +52,7 @@ namespace MagicConchBot.Services
 
         private PlayMode _playMode;
 
-        private List<string> _directPlayFormats = new List<string>
+        private static List<string> _directPlayFormats = new List<string>
         {
             "webm",
             "mp3",
@@ -82,13 +83,15 @@ namespace MagicConchBot.Services
             return await Task.Factory.StartNew(() =>
             {
                 // ffmpeg -i input.wav -vn -ar 44100 -ac 2 -ab 192k -f mp3 output.mp3
-                if (!_urlToUniqueFile.TryGetValue(_currentSong.DirectUrl, out var guid))
+                if (!_urlToUniqueFile.TryGetValue(_currentSong.StreamUrl, out var guid))
                 {
                     guid = Guid.NewGuid();
-                    _urlToUniqueFile.TryAdd(_currentSong.DirectUrl, guid);
+                    _urlToUniqueFile.TryAdd(_currentSong.StreamUrl, guid);
                 }
 
                 var outputFile = _currentSong.Name + "_" + guid.ToString() + ".mp3";
+                var downloadFile = outputFile + ".raw";
+
                 var outputUrl = _serverUrl + WebUtility.UrlEncode(outputFile);
                 var destinationPath = Path.Combine(_serverPath, outputFile);
 
@@ -99,10 +102,15 @@ namespace MagicConchBot.Services
 
                 generatingMp3 = true;
 
+                using (var webClient = new WebClient())
+                {
+                    webClient.DownloadFile(_currentSong.StreamUrl, downloadFile);
+                }
+
                 var convert = Process.Start(new ProcessStartInfo
                 {
                     FileName = "ffmpeg",
-                    Arguments = $"-i {_currentSong.DirectUrl} -vn -ar 44100 -ac 2 -ab 192k -f mp3 {outputFile}",
+                    Arguments = $"-i {downloadFile} -vn -ar 44100 -ac 2 -ab 320k -f mp3 {outputFile}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = false,
@@ -121,6 +129,7 @@ namespace MagicConchBot.Services
                 }
 
                 File.Delete(outputFile);
+                File.Delete(downloadFile);
 
                 generatingMp3 = false;
 
@@ -166,38 +175,13 @@ namespace MagicConchBot.Services
                         if (!_songQueue.TryPeek(out _currentSong))
                             continue;
                         _currentSong.TokenSource = new CancellationTokenSource();
+                        _currentSong.StreamUrl = await ResolveStreamFromUrlAsync(_currentSong.Url);
 
-                        string url = null;
-                        if (_directPlayFormats.Contains(_currentSong.Url.Split('.').LastOrDefault()))
+                        if (_currentSong.StreamUrl == "")
                         {
-                            url = _currentSong.Url;
-                        }
-                        else if (_currentSong.Url.Contains("youtube"))
-                        {
-                            var video = DownloadUrlResolver.GetDownloadUrls(_currentSong.Url)
-                                .OrderByDescending(info => info.AudioBitrate)
-                                .ThenBy(info => info.Resolution)
-                                .First();
-                            url = video.DownloadUrl;
-                        }
-                        else
-                        {
-                            Log.Debug("Retrieving url using youtube-dl");
-                            var stopwatch = new Stopwatch();
-                            stopwatch.Start();
-
-                            url = await GetUrlFromYoutubeDlAsync().ConfigureAwait(false);
-
-                            stopwatch.Stop();
-                            Log.Debug("Url source found: " + stopwatch.Elapsed);
-                        }
-
-                        if (url == null)
-                        {
+                            Log.Debug($"Couldn't resolve stream url from url: {_currentSong.Url}");
                             return;
                         }
-
-                        _currentSong.DirectUrl = url;
 
                         var ffmpegArguments = (int)_currentSong.SeekTo.TotalSeconds == 0
                             ? ""
@@ -206,7 +190,7 @@ namespace MagicConchBot.Services
                         var startInfo = new ProcessStartInfo
                         {
                             FileName = "ffmpeg",
-                            Arguments = ffmpegArguments + $"-i {url} -f s16le -ar 48000 -ac 2 pipe:1",
+                            Arguments = ffmpegArguments + $"-i {_currentSong.StreamUrl} -f s16le -ar 48000 -ac 2 pipe:1",
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
                             RedirectStandardError = false,
@@ -286,13 +270,44 @@ namespace MagicConchBot.Services
             }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
-        private async Task<string> GetUrlFromYoutubeDlAsync()
+        private static async Task<string> ResolveStreamFromUrlAsync(string url)
+        {
+            var streamUrl = "";
+
+            if (_directPlayFormats.Contains(url.Split('.').LastOrDefault()))
+            {
+                streamUrl = url;
+            }
+            else if (url.Contains("youtube"))
+            {
+                var video = DownloadUrlResolver.GetDownloadUrls(url)
+                    .OrderByDescending(info => info.AudioBitrate)
+                    .ThenBy(info => info.Resolution)
+                    .First();
+                streamUrl = video.DownloadUrl;
+            }
+            else
+            {
+                Log.Debug("Retrieving url using youtube-dl");
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                streamUrl = await GetUrlFromYoutubeDlAsync(url).ConfigureAwait(false);
+
+                stopwatch.Stop();
+                Log.Debug("Url source found: " + stopwatch.Elapsed);
+            }
+
+            return streamUrl;
+        }
+
+        private static async Task<string> GetUrlFromYoutubeDlAsync(string url)
         {
             var youtubeDl = new ProcessStartInfo
             {
                 FileName = "youtube-dl",
                 // 
-                Arguments = $"{_currentSong.Url} -g -f bestaudio --audio-quality 0",
+                Arguments = $"{url} -g -f bestaudio --audio-quality 0",
                 RedirectStandardOutput = true,
                 RedirectStandardError = false,
                 CreateNoWindow = true,
