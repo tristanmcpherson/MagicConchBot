@@ -9,19 +9,17 @@ using Discord.WebSocket;
 using log4net;
 using MagicConchBot.Handlers;
 using MagicConchBot.Resources;
-using Nito.AsyncEx;
+using MagicConchBot.Services;
 
 namespace MagicConchBot
 {
     public class Program
     {
-        public const string RequiredRoleName = "Conch Control";
+        // https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
+        private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
 
-        private static readonly ILog Log =
-            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
-            private static DiscordSocketClient _client;
-            private static CommandHandler _handler;
+        private static DiscordSocketClient _client;
+        private static CommandHandler _handler;
 
         public static void Main()
         {
@@ -30,7 +28,7 @@ namespace MagicConchBot
 
             try
             {
-                Task.Factory.StartNew(async () => await new Program().MainAsync(cts.Token));
+                var task = Task.Factory.StartNew(async () => await new Program().MainAsync(cts.Token));
 
                 while (true)
                 {
@@ -42,6 +40,7 @@ namespace MagicConchBot
                             break;
                         }
                     }
+                    Thread.Sleep(250);
                 }
             }
             catch (TaskCanceledException)
@@ -63,6 +62,9 @@ namespace MagicConchBot
 
             try
             {
+                _handler = new CommandHandler();
+                _handler.ConfigureServices(map);
+
                 _client = new DiscordSocketClient(new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Info,
@@ -72,21 +74,21 @@ namespace MagicConchBot
                 _client.Log += WriteToLog;
 
                 // Login and connect to Discord.
-                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token).ConfigureAwait(false);
+
+                //Configuration.Load().Token
+                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
                 await _client.ConnectAsync().ConfigureAwait(false);
 
                 map.Add(_client);
-
-                _handler = new CommandHandler();
                 await _handler.InstallAsync(map).ConfigureAwait(false);
-                _handler.ConfigureServices(map);
 
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
+
             }
             finally
             {
-                map.Get<Services.FfmpegMusicService>().Stop();
-                await Task.Delay(3000);
+                map.Get<MusicServiceProvider>().StopAll();
+                await Task.Delay(1000);
                 await _client.DisconnectAsync();
             }
         }

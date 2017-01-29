@@ -15,15 +15,12 @@ using MagicConchBot.Helpers;
 using YoutubeExtractor;
 using System.IO;
 using System.Net;
-using System.Text;
 using MagicConchBot.Resources;
 
 namespace MagicConchBot.Services
 {
     public class FfmpegMusicService : IMusicService
     {
-        public bool debug = true;
-
         private IAudioClient _audio;
         private readonly ConcurrentQueue<Song> _songQueue;
 
@@ -39,6 +36,7 @@ namespace MagicConchBot.Services
         private static readonly ILog Log =
             LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        private Song _lastSong;
         private Song _currentSong;
 
         private const int SampleFrequency = 48000;
@@ -70,6 +68,8 @@ namespace MagicConchBot.Services
             _urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
             _serverPath = config.ServerMusicPath;
             _serverUrl = config.ServerMusicUrlBase;
+            _currentSong = null;
+            _lastSong = null;
         }
 
         public async Task<string> GenerateMp3Async()
@@ -160,6 +160,9 @@ namespace MagicConchBot.Services
 
                     while (!_tokenSource.Token.IsCancellationRequested && !_songQueue.IsEmpty)
                     {
+                        if (_currentSong != null)
+                            _lastSong = _currentSong;
+                        
                         if (!_songQueue.TryPeek(out _currentSong))
                             continue;
                         _currentSong.TokenSource = new CancellationTokenSource();

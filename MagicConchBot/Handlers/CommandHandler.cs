@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
 using MagicConchBot.Services;
+using MagicConchBot.Resources;
 
 namespace MagicConchBot.Handlers
 {
@@ -12,25 +13,40 @@ namespace MagicConchBot.Handlers
         private DiscordSocketClient _client;
         private IDependencyMap _map;
 
+        public void ConfigureServices(IDependencyMap map)
+        {
+            map.Add(new MusicServiceProvider());
+            map.Add(new GoogleApiService());
+            map.Add(new YouTubeInfoService(map));
+            map.Add(new SoundCloudInfoService());
+        }
+
         public async Task InstallAsync(IDependencyMap map)
         {
             // Create Command Service, inject it into Dependency Map
             _client = map.Get<DiscordSocketClient>();
             _commands = new CommandService();
-            map.Add(_commands);
             _map = map;
+
+            _map.Add(_commands);
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
             _client.MessageReceived += HandleCommandAsync;
+            _client.GuildAvailable += HandleGuildAvailable;
+            _client.JoinedGuild += HandleJoinedGuildAsync;
         }
 
-        public void ConfigureServices(IDependencyMap map)
+        private async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
-            map.Add(new FfmpegMusicService());
-            map.Add(new GoogleApiService());
-            map.Add(new YouTubeInfoService(map));
-            map.Add(new SoundCloudInfoService());
+            var channel = arg.GetChannel(arg.DefaultChannelId) as ISocketMessageChannel;
+            await channel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Constants.RequiredRoleName}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
+        }
+
+        private Task HandleGuildAvailable(SocketGuild guild)
+        {
+            _map.Get<MusicServiceProvider>().AddService(guild.Id, new FfmpegMusicService());
+            return Task.CompletedTask;
         }
 
         public async Task HandleCommandAsync(SocketMessage parameterMessage)
