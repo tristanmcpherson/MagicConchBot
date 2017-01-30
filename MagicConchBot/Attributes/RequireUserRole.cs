@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Discord.Commands;
 using MagicConchBot.Resources;
+using Discord;
 
 namespace MagicConchBot.Attributes
 {
@@ -32,7 +33,7 @@ namespace MagicConchBot.Attributes
                 return PreconditionResult.FromError($"No role named 'Conch Control' exists.");
             }
 
-            return (await context.Guild.GetUserAsync(context.User.Id)).RoleIds.Contains(requiredRole.Id) 
+            return (context.User as IGuildUser).RoleIds.Contains(requiredRole.Id) 
                 ? PreconditionResult.FromSuccess() 
                 : PreconditionResult.FromError($"You must have the role {_requiredRole} to run this command.");
         }

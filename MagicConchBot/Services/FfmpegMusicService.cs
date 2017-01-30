@@ -16,7 +16,6 @@ using YoutubeExtractor;
 using System.IO;
 using System.Net;
 using MagicConchBot.Resources;
-using System.Net.Http;
 
 namespace MagicConchBot.Services
 {
@@ -57,7 +56,9 @@ namespace MagicConchBot.Services
             "webm",
             "mp3",
             "avi",
-            "wav"
+            "wav",
+            "mp4",
+            "flac"
         };
 
         public FfmpegMusicService()
@@ -92,7 +93,7 @@ namespace MagicConchBot.Services
                 var outputFile = _currentSong.Name + "_" + guid.ToString() + ".mp3";
                 var downloadFile = outputFile + ".raw";
 
-                var outputUrl = _serverUrl + WebUtility.UrlEncode(outputFile);
+                var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
                 var destinationPath = Path.Combine(_serverPath, outputFile);
 
                 if (File.Exists(destinationPath))
@@ -110,7 +111,7 @@ namespace MagicConchBot.Services
                 var convert = Process.Start(new ProcessStartInfo
                 {
                     FileName = "ffmpeg",
-                    Arguments = $"-i {downloadFile} -vn -ar 44100 -ac 2 -ab 320k -f mp3 {outputFile}",
+                    Arguments = $@"-i ""{downloadFile}"" -vn -ar 44100 -ac 2 -ab 320k -f mp3 ""{outputFile}""",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = false,

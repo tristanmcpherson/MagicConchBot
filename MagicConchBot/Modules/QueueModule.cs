@@ -3,7 +3,6 @@ using Discord.Commands;
 using System.Threading.Tasks;
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Services;
 using MagicConchBot.Resources;
 
