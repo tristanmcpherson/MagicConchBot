@@ -33,7 +33,7 @@ namespace MagicConchBot.Modules
             }
 
             await ReplyAsync("", false, songs.First().GetEmbed());
-            for (var i = 1; i < songs.Capacity; i++)
+            for (var i = 1; i < songs.Count; i++)
             {
                 await ReplyAsync("", false, songs[i].GetEmbed($"{i}: {songs[i].Name}"));
             }
