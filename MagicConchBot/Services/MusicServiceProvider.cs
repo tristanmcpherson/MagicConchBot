@@ -17,15 +17,15 @@ namespace MagicConchBot.Services
 
         public void AddService(ulong guildId, IMusicService service)
         {
-            _musicServices.TryAdd(guildId, service);
+            if (!_musicServices.ContainsKey(guildId))
+                _musicServices.TryAdd(guildId, service);
         }
 
         public IMusicService GetService(ulong guildId)
         {
-           
-
             if (!_musicServices.TryGetValue(guildId, out var service))
             {
+                Log.Error("Server music service was not created, recreating.");
                 service = new FfmpegMusicService();
                 _musicServices.TryAdd(guildId, service);
             }

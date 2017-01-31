@@ -38,29 +38,17 @@ namespace MagicConchBot.Common.Types
             SeekTo = seekTo;
         }
 
-        public Embed GetEmbed(string title = "", bool embedThumbnail = true)
+        public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false)
         {
             var embed = new EmbedBuilder { Color = Constants.MaterialBlue };
-            if (title == "")
+            embed.AddField(x =>
             {
-                embed.AddField(x =>
-                {
-                    x.WithName($"[Current] {Name}")
-                        .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n{CurrentTimePretty} / {TotalTimePretty}");
-                });
-                if (ThumbnailUrl != "" && embedThumbnail)
-                    embed.WithThumbnailUrl(ThumbnailUrl);
-            }
-            else
-            {
-                embed.AddField(x =>
-                {
-                    x.WithName(title)
-                        .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n{TotalTimePretty}");
-                });
-                if (ThumbnailUrl != "" && embedThumbnail)
-                    embed.WithThumbnailUrl(ThumbnailUrl);
-            }
+                x.WithName(title == "" ? Name : title)
+                    .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" + (showDuration ? $"{CurrentTimePretty} / {TotalTimePretty}" : $"{TotalTimePretty}"));
+            });
+            if (ThumbnailUrl != "" && embedThumbnail)
+                embed.WithThumbnailUrl(ThumbnailUrl);
+
             return embed.Build();
         }
     }

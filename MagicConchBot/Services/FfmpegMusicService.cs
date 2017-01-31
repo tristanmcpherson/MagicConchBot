@@ -338,7 +338,7 @@ namespace MagicConchBot.Services
                         return;
                     }
 
-                    var message = await msg.Channel.SendMessageAsync("", false, song.GetEmbed("", false));
+                    var message = await msg.Channel.SendMessageAsync("", false, song.GetEmbed("", true, true));
 
                     while (_currentSong != null)
                     {
@@ -349,7 +349,7 @@ namespace MagicConchBot.Services
                         }
 
                         _currentSong.TokenSource.Token.ThrowIfCancellationRequested();
-                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false));
+                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", true, true));
                         await Task.Delay(2000);
                     }
                     await message.DeleteAsync();
@@ -368,7 +368,7 @@ namespace MagicConchBot.Services
         public bool Stop()
         {
             _tokenSource.Cancel();
-            _currentSong?.TokenSource.Cancel();
+            _currentSong?.TokenSource?.Cancel();
             return true;
         }
 

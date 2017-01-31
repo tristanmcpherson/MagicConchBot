@@ -136,6 +136,7 @@ namespace MagicConchBot.Modules
         public async Task StopAsync()
         {
             var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            musicService.Stop();
             await ReplyAsync(musicService.GetCurrentSong() != null ? "Music stopped playing." : "No music currently playing.");
         }
         

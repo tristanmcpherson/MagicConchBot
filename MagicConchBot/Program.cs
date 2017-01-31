@@ -79,6 +79,8 @@ namespace MagicConchBot
                 await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
                 await _client.ConnectAsync().ConfigureAwait(false);
 
+                //_client.Guild
+
                 map.Add(_client);
                 await _handler.InstallAsync(map).ConfigureAwait(false);
 

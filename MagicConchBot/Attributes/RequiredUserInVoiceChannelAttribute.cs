@@ -12,9 +12,7 @@ namespace MagicConchBot.Attributes
             await Task.Delay(0);
 
             var channel = (context.User as IGuildUser)?.VoiceChannel;
-            if (channel != null)
-                return PreconditionResult.FromSuccess();
-            return PreconditionResult.FromError("User must be in a voice channel.");
+            return channel != null ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("User must be in a voice channel.");
         }
     }
 }

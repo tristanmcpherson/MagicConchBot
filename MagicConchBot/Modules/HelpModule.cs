@@ -64,7 +64,7 @@ namespace MagicConchBot.Modules
             var builder = new EmbedBuilder
             {
                 Color = Constants.MaterialBlue,
-                Description = $"Here are some commands like **{command}**"
+                Description = $"**{command}**:"
             };
 
             foreach (var match in result.Commands)
