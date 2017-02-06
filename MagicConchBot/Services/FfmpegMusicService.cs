@@ -281,7 +281,8 @@ namespace MagicConchBot.Services
             }
             else if (url.Contains("youtube"))
             {
-                var video = DownloadUrlResolver.GetDownloadUrls(url)
+                var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
+                var video = videos
                     .OrderByDescending(info => info.AudioBitrate)
                     .ThenBy(info => info.Resolution)
                     .First();

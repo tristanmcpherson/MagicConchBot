@@ -33,9 +33,10 @@ namespace MagicConchBot.Attributes
                 return PreconditionResult.FromError($"No role named 'Conch Control' exists.");
             }
 
-            return (context.User as IGuildUser).RoleIds.Contains(requiredRole.Id) 
-                ? PreconditionResult.FromSuccess() 
-                : PreconditionResult.FromError($"You must have the role {_requiredRole} to run this command.");
+            if ((context.User as IGuildUser).RoleIds.Contains(requiredRole.Id))
+                return PreconditionResult.FromSuccess();
+
+            return PreconditionResult.FromError($"You must have the role {_requiredRole} to run this command.");
         }
     }
 }
