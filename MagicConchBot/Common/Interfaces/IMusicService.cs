@@ -17,6 +17,7 @@ namespace MagicConchBot.Common.Interfaces
         Song DequeueSong(int songNumber);
         void ClearQueue();
 
+        int Volume { get; }
         int ChangeVolume(int volume);
 
         void ChangePlayMode(PlayMode mode);

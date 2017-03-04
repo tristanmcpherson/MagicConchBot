@@ -19,14 +19,17 @@ namespace MagicConchBot.Common.Types
         private TimeSpan Length { get; } // Length in seconds
         public TimeSpan CurrentTime { get; set; }
 
-        private string TotalTimePretty => Length > new TimeSpan(0, 59, 59) ? Length.ToString(@"hh\:mm\:ss") : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
-        private string CurrentTimePretty => Length > new TimeSpan(0, 59, 59) ? CurrentTime.ToString(@"hh\:mm\:ss") : CurrentTime.ToString(@"mm\:ss");
+        private string TotalTimePretty => 
+            Length > new TimeSpan(0, 59, 59) ? Length.ToString(@"hh\:mm\:ss") : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
+        private string CurrentTimePretty => 
+            Length > new TimeSpan(0, 59, 59) ? CurrentTime.ToString(@"hh\:mm\:ss") : CurrentTime.ToString(@"mm\:ss");
 
         public CancellationTokenSource TokenSource;
 
         public Song(string name, TimeSpan length, string url, string thumbnailUrl = "")
             : this(name, length, url, thumbnailUrl, TimeSpan.Zero)
         {
+            
         }
 
         public Song(string name, TimeSpan length, string url, string thumbnailUrl, TimeSpan seekTo)
@@ -40,16 +43,16 @@ namespace MagicConchBot.Common.Types
 
         public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false)
         {
-            var embed = new EmbedBuilder { Color = Constants.MaterialBlue };
-            embed.AddField(x =>
+            var builder = new EmbedBuilder { Color = Constants.MaterialBlue };
+            builder.AddField(x =>
             {
                 x.WithName(title == "" ? Name : title)
                     .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" + (showDuration ? $"{CurrentTimePretty} / {TotalTimePretty}" : $"{TotalTimePretty}"));
             });
             if (ThumbnailUrl != "" && embedThumbnail)
-                embed.WithThumbnailUrl(ThumbnailUrl);
+                builder.WithThumbnailUrl(ThumbnailUrl);
 
-            return embed.Build();
+            return builder.Build();
         }
     }
 }

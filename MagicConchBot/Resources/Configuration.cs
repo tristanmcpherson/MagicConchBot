@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Newtonsoft.Json;
+using MagicConchBot.Common.Types;
 
 namespace MagicConchBot.Resources
 {
@@ -23,14 +24,12 @@ namespace MagicConchBot.Resources
         public string GoogleApiKey { get; set; }
         /// <summary> The name of this application for Google Api </summary>
         public string ApplicationName { get; set; }
-        /// <summary>
-        /// Local path to copy music to
-        /// </summary>
+        /// <summary> Local path to copy music to </summary>
         public string ServerMusicPath { get; set; }
-        /// <summary>
-        /// Base of the url ex. https://website.com/music/
-        /// </summary>
+        /// <summary> Base of the url ex. https://website.com/music/ </summary>
         public string ServerMusicUrlBase { get; set; }
+        /// <summary>  </summary>
+        public Playlist DefaultPlaylist { get; set; }
 
         public Configuration()
         {

@@ -24,6 +24,7 @@ namespace MagicConchBot.Handlers
             map.Add(new GoogleApiService());
             map.Add(new YouTubeInfoService(map));
             map.Add(new SoundCloudInfoService());
+            map.Add(new ChanService());
         }
 
         public async Task InstallAsync(IDependencyMap map)

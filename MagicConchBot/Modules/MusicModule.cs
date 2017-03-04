@@ -20,6 +20,8 @@ namespace MagicConchBot.Modules
         private readonly MusicServiceProvider _musicServiceProvider;
         private readonly GoogleApiService _googleApiService;
         private readonly List<IMusicInfoService> _musicInfoServices;
+        private readonly ChanService _chanService;
+        private readonly YouTubeInfoService _youtubeInfoService;
 
         private static readonly ILog Log =
             LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -33,6 +35,8 @@ namespace MagicConchBot.Modules
             };
             _musicServiceProvider = map.Get<MusicServiceProvider>();
             _googleApiService = map.Get<GoogleApiService>();
+            _chanService = map.Get<ChanService>();
+            _youtubeInfoService = map.Get<YouTubeInfoService>();
         }
         
         [Command("play"), Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
@@ -74,7 +78,6 @@ namespace MagicConchBot.Modules
                     }
                     break;
                 case 2:
-
                     // first term is url, therefore second should be time, if not then ignore second argument
                     if (isUrlRegex.IsMatch(terms[0]))
                     {
@@ -156,6 +159,13 @@ namespace MagicConchBot.Modules
             await ReplyAsync(skipped ? "Skipped current song." : "No song available to skip");
         }
 
+        [Command("volume"), Alias("vol"), Summary("Gets the current volume.")]
+        public async Task ChangeVolumeAsync()
+        {
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            await ReplyAsync($"{musicService.Volume}");
+        }
+
         [Command("volume"), Alias("vol"), Summary("Changes the volume of the current playing song and future songs.")]
         public async Task ChangeVolumeAsync([Summary("The volume to set the song to from between 0 and 100.")] int volume)
         {
@@ -183,14 +193,64 @@ namespace MagicConchBot.Modules
         public async Task GenerateMp3Async()
         {
             var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
-            var url = await musicService.GenerateMp3Async();
+            var url = await musicService.GenerateMp3Async().ContinueWith(async t =>
+            {
+                var dm = await Context.User.CreateDMChannelAsync();
+                await dm.SendMessageAsync($"Requested url at: {t.Result}");
+            });
+
             if (url == null)
             {
                 await ReplyAsync("Generating mp3 file... please wait.");
-                return;
             }
-            var dm = await Context.User.CreateDMChannelAsync();
-            await dm.SendMessageAsync($"Requested url at: {url}");
+        }
+
+        //[Command("ygyl")]
+        //public async Task YouGrooveYouLoseAsync()
+        //{
+        //    var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+        //    var songUrls = await _chanService.GetPostsWithVideos("wsg");
+
+        //    foreach (var songUrl in songUrls)
+        //    {
+        //        Song song;
+        //        if (!songUrl.EndsWith("webm"))
+        //        {
+        //            song = await _youtubeInfoService.GetSongInfoAsync(songUrl);
+        //        }
+        //        else
+        //        {
+        //            song = new Song("Unknown", TimeSpan.Zero, songUrl);
+        //        }
+
+        //        musicService.QueueSong(song);
+        //    }
+
+        //    await musicService.PlayAsync(Context.Message);
+        //}
+
+        [Command("ygyl")]
+        public async Task YouGrooveYouLoseAsync(string board = "wsg")
+        {
+            var musicService = _musicServiceProvider.GetService(Context.Guild.Id);
+            var songUrls = await _chanService.GetPostsWithVideosAsync(board);
+
+            foreach (var songUrl in songUrls)
+            {
+                Song song;
+                if (!songUrl.EndsWith("webm"))
+                {
+                    song = await _youtubeInfoService.GetSongInfoAsync(songUrl);
+                }
+                else
+                {
+                    song = new Song("Unknown", TimeSpan.Zero, songUrl);
+                }
+
+                musicService.QueueSong(song);
+            }
+
+            await musicService.PlayAsync(Context.Message);
         }
     }
 }

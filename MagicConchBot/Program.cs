@@ -43,10 +43,6 @@ namespace MagicConchBot
                     Thread.Sleep(250);
                 }
             }
-            catch (TaskCanceledException)
-            {
-                Console.WriteLine("Bot exited successfully.");
-            }
             finally
             {
                 Console.WriteLine("Press enter to continue . . .");
@@ -87,11 +83,19 @@ namespace MagicConchBot
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
 
             }
+            catch (TaskCanceledException)
+            {
+                Console.WriteLine("Bot exited successfully.");
+            }
+            catch (Exception ex)
+            {
+                await WriteToLog(new LogMessage(LogSeverity.Critical, "", "", ex));
+            }
             finally
             {
                 map.Get<MusicServiceProvider>().StopAll();
                 await Task.Delay(1000);
-                await _client.DisconnectAsync();
+                _client.DisconnectAsync();
             }
         }
 

@@ -1,0 +1,52 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using FChan.Library;
+using System.Text.RegularExpressions;
+
+namespace MagicConchBot.Services
+{
+    public class ChanService
+    {
+        private static Regex YgylRegex = new Regex(@"ygyl|you groove you lose|you groove", RegexOptions.IgnoreCase);
+        private static Regex YouTubeRegex = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=))(?<VideoId>[\w-]{10,12})(?:[\&\?]?t=)?(?<Time>[\d]+)?s?(?<TimeAlt>(\d+h)?(\d+m)?(\d+s)?)?");
+
+        public async Task<List<string>> GetPostsWithVideosAsync(string boardName)
+        {
+            var chan = await Chan.GetBoardAsync();
+            var videos = new List<string>();
+            var board = chan.Boards.First(b => b.BoardName == boardName);
+            for (int i = 1; i <= board.Pages; i++)
+            {
+                var page = await Chan.GetThreadPageAsync(board.BoardName, i);
+                foreach (var thread in page.Threads)
+                {
+                    var t = thread.Posts.First();
+                    if (YgylRegex.IsMatch(t.Subject ?? "") || YgylRegex.IsMatch(t.Comment ?? "") || YgylRegex.IsMatch(t.Name ?? ""))
+                    {
+                        foreach (var post in thread.Posts)
+                        {
+
+                            if (post.HasImage && post.FileExtension == ".webm")
+                            {
+                                var file = Constants.GetImageUrl(board.BoardName, post.FileName, post.FileExtension);
+                                videos.Add(file);
+                            }
+                            else if (post.Comment.Contains("youtube.com"))
+                            {
+                                var cleanedPost = post.Comment.Replace("<wbr>", "");
+                                var match = YouTubeRegex.Match(cleanedPost);
+                                videos.Add(match.Value);
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            return videos;
+        }
+    }
+}

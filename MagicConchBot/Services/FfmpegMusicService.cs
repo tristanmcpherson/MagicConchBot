@@ -21,6 +21,9 @@ namespace MagicConchBot.Services
 {
     public class FfmpegMusicService : IMusicService
     {
+        private static readonly ILog Log =
+    LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private IAudioClient _audio;
         private readonly ConcurrentQueue<Song> _songQueue;
 
@@ -32,9 +35,6 @@ namespace MagicConchBot.Services
         private static bool generatingMp3;
 
         private CancellationTokenSource _tokenSource;
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private Song _lastSong;
         private Song _currentSong;
@@ -48,6 +48,7 @@ namespace MagicConchBot.Services
         private const int MinVolume = 0;
 
         private float _currentVolume = 0.4f;
+        public int Volume { get { return (int)(_currentVolume * 100); } }
 
         private PlayMode _playMode;
 
@@ -84,13 +85,17 @@ namespace MagicConchBot.Services
             return await Task.Factory.StartNew(() =>
             {
                 // ffmpeg -i input.wav -vn -ar 44100 -ac 2 -ab 192k -f mp3 output.mp3
-                if (!_urlToUniqueFile.TryGetValue(_currentSong.StreamUrl, out var guid))
+                var songToDownload = _currentSong ?? _lastSong;
+                if (songToDownload == null)
+                    return null;
+
+                if (!_urlToUniqueFile.TryGetValue(songToDownload.StreamUrl, out var guid))
                 {
                     guid = Guid.NewGuid();
-                    _urlToUniqueFile.TryAdd(_currentSong.StreamUrl, guid);
+                    _urlToUniqueFile.TryAdd(songToDownload.StreamUrl, guid);
                 }
 
-                var outputFile = _currentSong.Name + "_" + guid.ToString() + ".mp3";
+                var outputFile = songToDownload.Name + "_" + guid.ToString() + ".mp3";
                 var downloadFile = outputFile + ".raw";
 
                 var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
@@ -105,7 +110,7 @@ namespace MagicConchBot.Services
 
                 using (var webClient = new WebClient())
                 {
-                    webClient.DownloadFile(_currentSong.StreamUrl, downloadFile);
+                    webClient.DownloadFile(songToDownload.StreamUrl, downloadFile);
                 }
 
                 var convert = Process.Start(new ProcessStartInfo
@@ -170,11 +175,15 @@ namespace MagicConchBot.Services
 
                     while (!_tokenSource.Token.IsCancellationRequested && !_songQueue.IsEmpty)
                     {
-                        if (_currentSong != null)
+                        if (_currentSong != null)  
                             _lastSong = _currentSong;
                         
                         if (!_songQueue.TryPeek(out _currentSong))
                             continue;
+
+                        if (_currentSong.IsPaused)
+                            _currentSong.IsPaused = false;
+
                         _currentSong.TokenSource = new CancellationTokenSource();
                         _currentSong.StreamUrl = await ResolveStreamFromUrlAsync(_currentSong.Url);
 
@@ -184,14 +193,14 @@ namespace MagicConchBot.Services
                             return;
                         }
 
-                        var ffmpegArguments = (int)_currentSong.SeekTo.TotalSeconds == 0
+                        var seekArg = (int)_currentSong.SeekTo.TotalSeconds == 0
                             ? ""
                             : $"-ss {_currentSong.SeekTo.TotalSeconds} ";
 
                         var startInfo = new ProcessStartInfo
                         {
                             FileName = "ffmpeg",
-                            Arguments = ffmpegArguments + $"-i {_currentSong.StreamUrl} -f s16le -ar 48000 -ac 2 pipe:1",
+                            Arguments = seekArg + $"-i {_currentSong.StreamUrl} -f s16le -ar 48000 -ac 2 pipe:1",
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
                             RedirectStandardError = false,
@@ -369,7 +378,7 @@ namespace MagicConchBot.Services
         public bool Stop()
         {
             _tokenSource.Cancel();
-            _currentSong?.TokenSource?.Cancel();
+            _currentSong?.TokenSource.Cancel();
             return true;
         }
 
@@ -386,7 +395,7 @@ namespace MagicConchBot.Services
 
         public bool Skip()
         {
-            if (_currentSong == null || _songQueue.Count <= 0)
+            if (_currentSong == null || _songQueue.Count == 0)
             {
                 return false;
             }
@@ -413,7 +422,6 @@ namespace MagicConchBot.Services
             }
 
             // They want to remove the currently playing song from queue, also stop playing it
-
             var stack = new Stack<Song>();
             for (var i = 0; i <= songNumber; i++)
             {
