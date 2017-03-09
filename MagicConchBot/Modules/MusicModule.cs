@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
+    using System.Linq;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
 
@@ -21,6 +23,9 @@
     {
         private static readonly ILog Log =
             LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        private static readonly Regex UrlRegex =
+            new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
         private readonly GoogleApiService googleApiService;
         private readonly List<IMusicInfoService> musicInfoServices;
@@ -61,38 +66,30 @@
         public async Task PlayAsync([Remainder, Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string urlOrQuery)
         {
             var terms = urlOrQuery.Split(' ');
-            var url = "";
-            var seekTo = TimeSpan.Zero;
+            var startTime = TimeSpan.Zero;
+            string url;
             Song song = null;
 
-            var isUrlRegex = new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
-
-            switch (terms.Length)
+            if (terms.Length > 1)
             {
-                case 1:
-                    if (isUrlRegex.IsMatch(urlOrQuery))
-                    {
-                        url = urlOrQuery;
-                    }
-
-                    break;
-                case 2:
-                    // first term is url, therefore second should be time, if not then ignore second argument
-                    if (isUrlRegex.IsMatch(terms[0]))
-                    {
-                        url = terms[0];
-                        if (!TimeSpan.TryParse(terms[1], out seekTo))
-                        {
-                            seekTo = TimeSpan.Zero;
-                        }
-                    }
-
-                    break;
+                if (TimeSpan.TryParseExact(terms.Last(), new []{@"mm\:ss", @"hh\:mm\:ss"}, CultureInfo.InvariantCulture,  out startTime))
+                {
+                    // last term is a time mark, remove it
+                    urlOrQuery = urlOrQuery.Replace(" " + terms.Last(), "");
+                }
+                else
+                {
+                    startTime = TimeSpan.Zero;
+                }
             }
 
-            // input is not a url, search for it on YouTube
-            if (url == "")
+            if (UrlRegex.IsMatch(urlOrQuery))
             {
+                url = urlOrQuery;
+            }
+            else
+            {
+                // input is not a url, search for it on YouTube
                 url = await googleApiService.GetFirstVideoByKeywordsAsync(urlOrQuery);
             }
 
@@ -105,10 +102,10 @@
 
                 song = await service.GetSongInfoAsync(url);
                 
-                // if url contains time info but it is specified, overwrite
-                if (seekTo != TimeSpan.Zero)
+                // url may contain time info but it is specified, overwrite
+                if (startTime != TimeSpan.Zero)
                 {
-                    song.SeekTo = seekTo;
+                    song.StartTime = startTime;
                 }
                 
                 // song info found, stop info service search
@@ -130,7 +127,7 @@
             }
 
             // valid url but song information not found by any song info service
-            Log.Info($"Queued song: {song.Name} - {song.Url} at {song.SeekTo}.");
+            Log.Info($"Queued song: {song.Name} - {song.Url} at {song.StartTime}.");
 
             // add to queue
             Context.MusicService.QueueSong(song);
@@ -208,45 +205,8 @@
             }
         }
 
-        //[Command("ygyl")]
-        //public async Task YouGrooveYouLoseAsync()
-        //{
-        //    var musicService = _musicServiceProvider.GetService(Context.OwnerGuildId.Id);
-        //    var songUrls = await _chanService.GetPostsWithVideos("wsg");
-
-        //    foreach (var songUrl in songUrls)
-        //    {
-        //        Song song;
-        //        if (!songUrl.EndsWith("webm"))
-        //        {
-        //            song = await _youtubeInfoService.GetSongInfoAsync(songUrl);
-        //        }
-        //        else
-        //        {
-        //            song = new Song("Unknown", TimeSpan.Zero, songUrl);
-        //        }
-
-        //        musicService.QueueSong(song);
-        //    }
-
-        //    await musicService.PlayAsync(Context.Message);
-        //}
         [Command("ygyl")]
-        public async Task YouGrooveYouLoseAsync()
-        {
-            var songUrls = await chanService.GetPostsWithVideosAsync("wsg");
-
-            foreach (var songUrl in songUrls)
-            {
-                var song = !songUrl.EndsWith("webm") ? await youtubeInfoService.GetSongInfoAsync(songUrl) : new Song(songUrl);
-                Context.MusicService.QueueSong(song);
-            }
-
-            await Context.MusicService.PlayAsync(Context.Message);
-        }
-
-        [Command("ygyl")]
-        public async Task YouGrooveYouLoseAsync(string board)
+        public async Task YouGrooveYouLoseAsync(string board = "wsg")
         {
             var songUrls = await chanService.GetPostsWithVideosAsync(board);
 

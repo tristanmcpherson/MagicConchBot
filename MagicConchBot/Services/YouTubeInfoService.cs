@@ -34,11 +34,11 @@
             var song = await googleApiService.GetVideoInfoByIdAsync(videoId);
             if (match.Groups["Time"].Value != "")
             {
-                song.SeekTo = TimeSpan.FromSeconds(Convert.ToInt32(match.Groups["Time"].Value));
+                song.StartTime = TimeSpan.FromSeconds(Convert.ToInt32(match.Groups["Time"].Value));
             }
             else if (match.Groups["TimeAlt"].Value != "")
             {
-                song.SeekTo = TimeSpan.Parse(match.Groups["TimeAlt"].Value);
+                song.StartTime = TimeSpan.Parse(match.Groups["TimeAlt"].Value);
             }
 
             return song;

@@ -182,9 +182,9 @@
                             return;
                         }
 
-                        var seekArg = (int)currentSong.SeekTo.TotalSeconds == 0
+                        var seekArg = (int)currentSong.StartTime.TotalSeconds == 0
                             ? ""
-                            : $"-ss {currentSong.SeekTo.TotalSeconds} ";
+                            : $"-ss {currentSong.StartTime.TotalSeconds} ";
 
                         var startInfo = new ProcessStartInfo
                         {
@@ -239,7 +239,7 @@
 
                                     await pcmStream.WriteAsync(buffer, 0, byteCount, currentSong.TokenSource.Token).ConfigureAwait(false);
                                     bytesSent += byteCount;
-                                    currentSong.CurrentTime = currentSong.SeekTo +
+                                    currentSong.CurrentTime = currentSong.StartTime +
                                                                 TimeSpan.FromSeconds(bytesSent /
                                                                                     (1000d * FrameBytes / Milliseconds));
                                 }
@@ -330,7 +330,7 @@
             }
 
             currentSong.IsPaused = true;
-            currentSong.SeekTo = currentSong.CurrentTime;
+            currentSong.StartTime = currentSong.CurrentTime;
             currentSong.TokenSource.Cancel();
             tokenSource.Cancel();
             return true;
@@ -434,10 +434,7 @@
             else if (url.Contains("youtube"))
             {
                 var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
-                var video = videos
-                    .OrderByDescending(info => info.AudioBitrate)
-                    .ThenBy(info => info.Resolution)
-                    .First();
+                var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
                 streamUrl = video.DownloadUrl;
             }
             else
@@ -449,7 +446,15 @@
                 streamUrl = await GetUrlFromYoutubeDlAsync(url).ConfigureAwait(false);
 
                 stopwatch.Stop();
-                Log.Debug("Url source found: " + stopwatch.Elapsed);
+
+                if (streamUrl == null)
+                {
+                    Log.Error("Failed to get url from youtube-dl. Possible update needed.");
+                }
+                else
+                {
+                    Log.Debug("Url source found: " + stopwatch.Elapsed);
+                }
             }
 
             return streamUrl;

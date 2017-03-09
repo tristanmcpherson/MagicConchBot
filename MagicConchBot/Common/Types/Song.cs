@@ -17,13 +17,13 @@ namespace MagicConchBot.Common.Types
         {
         }
 
-        public Song(string name, TimeSpan length, string url, string thumbnailUrl, TimeSpan seekTo)
+        public Song(string name, TimeSpan length, string url, string thumbnailUrl, TimeSpan startTime)
         {
             ThumbnailUrl = thumbnailUrl;
             Name = name;
             Length = length;
             Url = url;
-            SeekTo = seekTo;
+            this.StartTime = startTime;
         }
 
         public bool IsPaused { get; set; }
@@ -34,7 +34,7 @@ namespace MagicConchBot.Common.Types
 
         public string StreamUrl { get; set; }
 
-        public TimeSpan SeekTo { get; set; }
+        public TimeSpan StartTime { get; set; }
 
         public TimeSpan CurrentTime { get; set; }
 

@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -37,10 +38,22 @@
                 {
                     if (Console.KeyAvailable)
                     {
-                        if (Console.ReadKey(true).Key == ConsoleKey.Q)
+                        var key = Console.ReadKey(true).Key;
+                        if (key == ConsoleKey.Q)
                         {
                             cts.Cancel();
                             break;
+                        }
+
+                        // Skip song
+                        if (key == ConsoleKey.S)
+                        {
+                            var config = Configuration.Load();
+                            var serverId = config.OwnerGuildId;
+                            Console.WriteLine("Skipping song.");
+                            var channel = (IMessageChannel)client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
+                            channel.SendMessageAsync("Skipping song at request of owner.");
+                            MusicServiceProvider.GetService(serverId).Skip();
                         }
                     }
 
@@ -89,7 +102,6 @@
             }
             catch (TaskCanceledException)
             {
-                Console.WriteLine("Bot exited successfully.");
             }
             catch (Exception ex)
             {
@@ -98,7 +110,6 @@
             finally
             {
                 MusicServiceProvider.StopAll();
-                await Task.Delay(1000);
                 client.DisconnectAsync();
             }
         }

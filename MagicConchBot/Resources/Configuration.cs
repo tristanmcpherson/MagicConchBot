@@ -35,6 +35,16 @@ namespace MagicConchBot.Resources
         public Configuration()
         {
             Owners = new ulong[] { 0 };
+            Token = "";
+            GoogleApiKey = "";
+            ApplicationName = "";
+            ServerMusicPath = "";
+            ServerMusicUrlBase = "";
+            DefaultPlaylist = new Playlist();
+            WrongChannelError = "";
+            RequiredRole = "";
+            OwnerGuildId = 0;
+            BotControlChannel = "";
         }
 
         /// <summary> Gets or sets the bot's command prefix. Please don't pick `!`. </summary>
