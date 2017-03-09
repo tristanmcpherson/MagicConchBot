@@ -1,21 +1,23 @@
-﻿using System;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Google.Apis.Services;
-using Google.Apis.YouTube.v3;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Resources;
-
-namespace MagicConchBot.Services
+﻿namespace MagicConchBot.Services
 {
+    using System;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+
+    using Google.Apis.Services;
+    using Google.Apis.YouTube.v3;
+
+    using MagicConchBot.Common.Types;
+    using MagicConchBot.Resources;
+
     public class GoogleApiService
     {
-        private readonly YouTubeService _youtubeService;
+        private readonly YouTubeService youtubeService;
 
         public GoogleApiService()
         {
-            _youtubeService = new YouTubeService(new BaseClientService.Initializer
+            youtubeService = new YouTubeService(new BaseClientService.Initializer
             {
                 ApiKey = Configuration.Load().GoogleApiKey,
                 ApplicationName = Configuration.Load().ApplicationName
@@ -24,7 +26,7 @@ namespace MagicConchBot.Services
 
         public async Task<string> GetFirstVideoByKeywordsAsync(string keywords)
         {
-            var searchListRequest = _youtubeService.Search.List("snippet");
+            var searchListRequest = youtubeService.Search.List("snippet");
             searchListRequest.Q = keywords; // Replace with your search term.
             searchListRequest.MaxResults = 1;
             searchListRequest.Type = "video";
@@ -36,7 +38,7 @@ namespace MagicConchBot.Services
 
         public async Task<Song> GetVideoInfoByIdAsync(string id)
         {
-            var search = _youtubeService.Videos.List("snippet,contentDetails");
+            var search = youtubeService.Videos.List("snippet,contentDetails");
             search.Id = id;
             var video = (await search.ExecuteAsync()).Items.First();
             var regex = new Regex(@"PT((?<H>\d+)H)?(?<M>\d+)M(?<S>\d+)S");

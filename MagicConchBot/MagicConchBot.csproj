@@ -226,12 +226,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\RequiredUserInVoiceChannelAttribute.cs" />
-    <Compile Include="Attributes\RequireUserRole.cs" />
+    <Compile Include="Attributes\RequireUserInVoiceChannelAttribute.cs" />
+    <Compile Include="Attributes\RequireBotControlRoleAttribute.cs" />
     <Compile Include="Common\Types\Playlist.cs" />
+    <Compile Include="Common\Types\PomfResult.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Handlers\CmdSrv.cs" />
     <Compile Include="Handlers\CommandHandler.cs" />
     <Compile Include="Helpers\AudioHelper.cs" />
+    <Compile Include="Modules\MusicContextModuleBase.cs" />
     <Compile Include="Modules\QueueModule.cs" />
     <Compile Include="Resources\Configuration.cs" />
     <Compile Include="Common\Types\Song.cs" />
@@ -249,6 +252,7 @@
     <Compile Include="Common\Enums\PlayMode.cs" />
     <Compile Include="Services\MusicServiceProvider.cs" />
     <Compile Include="Services\SoundCloudInfoService.cs" />
+    <Compile Include="Services\WebmHostingService.cs" />
     <Compile Include="Services\YouTubeInfoService.cs" />
   </ItemGroup>
   <ItemGroup>

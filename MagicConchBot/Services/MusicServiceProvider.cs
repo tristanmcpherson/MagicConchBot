@@ -1,40 +1,40 @@
-﻿using Discord.Commands;
-using log4net;
-using MagicConchBot.Common.Interfaces;
-using System.Collections.Concurrent;
-
-namespace MagicConchBot.Services
+﻿namespace MagicConchBot.Services
 {
-    public class MusicServiceProvider
+    using System.Collections.Concurrent;
+
+    using log4net;
+
+    using MagicConchBot.Common.Interfaces;
+
+    public static class MusicServiceProvider
     {
-        public ConcurrentDictionary<ulong, IMusicService> _musicServices;
+        private static readonly ConcurrentDictionary<ulong, IMusicService> MusicServices = new ConcurrentDictionary<ulong, IMusicService>();
+
         private static readonly ILog Log = LogManager.GetLogger(typeof(MusicServiceProvider));
 
-        public MusicServiceProvider()
+        public static void AddService(ulong guildId, IMusicService service)
         {
-            _musicServices = new ConcurrentDictionary<ulong, IMusicService>();
+            if (!MusicServices.ContainsKey(guildId))
+            {
+                MusicServices.TryAdd(guildId, service);
+            }
         }
 
-        public void AddService(ulong guildId, IMusicService service)
+        public static IMusicService GetService(ulong guildId)
         {
-            if (!_musicServices.ContainsKey(guildId))
-                _musicServices.TryAdd(guildId, service);
-        }
-
-        public IMusicService GetService(ulong guildId)
-        {
-            if (!_musicServices.TryGetValue(guildId, out var service))
+            if (!MusicServices.TryGetValue(guildId, out var service))
             {
                 Log.Error("Server music service was not created, recreating.");
                 service = new FfmpegMusicService();
-                _musicServices.TryAdd(guildId, service);
+                MusicServices.TryAdd(guildId, service);
             }
+
             return service;
         }
 
-        public void StopAll()
+        public static void StopAll()
         {
-            foreach (var musicService in _musicServices)
+            foreach (var musicService in MusicServices)
             {
                 if (!musicService.Value.Stop())
                 {

@@ -1,25 +1,28 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Audio;
-using Discord.Commands;
-using Discord.WebSocket;
-using log4net;
-using MagicConchBot.Handlers;
-using MagicConchBot.Resources;
-using MagicConchBot.Services;
-
-namespace MagicConchBot
+﻿namespace MagicConchBot
 {
+    using System;
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Discord;
+    using Discord.Audio;
+    using Discord.Commands;
+    using Discord.WebSocket;
+
+    using log4net;
+
+    using MagicConchBot.Handlers;
+    using MagicConchBot.Resources;
+    using MagicConchBot.Services;
+
     public class Program
     {
         // https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
         private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
 
-        private static DiscordSocketClient _client;
-        private static CommandHandler _handler;
+        private static DiscordSocketClient client;
+        private static CommandHandler handler;
 
         public static void Main()
         {
@@ -28,7 +31,7 @@ namespace MagicConchBot
 
             try
             {
-                var task = Task.Factory.StartNew(async () => await new Program().MainAsync(cts.Token));
+                var task = Task.Factory.StartNew(async () => await MainAsync(cts.Token), cts.Token);
 
                 while (true)
                 {
@@ -40,8 +43,11 @@ namespace MagicConchBot
                             break;
                         }
                     }
+
                     Thread.Sleep(250);
                 }
+
+                Task.WaitAll(task);
             }
             finally
             {
@@ -50,7 +56,7 @@ namespace MagicConchBot
             }
         }
 
-        private async Task MainAsync(CancellationToken cancellationToken)
+        private static async Task MainAsync(CancellationToken cancellationToken)
         {
             EnsureConfigExists();
 
@@ -58,30 +64,28 @@ namespace MagicConchBot
 
             try
             {
-                _handler = new CommandHandler();
-                _handler.ConfigureServices(map);
+                handler = new CommandHandler();
+                handler.ConfigureServices(map);
 
-                _client = new DiscordSocketClient(new DiscordSocketConfig
+                client = new DiscordSocketClient(new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Info,
                     AudioMode = AudioMode.Outgoing
                 });
 
-                _client.Log += WriteToLog;
-
+                client.Log += WriteToLog;
+                
                 // Login and connect to Discord.
 
                 //Configuration.Load().Token
-                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
-                await _client.ConnectAsync().ConfigureAwait(false);
+                await client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
+                await client.ConnectAsync().ConfigureAwait(false);
 
-                //_client.Guild
-
-                map.Add(_client);
-                await _handler.InstallAsync(map).ConfigureAwait(false);
+                //_client.OwnerGuildId
+                map.Add(client);
+                await handler.InstallAsync().ConfigureAwait(false);
 
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
-
             }
             catch (TaskCanceledException)
             {
@@ -93,16 +97,18 @@ namespace MagicConchBot
             }
             finally
             {
-                map.Get<MusicServiceProvider>().StopAll();
+                MusicServiceProvider.StopAll();
                 await Task.Delay(1000);
-                _client.DisconnectAsync();
+                client.DisconnectAsync();
             }
         }
 
         private static Task WriteToLog(LogMessage message)
         {
             if (message.Message.Contains("Unknown OpCode"))
+            {
                 return Task.CompletedTask;
+            }
 
             switch (message.Severity)
             {
@@ -128,8 +134,9 @@ namespace MagicConchBot
         private static void EnsureConfigExists()
         {
             var loc = Path.Combine(AppContext.BaseDirectory, "Configuration.json");
-
-            if (!File.Exists(loc))                              // Check if the configuration file exists.
+            
+            // Check if the configuration file exists.
+            if (!File.Exists(loc))                              
             {
                 var config = new Configuration();               // Create a new configuration object.
 
@@ -140,6 +147,7 @@ namespace MagicConchBot
                 config.Token = Console.ReadLine();              // Read the bot token from console.
                 config.Save();                                  // Save the new configuration object to file.
             }
+
             Console.WriteLine("Configuration Loaded...");
         }
     }

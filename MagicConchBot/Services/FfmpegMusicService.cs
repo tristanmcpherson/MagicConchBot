@@ -1,44 +1,30 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Audio;
-using log4net;
-using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Helpers;
-using YoutubeExtractor;
-using System.IO;
-using System.Net;
-using MagicConchBot.Resources;
-
-namespace MagicConchBot.Services
+﻿namespace MagicConchBot.Services
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Discord;
+    using Discord.Audio;
+
+    using log4net;
+
+    using MagicConchBot.Common.Enums;
+    using MagicConchBot.Common.Interfaces;
+    using MagicConchBot.Common.Types;
+    using MagicConchBot.Helpers;
+    using MagicConchBot.Resources;
+
+    using YoutubeExtractor;
+
     public class FfmpegMusicService : IMusicService
     {
-        private static readonly ILog Log =
-    LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
-        private IAudioClient _audio;
-        private readonly ConcurrentQueue<Song> _songQueue;
-
-        private static string _serverPath;
-        private static string _serverUrl;
-
-        private ConcurrentDictionary<string, Guid> _urlToUniqueFile;
-
-        private static bool generatingMp3;
-
-        private CancellationTokenSource _tokenSource;
-
-        private Song _lastSong;
-        private Song _currentSong;
-
         private const int SampleFrequency = 48000;
         private const int Milliseconds = 5;
         private const int SamplesPerFrame = SampleFrequency * Milliseconds / 1000;
@@ -47,33 +33,42 @@ namespace MagicConchBot.Services
         private const int MaxVolume = 100;
         private const int MinVolume = 0;
 
-        private float _currentVolume = 0.4f;
-        public int Volume { get { return (int)(_currentVolume * 100); } }
+        private static readonly ILog Log =
+            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private PlayMode _playMode;
+        private static readonly string[] DirectPlayFormats = { "webm", "mp3", "avi", "wav", "mp4", "flac" };
 
-        private static List<string> _directPlayFormats = new List<string>
-        {
-            "webm",
-            "mp3",
-            "avi",
-            "wav",
-            "mp4",
-            "flac"
-        };
+        private static string serverPath;
+        private static string serverUrl;
+        private static bool generatingMp3;
+
+        private readonly ConcurrentDictionary<string, Guid> urlToUniqueFile;
+        private readonly ConcurrentQueue<Song> songQueue;
+        private IAudioClient audio;
+
+        private PlayMode playMode;
+
+        private CancellationTokenSource tokenSource;
+
+        private Song lastSong;
+        private Song currentSong;
+
+        private float currentVolume = 0.4f;
 
         public FfmpegMusicService()
         {
             var config = Configuration.Load();
 
-            _songQueue = new ConcurrentQueue<Song>();
-            _playMode = PlayMode.Queue;
-            _urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
-            _serverPath = config.ServerMusicPath;
-            _serverUrl = config.ServerMusicUrlBase;
-            _currentSong = null;
-            _lastSong = null;
+            songQueue = new ConcurrentQueue<Song>();
+            playMode = PlayMode.Queue;
+            urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
+            serverPath = config.ServerMusicPath;
+            serverUrl = config.ServerMusicUrlBase;
+            currentSong = null;
+            lastSong = null;
         }
+
+        public int Volume => (int)(currentVolume * 100);
 
         public async Task<string> GenerateMp3Async()
         {
@@ -85,21 +80,23 @@ namespace MagicConchBot.Services
             return await Task.Factory.StartNew(() =>
             {
                 // ffmpeg -i input.wav -vn -ar 44100 -ac 2 -ab 192k -f mp3 output.mp3
-                var songToDownload = _currentSong ?? _lastSong;
+                var songToDownload = currentSong ?? lastSong;
                 if (songToDownload == null)
+                {
                     return null;
+                }
 
-                if (!_urlToUniqueFile.TryGetValue(songToDownload.StreamUrl, out var guid))
+                if (!urlToUniqueFile.TryGetValue(songToDownload.StreamUrl, out var guid))
                 {
                     guid = Guid.NewGuid();
-                    _urlToUniqueFile.TryAdd(songToDownload.StreamUrl, guid);
+                    urlToUniqueFile.TryAdd(songToDownload.StreamUrl, guid);
                 }
 
                 var outputFile = songToDownload.Name + "_" + guid.ToString() + ".mp3";
                 var downloadFile = outputFile + ".raw";
 
-                var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
-                var destinationPath = Path.Combine(_serverPath, outputFile);
+                var outputUrl = serverUrl + Uri.EscapeDataString(outputFile);
+                var destinationPath = Path.Combine(serverPath, outputFile);
 
                 if (File.Exists(destinationPath))
                 {
@@ -123,6 +120,12 @@ namespace MagicConchBot.Services
                     CreateNoWindow = true
                 });
 
+                if (convert == null)
+                {
+                    Log.Error("Couldn't start ffmpeg process.");
+                    return null;
+                }
+
                 convert.StandardOutput.ReadToEnd();
                 convert.WaitForExit();
 
@@ -143,29 +146,9 @@ namespace MagicConchBot.Services
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
-        private async Task JoinChannelAsync(IMessage msg)
-        {
-            var channel = (msg.Author as IGuildUser)?.VoiceChannel;
-            if (channel == null)
-            {
-                await msg.Channel.SendMessageAsync("User must be in a voice channel.");
-                return;
-            }
-
-            // Get the IAudioClient by calling the JoinAsync method
-            _audio = await channel.ConnectAsync();
-        }
-
-        private async Task LeaveChannelAsync()
-        {
-            if (_audio != null && _audio.ConnectionState == ConnectionState.Connected)
-                await _audio?.DisconnectAsync();
-        }
-
         public async Task PlayAsync(IUserMessage msg)
         {
-            _tokenSource = new CancellationTokenSource();
-
+            tokenSource = new CancellationTokenSource();
 
             await Task.Factory.StartNew(async () =>
             {
@@ -173,34 +156,40 @@ namespace MagicConchBot.Services
                 {
                     await JoinChannelAsync(msg).ConfigureAwait(false);
 
-                    while (!_tokenSource.Token.IsCancellationRequested && !_songQueue.IsEmpty)
+                    while (!tokenSource.Token.IsCancellationRequested && !songQueue.IsEmpty)
                     {
-                        if (_currentSong != null)  
-                            _lastSong = _currentSong;
-                        
-                        if (!_songQueue.TryPeek(out _currentSong))
-                            continue;
-
-                        if (_currentSong.IsPaused)
-                            _currentSong.IsPaused = false;
-
-                        _currentSong.TokenSource = new CancellationTokenSource();
-                        _currentSong.StreamUrl = await ResolveStreamFromUrlAsync(_currentSong.Url);
-
-                        if (_currentSong.StreamUrl == "")
+                        if (currentSong != null)
                         {
-                            Log.Debug($"Couldn't resolve stream url from url: {_currentSong.Url}");
+                            lastSong = currentSong;
+                        }
+
+                        if (!songQueue.TryPeek(out currentSong))
+                        {
+                            continue;
+                        }
+
+                        if (currentSong.IsPaused)
+                        {
+                            currentSong.IsPaused = false;
+                        }
+
+                        currentSong.TokenSource = new CancellationTokenSource();
+                        currentSong.StreamUrl = await ResolveStreamFromUrlAsync(currentSong.Url);
+
+                        if (currentSong.StreamUrl == "")
+                        {
+                            Log.Debug($"Couldn't resolve stream url from url: {currentSong.Url}");
                             return;
                         }
 
-                        var seekArg = (int)_currentSong.SeekTo.TotalSeconds == 0
+                        var seekArg = (int)currentSong.SeekTo.TotalSeconds == 0
                             ? ""
-                            : $"-ss {_currentSong.SeekTo.TotalSeconds} ";
+                            : $"-ss {currentSong.SeekTo.TotalSeconds} ";
 
                         var startInfo = new ProcessStartInfo
                         {
                             FileName = "ffmpeg",
-                            Arguments = seekArg + $"-i {_currentSong.StreamUrl} -f s16le -ar 48000 -ac 2 pipe:1",
+                            Arguments = seekArg + $"-i {currentSong.StreamUrl} -f s16le -ar 48000 -ac 2 pipe:1",
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
                             RedirectStandardError = false,
@@ -217,7 +206,7 @@ namespace MagicConchBot.Services
 
                         try
                         {
-                            using (var pcmStream = _audio.CreatePCMStream(SamplesPerFrame))
+                            using (var pcmStream = audio.CreatePCMStream(SamplesPerFrame))
                             {
                                 Log.Debug("Playing song.");
                                 await PlayerAsync(msg).ConfigureAwait(false);
@@ -225,10 +214,12 @@ namespace MagicConchBot.Services
                                 while (true)
                                 {
                                     if (process == null)
+                                    {
                                         throw new Exception("ffmpeg process could not be created.");
+                                    }
 
                                     var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, FrameBytes,
-                                        _currentSong.TokenSource.Token);
+                                        currentSong.TokenSource.Token);
 
                                     if (byteCount == 0)
                                     {
@@ -238,15 +229,17 @@ namespace MagicConchBot.Services
                                     }
 
                                     if (retryCount == 5)
+                                    {
                                         break;
+                                    }
 
-                                    _currentSong.TokenSource.Token.ThrowIfCancellationRequested();
+                                    currentSong.TokenSource.Token.ThrowIfCancellationRequested();
 
-                                    buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
+                                    buffer = AudioHelper.AdjustVolume(buffer, currentVolume);
 
-                                    await pcmStream.WriteAsync(buffer, 0, byteCount, _currentSong.TokenSource.Token).ConfigureAwait(false);
+                                    await pcmStream.WriteAsync(buffer, 0, byteCount, currentSong.TokenSource.Token).ConfigureAwait(false);
                                     bytesSent += byteCount;
-                                    _currentSong.CurrentTime = _currentSong.SeekTo +
+                                    currentSong.CurrentTime = currentSong.SeekTo +
                                                                 TimeSpan.FromSeconds(bytesSent /
                                                                                     (1000d * FrameBytes / Milliseconds));
                                 }
@@ -262,14 +255,15 @@ namespace MagicConchBot.Services
                         }
                         finally
                         {
-                            if (!_currentSong.IsPaused)
+                            if (!currentSong.IsPaused)
                             {
-                                if (_playMode == PlayMode.Queue)
+                                if (playMode == PlayMode.Queue)
                                 {
-                                    _songQueue.TryDequeue(out var _);
+                                    songQueue.TryDequeue(out var _);
                                 }
                             }
-                            _currentSong = null;
+
+                            currentSong = null;
                         }
                     }
                 }
@@ -277,14 +271,163 @@ namespace MagicConchBot.Services
                 {
                     await LeaveChannelAsync().ConfigureAwait(false);
                 }
-            }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        public async Task PlayerAsync(IMessage msg)
+        {
+            await Task.Factory.StartNew(async () =>
+            {
+                try
+                {
+                    var song = currentSong;
+                    if (song == null)
+                    {
+                        return;
+                    }
+
+                    var message = await msg.Channel.SendMessageAsync("", false, song.GetEmbed("", true, true));
+
+                    while (currentSong != null)
+                    {
+                        // Song changed. Stop updating song info.
+                        if (currentSong.Url != song.Url)
+                        {
+                            break;
+                        }
+
+                        currentSong.TokenSource.Token.ThrowIfCancellationRequested();
+                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", true, true));
+                        await Task.Delay(2000);
+                    }
+
+                    await message.DeleteAsync();
+                }
+                catch (OperationCanceledException ex)
+                {
+                    Log.Debug($"Player task cancelled: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex.ToString());
+                }
+            }, currentSong.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        public bool Stop()
+        {
+            ClearQueue();
+            tokenSource.Cancel();
+            currentSong?.TokenSource.Cancel();
+            return true;
+        }
+
+        public bool Pause()
+        {
+            if (currentSong == null)
+            {
+                return false;
+            }
+
+            currentSong.IsPaused = true;
+            currentSong.SeekTo = currentSong.CurrentTime;
+            currentSong.TokenSource.Cancel();
+            tokenSource.Cancel();
+            return true;
+        }
+
+        public bool Skip()
+        {
+            if (currentSong == null || songQueue.Count == 0)
+            {
+                return false;
+            }
+
+            currentSong.TokenSource.Cancel();
+            return playMode == PlayMode.Queue || songQueue.TryDequeue(out var _);
+        }
+
+        public void QueueSong(Song song)
+        {
+            songQueue.Enqueue(song);
+        }
+
+        public Song DequeueSong(int songNumber)
+        {
+            if (songNumber < 0 || songNumber > songQueue.Count)
+            {
+                return null;
+            }
+
+            if (songNumber == 0)
+            {
+                Stop();
+                return null;
+            }
+
+            // They want to remove the currently playing song from queue, also stop playing it
+            var stack = new Stack<Song>();
+            for (var i = 0; i <= songNumber; i++)
+            {
+                songQueue.TryDequeue(out var song);
+                stack.Push(song);
+            }
+
+            // Remove last song, aka the song we want to dequeue
+            var removedSong = stack.Pop();
+
+            while (stack.Count > 0)
+            {
+                songQueue.Enqueue(stack.Pop());
+            }
+
+            return removedSong;
+        }
+
+        public void ClearQueue()
+        {
+            while (songQueue.Count > 0)
+            {
+                songQueue.TryDequeue(out var _);
+            }
+        }
+
+        public void ChangePlayMode(PlayMode mode)
+        {
+            playMode = mode;
+        }
+
+        public int ChangeVolume(int volume)
+        {
+            if (volume < MinVolume)
+            {
+                volume = MinVolume;
+            }
+
+            if (volume > MaxVolume)
+            {
+                volume = MaxVolume;
+            }
+
+            currentVolume = (float) (volume / 100m);
+            return volume;
+        }
+
+        public Song GetCurrentSong()
+        {
+            return currentSong;
+        }
+
+        public List<Song> QueuedSongs()
+        {
+            return new List<Song>(songQueue.ToArray());
         }
 
         private static async Task<string> ResolveStreamFromUrlAsync(string url)
         {
-            var streamUrl = "";
+            string streamUrl;
 
-            if (_directPlayFormats.Contains(url.Split('.').LastOrDefault()))
+            if (DirectPlayFormats.Contains(url.Split('.').LastOrDefault()))
             {
                 streamUrl = url;
             }
@@ -317,7 +460,6 @@ namespace MagicConchBot.Services
             var youtubeDl = new ProcessStartInfo
             {
                 FileName = "youtube-dl",
-                // 
                 Arguments = $"{url} -g -f bestaudio --audio-quality 0",
                 RedirectStandardOutput = true,
                 RedirectStandardError = false,
@@ -327,146 +469,34 @@ namespace MagicConchBot.Services
 
             var p = Process.Start(youtubeDl);
 
-            if (youtubeDl == null)
+            if (p != null)
             {
-                Console.WriteLine("Unable to create youtube-dl process");
-                return null;
+                return await p.StandardOutput.ReadLineAsync();
             }
 
-            return await p.StandardOutput.ReadLineAsync();
+            Console.WriteLine("Unable to create youtube-dl process");
+            return null;
         }
 
-        public async Task PlayerAsync(IMessage msg)
+        private async Task JoinChannelAsync(IMessage msg)
         {
-            await Task.Factory.StartNew(async () =>
+            var channel = (msg.Author as IGuildUser)?.VoiceChannel;
+            if (channel == null)
             {
-                try
-                {
-                    var song = _currentSong;
-                    if (song == null)
-                    {
-                        return;
-                    }
-
-                    var message = await msg.Channel.SendMessageAsync("", false, song.GetEmbed("", true, true));
-
-                    while (_currentSong != null)
-                    {
-                        // Song changed. Stop updating song info.
-                        if (_currentSong.Url != song.Url)
-                        {
-                            break;
-                        }
-
-                        _currentSong.TokenSource.Token.ThrowIfCancellationRequested();
-                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", true, true));
-                        await Task.Delay(2000);
-                    }
-                    await message.DeleteAsync();
-                }
-                catch (OperationCanceledException ex)
-                {
-                    Log.Debug($"Player task cancelled: {ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex.ToString());
-                }
-            }, _currentSong.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        }
-
-        public bool Stop()
-        {
-            _tokenSource.Cancel();
-            _currentSong?.TokenSource.Cancel();
-            return true;
-        }
-
-        public bool Pause()
-        {
-            if (_currentSong == null)
-                return false;
-            _currentSong.IsPaused = true;
-            _currentSong.SeekTo = _currentSong.CurrentTime;
-            _currentSong.TokenSource.Cancel();
-            _tokenSource.Cancel();
-            return true;
-        }
-
-        public bool Skip()
-        {
-            if (_currentSong == null || _songQueue.Count == 0)
-            {
-                return false;
+                await msg.Channel.SendMessageAsync("User must be in a voice channel.");
+                return;
             }
 
-            _currentSong.TokenSource.Cancel();
-            return _playMode == PlayMode.Queue || _songQueue.TryDequeue(out var _);
+            // Get the IAudioClient by calling the JoinAsync method
+            audio = await channel.ConnectAsync();
         }
 
-        public void QueueSong(Song song)
+        private async Task LeaveChannelAsync()
         {
-            _songQueue.Enqueue(song);
-        }
-
-        public Song DequeueSong(int songNumber)
-        {
-            if (songNumber < 0 || songNumber > _songQueue.Count)
+            if (audio != null && audio.ConnectionState == ConnectionState.Connected)
             {
-                return null;
+                await audio?.DisconnectAsync();
             }
-
-            if (songNumber == 0)
-            {
-                Stop();
-            }
-
-            // They want to remove the currently playing song from queue, also stop playing it
-            var stack = new Stack<Song>();
-            for (var i = 0; i <= songNumber; i++)
-            {
-                _songQueue.TryDequeue(out var song);
-                stack.Push(song);
-            }
-
-            // Remove last song, aka the song we want to dequeue
-            var removedSong = stack.Pop();
-
-            while (stack.Count > 0)
-                _songQueue.Enqueue(stack.Pop());
-
-            return removedSong;
-        }
-
-        public void ClearQueue()
-        {
-            while (_songQueue.Count > 0)
-                _songQueue.TryDequeue(out var _);
-        }
-
-        public void ChangePlayMode(PlayMode mode)
-        {
-            _playMode = mode;
-        }
-
-        public int ChangeVolume(int volume)
-        {
-            if (volume < MinVolume)
-                volume = MinVolume;
-            if (volume > MaxVolume)
-                volume = MaxVolume;
-            _currentVolume = (float) (volume / 100m);
-            return volume;
-        }
-
-        public Song GetCurrentSong()
-        {
-            return _currentSong;
-        }
-
-        public List<Song> QueuedSongs()
-        {
-            return new List<Song>(_songQueue.ToArray());
         }
     }
 }

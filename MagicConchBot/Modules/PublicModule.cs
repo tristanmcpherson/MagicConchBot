@@ -1,20 +1,35 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using MagicConchBot.Resources;
-
-namespace MagicConchBot.Modules
+﻿namespace MagicConchBot.Modules
 {
+    using System;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+
+    using Discord;
+    using Discord.Commands;
+    using Discord.WebSocket;
+
+    using MagicConchBot.Resources;
+
     [Name("Default Commands")]
     public class PublicModule : ModuleBase
     {
+        private static readonly string[] Replies =
+        {
+            "Maybe someday.",
+            "I don't think so",
+            "No",
+            "N o o o o o!",
+            "Try asking again"
+        };
+
+        private static int questionCount;
+
+        private static int responseNumber;
+
         [Command("info"), Summary("Get info from the server.")]
         public async Task InfoAsync()
         {
@@ -42,17 +57,7 @@ namespace MagicConchBot.Modules
 
             await ReplyAsync("", false, embed.Build());
         }
-        
-        private readonly string[] _magicConchReplies =
-        {
-            "Maybe someday.",
-            "I don't think so",
-            "No",
-            "N o o o o o!",
-            "Try asking again"
-        };
-        private static int _canIHaveSomethingToEatCount;
-        private static int _magicConchReplyNumber;
+
         [Command("conch"), Alias("magicconch"), Summary("Have the Conch declare it's reign.")]
         public async Task MagicConchAsync()
         {
@@ -64,7 +69,7 @@ namespace MagicConchBot.Modules
         {
             if (Regex.IsMatch(question, @"can i have something to eat\?*", RegexOptions.IgnoreCase))
             {
-                switch (_canIHaveSomethingToEatCount++)
+                switch (questionCount++)
                 {
                     case 2:
                         await ReplyAsync("Try asking again.", true);
@@ -79,14 +84,17 @@ namespace MagicConchBot.Modules
             }
             else
             {
-                await ReplyAsync($"{_magicConchReplies[_magicConchReplyNumber++]}");
-                if (_magicConchReplyNumber >= _magicConchReplies.Length)
-                    _magicConchReplyNumber = 0;
+                await ReplyAsync($"{Replies[responseNumber++]}");
+                if (responseNumber >= Replies.Length)
+                {
+                    responseNumber = 0;
+                }
             }
         }
 
         private static string GetUptime()
             => (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss");
+
         private static string GetHeapSize() => Math.Round(GC.GetTotalMemory(true) / (1024.0 * 1024.0), 2).ToString(CultureInfo.InvariantCulture);
     }
 }

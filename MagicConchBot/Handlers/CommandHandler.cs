@@ -1,133 +1,110 @@
-﻿using System.Reflection;
-using System.Threading.Tasks;
-using Discord.Commands;
-using Discord.WebSocket;
-using MagicConchBot.Services;
-using MagicConchBot.Resources;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
-
-namespace MagicConchBot.Handlers
+﻿namespace MagicConchBot.Handlers
 {
+    using System.Reflection;
+    using System.Threading.Tasks;
+
+    using Discord.Commands;
+    using Discord.WebSocket;
+
+    using log4net;
+
+    using MagicConchBot.Modules;
+    using MagicConchBot.Resources;
+    using MagicConchBot.Services;
+
     public class CommandHandler
     {
-        private CmdSrv _commands;
-        private DiscordSocketClient _client;
-        private IDependencyMap _map;
+        private static readonly ILog Log = LogManager.GetLogger(typeof(CommandHandler));
 
-        public void ConfigureServices(IDependencyMap map)
+        private CmdSrv commands;
+        private DiscordSocketClient client;
+        private IDependencyMap map;
+
+        public void ConfigureServices(IDependencyMap depMap)
         {
-            map.Add(new MusicServiceProvider());
+            map = depMap;
             map.Add(new GoogleApiService());
             map.Add(new YouTubeInfoService(map));
             map.Add(new SoundCloudInfoService());
             map.Add(new ChanService());
         }
 
-        public async Task InstallAsync(IDependencyMap map)
+        public async Task InstallAsync()
         {
             // Create Command Service, inject it into Dependency Map
-            _client = map.Get<DiscordSocketClient>();
-            _commands = new CmdSrv();
-            _map = map;
+            client = map.Get<DiscordSocketClient>();
+            commands = new CmdSrv();
 
-            _map.Add(_commands);
+            map.Add(commands);
 
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            await commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
-            _client.MessageReceived += HandleCommandAsync;
-            _client.GuildAvailable += HandleGuildAvailable;
-            _client.JoinedGuild += HandleJoinedGuildAsync;
-        }
-
-        private async Task HandleJoinedGuildAsync(SocketGuild arg)
-        {
-            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Constants.RequiredRoleName}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
-        }
-
-        private Task HandleGuildAvailable(SocketGuild guild)
-        {
-            _map.Get<MusicServiceProvider>().AddService(guild.Id, new FfmpegMusicService());
-            return Task.CompletedTask;
+            client.MessageReceived += HandleCommandAsync;
+            client.GuildAvailable += HandleGuildAvailable;
+            client.JoinedGuild += HandleJoinedGuildAsync;
+            client.MessageReceived += HandleMessageReceivedAsync;
         }
 
         public async Task HandleCommandAsync(SocketMessage parameterMessage)
         {
             // Don't handle the command if it is a system message
             var message = parameterMessage as SocketUserMessage;
-            if (message == null) return;
+            if (message == null)
+            {
+                return;
+            }
 
             // Mark where the prefix ends and the command begins
             var argPos = 0;
+
             // Determine if the message has a valid prefix, adjust argPos 
-            if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasCharPrefix('!', ref argPos))) return;
+            if (!(message.HasMentionPrefix(client.CurrentUser, ref argPos) || message.HasCharPrefix('!', ref argPos)))
+            {
+                return;
+            }
 
             // Create a Command Context
-            var context = new CommandContext(_client, message);
+            var context = new MusicCommandContext(client, message);
+
             // Execute the Command, store the result
-            var result = await _commands.ExecuteAsync(context, argPos, _map, MultiMatchHandling.Best);
+            var result = await commands.ExecuteAsync(context, argPos, map, MultiMatchHandling.Best);
 
             // If the command failed, notify the user
             if (!result.IsSuccess)
-                await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
-        }
-    }
-    public class CmdSrv : CommandService
-    {
-        public new Task<IResult> ExecuteAsync(ICommandContext context, int argPos, IDependencyMap dependencyMap = null, MultiMatchHandling multiMatchHandling = MultiMatchHandling.Exception)
-            => ExecuteAsync(context, context.Message.Content.Substring(argPos), dependencyMap, multiMatchHandling);
-        public async new Task<IResult> ExecuteAsync(ICommandContext context, string input, IDependencyMap dependencyMap = null, MultiMatchHandling multiMatchHandling = MultiMatchHandling.Exception)
-        {
-            dependencyMap = dependencyMap ?? DependencyMap.Empty;
-
-            var searchResult = Search(context, input);
-            if (!searchResult.IsSuccess)
-                return searchResult;
-
-            var commands = searchResult.Commands;
-            for (int i = commands.Count - 1; i >= 0; i--)
             {
-                var preconditionResult = await commands[i].CheckPreconditionsAsync(context, dependencyMap).ConfigureAwait(false);
-                if (!preconditionResult.IsSuccess)
+                if (result.ErrorReason == Configuration.Load().WrongChannelError)
                 {
-                    if (i == 1)
-                        return preconditionResult;
-                    else
-                        continue;
+                    await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
                 }
-
-                var parseResult = await commands[i].ParseAsync(context, searchResult, preconditionResult).ConfigureAwait(false);
-                if (!parseResult.IsSuccess)
+                else
                 {
-                    if (parseResult.Error == CommandError.MultipleMatches)
-                    {
-                        IReadOnlyList<TypeReaderValue> argList, paramList;
-                        switch (multiMatchHandling)
-                        {
-                            case MultiMatchHandling.Best:
-                                argList = parseResult.ArgValues.Select(x => x.Values.OrderByDescending(y => y.Score).First()).ToImmutableArray();
-                                paramList = parseResult.ParamValues.Select(x => x.Values.OrderByDescending(y => y.Score).First()).ToImmutableArray();
-                                parseResult = ParseResult.FromSuccess(argList, paramList);
-                                break;
-                        }
-                    }
-
-                    if (!parseResult.IsSuccess)
-                    {
-                        if (i == 1)
-                            return parseResult;
-                        else
-                            continue;
-                    }
+                    await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
                 }
-
-                return await commands[i].ExecuteAsync(context, parseResult, dependencyMap).ConfigureAwait(false);
             }
+        }
 
-            return SearchResult.FromError(CommandError.UnknownCommand, "This input does not match any overload.");
+        private async Task HandleMessageReceivedAsync(SocketMessage arg)
+        {
+            foreach (var attachment in arg.Attachments)
+            {
+                if (attachment.Filename.EndsWith(".webm"))
+                {
+                    Log.Info($"Url: {attachment.Url}");
+                    Log.Info($"Proxy: {attachment.ProxyUrl}");
+                    await Task.Delay(1);
+                }
+            }
+        }
+
+        private async Task HandleJoinedGuildAsync(SocketGuild arg)
+        {
+            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
+        }
+
+        private Task HandleGuildAvailable(SocketGuild guild)
+        {
+            MusicServiceProvider.AddService(guild.Id, new FfmpegMusicService());
+            return Task.CompletedTask;
         }
     }
 }

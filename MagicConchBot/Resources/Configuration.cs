@@ -1,63 +1,110 @@
-﻿using System;
-using System.IO;
-using Newtonsoft.Json;
-using MagicConchBot.Common.Types;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Configuration.cs" company="None">
+//   None
+// </copyright>
+// <summary>
+//   The configuration file.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace MagicConchBot.Resources
 {
+    using System;
+    using System.IO;
+
+    using MagicConchBot.Common.Types;
+
+    using Newtonsoft.Json;
+
+    /// <summary>
+    /// The configuration file.
+    /// </summary>
     public class Configuration
     {
-        /// <summary> The location of your bot's dll, ignored by the json parser. </summary>
-        [JsonIgnore]
-        public static readonly string Appdir = AppContext.BaseDirectory;
         /// <summary> The location to this config file relative to the launch directory. </summary>
         [JsonIgnore]
         public const string JsonPath = "Configuration.json";
 
-        /// <summary> Your bot's command prefix. Please don't pick `!`. </summary>
-        public string Prefix { get; set; }
-        /// <summary> Ids of users who will have owner access to the bot. </summary>
-        public ulong[] Owners { get; set; }
-        /// <summary> Your bot's login token. </summary>
-        public string Token { get; set; }
-        /// <summary> The api key for searching YouTube </summary>
-        public string GoogleApiKey { get; set; }
-        /// <summary> The name of this application for Google Api </summary>
-        public string ApplicationName { get; set; }
-        /// <summary> Local path to copy music to </summary>
-        public string ServerMusicPath { get; set; }
-        /// <summary> Base of the url ex. https://website.com/music/ </summary>
-        public string ServerMusicUrlBase { get; set; }
-        /// <summary>  </summary>
-        public Playlist DefaultPlaylist { get; set; }
+        /// <summary> The location of your bot's DLL, ignored by the JSON parser. </summary>
+        [JsonIgnore]
+        public static readonly string Appdir = AppContext.BaseDirectory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Configuration"/> class.
+        /// </summary>
         public Configuration()
         {
-            Prefix = "!";
             Owners = new ulong[] { 0 };
-            Token = "";
-            ApplicationName = "";
-            GoogleApiKey = "";
-            ServerMusicPath = "";
-            ServerMusicUrlBase = "";
         }
 
-        /// <summary> Save the configuration to the specified file location. </summary>
-        public void Save(string dir = JsonPath)
-        {
-            var file = Path.Combine(Appdir, dir);
-            File.WriteAllText(file, ToJson());
-        }
+        /// <summary> Gets or sets the bot's command prefix. Please don't pick `!`. </summary>
+        public string Prefix { get; set; } = "!";
 
-        /// <summary> Load the configuration from the specified file location. </summary>
+        /// <summary> Gets or sets the ids of users who will have owner access to the bot. </summary>
+        public ulong[] Owners { get; set; }
+
+        /// <summary> Gets or sets the bot's login token. </summary>
+        public string Token { get; set; }
+
+        /// <summary> Gets or sets the API key for searching YouTube. </summary>
+        public string GoogleApiKey { get; set; }
+
+        /// <summary> Gets or sets the name of this application for the Google API. </summary>
+        public string ApplicationName { get; set; }
+
+        /// <summary> Gets or sets the destination path to copy music to. </summary>
+        public string ServerMusicPath { get; set; }
+
+        /// <summary> Gets or sets the base of the url ex. https://website.com/music/. </summary>
+        public string ServerMusicUrlBase { get; set; }
+
+        /// <summary> Gets or sets the default playlist. </summary>
+        public Playlist DefaultPlaylist { get; set; }
+
+        /// <summary> Gets or sets the error message shown if the user requests a command in the wrong channel. </summary>
+        public string WrongChannelError { get; set; }
+
+        /// <summary> Gets or sets the name of the role required to use bot music commands. </summary>
+        public string RequiredRole { get; set; }
+
+        public ulong OwnerGuildId { get; set; }
+
+        public string BotControlChannel { get; set; }
+
+        /// <summary>
+        /// Load the configuration from the specified file location. 
+        /// </summary>
+        /// <param name="dir">
+        /// The optional path to save the JSON to.
+        /// </param>
+        /// <returns>
+        /// The <see cref="Configuration"/> instance loaded.
+        /// </returns>
         public static Configuration Load(string dir = JsonPath)
         {
             var file = Path.Combine(Appdir, dir);
             return JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(file));
         }
 
-        /// <summary> Convert the configuration to a json string. </summary>
+        /// <summary>
+        /// Convert the configuration to a JSON string. 
+        /// </summary>
+        /// <returns>
+        /// The serialized <see cref="string"/> JSON of this instance.
+        /// </returns>
         public string ToJson()
             => JsonConvert.SerializeObject(this, Formatting.Indented);
+
+        /// <summary>
+        /// Save the configuration to the specified file location. 
+        /// </summary>
+        /// <param name="dir">
+        /// The optional path to save the JSON to.
+        /// </param>
+        public void Save(string dir = JsonPath)
+        {
+            var file = Path.Combine(Appdir, dir);
+            File.WriteAllText(file, ToJson());
+        }
     }
 }
