@@ -151,6 +151,9 @@
     <Reference Include="Nito.AsyncEx.Enlightenment, Version=4.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Nito.AsyncEx.4.0.1\lib\net45\Nito.AsyncEx.Enlightenment.dll</HintPath>
     </Reference>
+    <Reference Include="SoundCloud.API.Client, Version=1.0.0.5, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SoundCloud.API.Client.1.0.0.5\lib\net45\SoundCloud.API.Client.dll</HintPath>
+    </Reference>
     <Reference Include="SuperSocket.ClientEngine, Version=0.8.0.8, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SuperSocket.ClientEngine.Core.0.8.0.8\lib\net45\SuperSocket.ClientEngine.dll</HintPath>
     </Reference>
@@ -272,6 +275,8 @@
     <DLLs Include="Dependencies\x64\opus.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Dependencies\libsodium.license.txt" />
+    <Content Include="Dependencies\opus.license.txt" />
     <Content Include="ffmpeg.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

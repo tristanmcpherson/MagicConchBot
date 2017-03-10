@@ -61,6 +61,7 @@
                 }
 
                 Task.WaitAll(task);
+                Thread.Sleep(500);
             }
             finally
             {

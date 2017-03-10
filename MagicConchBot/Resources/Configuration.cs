@@ -81,6 +81,10 @@ namespace MagicConchBot.Resources
 
         public string BotControlChannel { get; set; }
 
+        public string SoundCloudClientSecret { get; set; }
+
+        public string SoundCloudClientId { get; set; }
+
         /// <summary>
         /// Load the configuration from the specified file location. 
         /// </summary>

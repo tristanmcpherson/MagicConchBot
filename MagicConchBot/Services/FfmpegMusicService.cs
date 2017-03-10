@@ -53,7 +53,7 @@
         private Song lastSong;
         private Song currentSong;
 
-        private float currentVolume = 0.4f;
+        private float currentVolume = 0.5f;
 
         public FfmpegMusicService()
         {
@@ -72,13 +72,13 @@
 
         public async Task<string> GenerateMp3Async()
         {
-            if (generatingMp3)
-            {
-                return null;
-            }
-
             return await Task.Factory.StartNew(() =>
             {
+                if (generatingMp3)
+                {
+                    return null;
+                }
+
                 // ffmpeg -i input.wav -vn -ar 44100 -ac 2 -ab 192k -f mp3 output.mp3
                 var songToDownload = currentSong ?? lastSong;
                 if (songToDownload == null)
@@ -92,7 +92,7 @@
                     urlToUniqueFile.TryAdd(songToDownload.StreamUrl, guid);
                 }
 
-                var outputFile = songToDownload.Name + "_" + guid.ToString() + ".mp3";
+                var outputFile = songToDownload.Name + "_" + guid + ".mp3";
                 var downloadFile = outputFile + ".raw";
 
                 var outputUrl = serverUrl + Uri.EscapeDataString(outputFile);
@@ -223,13 +223,13 @@
 
                                     if (byteCount == 0)
                                     {
-                                        await Task.Delay(250).ConfigureAwait(false);
+                                        await Task.Delay(500).ConfigureAwait(false);
                                         retryCount++;
-                                        Log.Warn($"Retrying. Retries: {retryCount}");
                                     }
 
                                     if (retryCount == 5)
                                     {
+                                        Log.Warn($"Failed. Retries: {retryCount}");
                                         break;
                                     }
 
@@ -431,7 +431,7 @@
             {
                 streamUrl = url;
             }
-            else if (url.Contains("youtube"))
+            else if (url.Contains("youtube.com"))
             {
                 var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
                 var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
