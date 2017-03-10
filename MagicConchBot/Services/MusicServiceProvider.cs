@@ -34,17 +34,6 @@
             return service;
         }
 
-        public static void StopAll()
-        {
-            foreach (var musicService in MusicServices)
-            {
-                if (!musicService.Value.Stop())
-                {
-                    Log.Error($"Failed to stop music service for GuildId: {musicService.Key}");
-                }
-            }
-        }
-
         public static Mp3ConverterService GetMp3Service(ulong guildId)
         {
             if (!Mp3Services.TryGetValue(guildId, out var service))
@@ -55,6 +44,17 @@
             }
 
             return service;
+        }
+
+        public static void StopAll()
+        {
+            foreach (var musicService in MusicServices)
+            {
+                if (!musicService.Value.Stop())
+                {
+                    Log.Error($"Failed to stop music service for GuildId: {musicService.Key}");
+                }
+            }
         }
     }
 }

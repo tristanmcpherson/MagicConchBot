@@ -7,6 +7,7 @@
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
 
+    using Discord;
     using Discord.Commands;
 
     using log4net;
@@ -189,7 +190,7 @@
                 await ReplyAsync("", false, song.GetEmbed());
             }
         }
-
+            
         [Command("mp3"), Summary("Generates a link to the mp3 of the current song playing or the last song played.")]
         public async Task GenerateMp3Async()
         {
@@ -197,15 +198,26 @@
             if (currentSong == null)
             {
                 await ReplyAsync("No songs recently played.");
+                return;
             }
 
-            var url = await MusicServiceProvider.GetMp3Service(Context.Guild.Id).GenerateMp3Async(currentSong);
-            var dm = await Context.User.CreateDMChannelAsync();
-            await dm.SendMessageAsync($"Requested url at: {url}");
+            await ReplyAsync("Generating mp3 file... please wait.");
 
-            if (url == null)
+            var mp3Service = MusicServiceProvider.GetMp3Service(Context.Guild.Id);
+
+            if (!mp3Service.Recipients.Contains(Context.User))
             {
-                await ReplyAsync("Generating mp3 file... please wait.");
+                mp3Service.Recipients.Add(Context.User);
+            }
+
+            if (!mp3Service.GeneratingMp3)
+            {
+                var url = await mp3Service.GenerateMp3Async(currentSong);
+                foreach (var user in mp3Service.Recipients)
+                {
+                    var dm = await user.CreateDMChannelAsync();
+                    await dm.SendMessageAsync($"Requested url at: {url}");
+                }
             }
         }
 

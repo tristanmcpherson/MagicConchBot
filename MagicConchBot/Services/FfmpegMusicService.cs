@@ -389,13 +389,13 @@
 
             var p = Process.Start(youtubeDl);
 
-            if (p != null)
+            if (p == null)
             {
-                return await p.StandardOutput.ReadLineAsync();
+                Log.Error("Unable to create youtube-dl process");
+                return null;
             }
 
-            Console.WriteLine("Unable to create youtube-dl process");
-            return null;
+            return await p.StandardOutput.ReadLineAsync();
         }
 
         private async Task JoinChannelAsync(IMessage msg)

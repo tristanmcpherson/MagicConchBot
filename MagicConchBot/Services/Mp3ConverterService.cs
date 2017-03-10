@@ -8,6 +8,8 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Discord;
+
     using log4net;
 
     using MagicConchBot.Common.Types;
@@ -31,10 +33,13 @@
             serverPath = config.ServerMusicPath;
             serverUrl = config.ServerMusicUrlBase;
 
+            Recipients = new ConcurrentBag<IUser>();
             GeneratingMp3 = false;
         }
 
         public bool GeneratingMp3 { get; private set; }
+
+        public ConcurrentBag<IUser> Recipients { get; }
 
         public async Task<string> GenerateMp3Async(Song song)
         {
