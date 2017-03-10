@@ -63,7 +63,7 @@
                         }
                     }
 
-                    Thread.Sleep(250);
+                    Thread.Sleep(100);
                 }
 
                 Task.WaitAll(task);

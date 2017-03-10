@@ -96,8 +96,7 @@
                             LastSong = CurrentSong;
                         }
  
-                        Song currentSong;
-                        if (!songQueue.TryPeek(out currentSong))
+                        if (!songQueue.TryPeek(out var currentSong))
                         {
                             continue;
                         }
