@@ -1,5 +1,6 @@
 ﻿namespace MagicConchBot.Handlers
 {
+    using System;
     using System.Reflection;
     using System.Threading.Tasks;
 
@@ -40,7 +41,7 @@
             await commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
             client.MessageReceived += HandleCommandAsync;
-            client.GuildAvailable += HandleGuildAvailable;
+            client.GuildAvailable += HandleGuildAvailableAsync;
             client.JoinedGuild += HandleJoinedGuildAsync;
             client.MessageReceived += HandleMessageReceivedAsync;
         }
@@ -83,7 +84,7 @@
             }
         }
 
-        private async Task HandleMessageReceivedAsync(SocketMessage arg)
+        private static async Task HandleMessageReceivedAsync(SocketMessage arg)
         {
             foreach (var attachment in arg.Attachments)
             {
@@ -96,14 +97,14 @@
             }
         }
 
-        private async Task HandleJoinedGuildAsync(SocketGuild arg)
+        private static async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
             await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
         }
 
-        private Task HandleGuildAvailable(SocketGuild guild)
+        private static Task HandleGuildAvailableAsync(SocketGuild guild)
         {
-            MusicServiceProvider.AddService(guild.Id, new FfmpegMusicService());
+            MusicServiceProvider.AddServices(guild.Id, new FfmpegMusicService(), new Mp3ConverterService());
             return Task.CompletedTask;
         }
     }

@@ -52,8 +52,14 @@
                             var serverId = config.OwnerGuildId;
                             Console.WriteLine("Skipping song.");
                             var channel = (IMessageChannel)client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
-                            channel.SendMessageAsync("Skipping song at request of owner.");
-                            MusicServiceProvider.GetService(serverId).Skip();
+                            if (MusicServiceProvider.GetService(serverId).Skip())
+                            {
+                                channel.SendMessageAsync("Skipping song at request of owner.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("No song to skip.");
+                            }
                         }
                     }
 
@@ -88,16 +94,15 @@
                 });
 
                 client.Log += WriteToLog;
-                
+
                 // Login and connect to Discord.
+                map.Add(client);
+
+                await handler.InstallAsync().ConfigureAwait(false);
 
                 //Configuration.Load().Token
                 await client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
                 await client.ConnectAsync().ConfigureAwait(false);
-
-                //_client.OwnerGuildId
-                map.Add(client);
-                await handler.InstallAsync().ConfigureAwait(false);
 
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
             }

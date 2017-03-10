@@ -14,11 +14,16 @@
 
         private static readonly ILog Log = LogManager.GetLogger(typeof(MusicServiceProvider));
 
-        public static void AddService(ulong guildId, IMusicService service)
+        public static void AddServices(ulong guildId, IMusicService service, Mp3ConverterService mp3Service)
         {
             if (!MusicServices.ContainsKey(guildId))
             {
                 MusicServices.TryAdd(guildId, service);
+            }
+
+            if (!Mp3Services.ContainsKey(guildId))
+            {
+                Mp3Services.TryAdd(guildId, mp3Service);
             }
         }
 
@@ -26,7 +31,7 @@
         {
             if (!MusicServices.TryGetValue(guildId, out var service))
             {
-                Log.Error("Server music service was not created, recreating.");
+                Log.Error("Server music service was not created, creating.");
                 service = new FfmpegMusicService();
                 MusicServices.TryAdd(guildId, service);
             }
@@ -38,7 +43,7 @@
         {
             if (!Mp3Services.TryGetValue(guildId, out var service))
             {
-                Log.Error("Server mp3 service was not created, recreating.");
+                Log.Error("Server mp3 service was not created, creating.");
                 service = new Mp3ConverterService();
                 Mp3Services.TryAdd(guildId, service);
             }
