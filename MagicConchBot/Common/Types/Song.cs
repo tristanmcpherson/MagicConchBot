@@ -23,7 +23,7 @@ namespace MagicConchBot.Common.Types
             Name = name;
             Length = length;
             Url = url;
-            this.StartTime = startTime;
+            StartTime = startTime;
         }
 
         public bool IsPaused { get; set; }

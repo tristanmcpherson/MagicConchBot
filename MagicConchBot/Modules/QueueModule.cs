@@ -48,7 +48,7 @@
         [Command("mode"), Alias("changemode"), Summary("Change the queue mode to queue (removes songs after playing) or playlist (keeps on playing through the queue).")]
         public async Task ChangeModeAsync([Summary("The mode to change to, either `playlist` or `queue`.")] string mode)
         {
-            Context.MusicService.ChangePlayMode(mode.ToLower() == "playlist" ? PlayMode.Playlist : PlayMode.Queue);
+            Context.MusicService.PlayMode = mode.ToLower() == "playlist" ? PlayMode.Playlist : PlayMode.Queue;
             await ReplyAsync($"Play mode changed to {mode}");
         }
     }

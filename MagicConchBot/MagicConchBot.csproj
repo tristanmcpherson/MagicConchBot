@@ -253,6 +253,7 @@
     <Compile Include="Common\Interfaces\IMusicService.cs" />
     <Compile Include="Services\FfmpegMusicService.cs" />
     <Compile Include="Common\Enums\PlayMode.cs" />
+    <Compile Include="Services\Mp3ConverterService.cs" />
     <Compile Include="Services\MusicServiceProvider.cs" />
     <Compile Include="Services\SoundCloudInfoService.cs" />
     <Compile Include="Services\WebmHostingService.cs" />

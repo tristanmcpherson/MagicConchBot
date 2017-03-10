@@ -47,7 +47,7 @@
         [Command("play"), Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
         public async Task PlayAsync()
         {
-            if (Context.MusicService.GetCurrentSong() != null)
+            if (Context.MusicService.CurrentSong != null)
             {
                 await ReplyAsync("Song already playing.");
             }
@@ -135,7 +135,7 @@
             await ReplyAsync("Queued song:", false, song.GetEmbed($"{song.Name}"));
 
             // if not playing, start playing and then the player service
-            if (Context.MusicService.GetCurrentSong() == null)
+            if (Context.MusicService.CurrentSong == null)
             {
                 Log.Info("No song currently playing, playing.");
                 await Context.MusicService.PlayAsync(Context.Message);
@@ -146,7 +146,7 @@
         public async Task StopAsync()
         {
             Context.MusicService.Stop();
-            await ReplyAsync(Context.MusicService.GetCurrentSong() != null ? "Music stopped playing." : "No music currently playing.");
+            await ReplyAsync(Context.MusicService.CurrentSong != null ? "Music stopped playing." : "No music currently playing.");
         }
         
         [Command("pause"), Summary("Pauses the current song.")]
@@ -172,14 +172,14 @@
         [Command("volume"), Alias("vol"), Summary("Changes the volume of the current playing song and future songs.")]
         public async Task ChangeVolumeAsync([Summary("The volume to set the song to from between 0 and 100.")] int volume)
         {
-            var currentVol = Context.MusicService.ChangeVolume(volume);
-            await ReplyAsync($"Current volume set to {currentVol}.");
+            Context.MusicService.Volume = volume;
+            await ReplyAsync($"Current volume set to {Context.MusicService.Volume}.");
         }
         
         [Command("current"), Summary("Displays the current song")]
         public async Task CurrentSongAsync()
         {
-            var song = Context.MusicService.GetCurrentSong();
+            var song = Context.MusicService.CurrentSong;
             if (song == null)
             {
                 await ReplyAsync("No song is currently playing.");
@@ -193,11 +193,15 @@
         [Command("mp3"), Summary("Generates a link to the mp3 of the current song playing or the last song played.")]
         public async Task GenerateMp3Async()
         {
-            var url = await Context.MusicService.GenerateMp3Async().ContinueWith(async t =>
+            var currentSong = Context.MusicService.CurrentSong ?? Context.MusicService.LastSong;
+            if (currentSong == null)
             {
-                var dm = await Context.User.CreateDMChannelAsync();
-                await dm.SendMessageAsync($"Requested url at: {t.Result}");
-            });
+                await ReplyAsync("No songs recently played.");
+            }
+
+            var url = await MusicServiceProvider.GetMp3Service(Context.Guild.Id).GenerateMp3Async(currentSong);
+            var dm = await Context.User.CreateDMChannelAsync();
+            await dm.SendMessageAsync($"Requested url at: {url}");
 
             if (url == null)
             {

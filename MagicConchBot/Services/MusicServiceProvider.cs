@@ -9,6 +9,8 @@
     public static class MusicServiceProvider
     {
         private static readonly ConcurrentDictionary<ulong, IMusicService> MusicServices = new ConcurrentDictionary<ulong, IMusicService>();
+        private static readonly ConcurrentDictionary<ulong, Mp3ConverterService> Mp3Services = new ConcurrentDictionary<ulong, Mp3ConverterService>();
+
 
         private static readonly ILog Log = LogManager.GetLogger(typeof(MusicServiceProvider));
 
@@ -41,6 +43,18 @@
                     Log.Error($"Failed to stop music service for GuildId: {musicService.Key}");
                 }
             }
+        }
+
+        public static Mp3ConverterService GetMp3Service(ulong guildId)
+        {
+            if (!Mp3Services.TryGetValue(guildId, out var service))
+            {
+                Log.Error("Server mp3 service was not created, recreating.");
+                service = new Mp3ConverterService();
+                Mp3Services.TryAdd(guildId, service);
+            }
+
+            return service;
         }
     }
 }

@@ -10,7 +10,13 @@
 
     public interface IMusicService
     {
-        int Volume { get; }
+        int Volume { get; set; }
+
+        Song LastSong { get; }
+
+        Song CurrentSong { get; }
+
+        PlayMode PlayMode { get; set; }
 
         Task PlayAsync(IUserMessage msg);
 
@@ -26,15 +32,6 @@
 
         void ClearQueue();
 
-        int ChangeVolume(int volume);
-
-        void ChangePlayMode(PlayMode mode);
-
-        // Task BufferSong();
-        Song GetCurrentSong();
-
         List<Song> QueuedSongs();
-
-        Task<string> GenerateMp3Async();
     }
 }
