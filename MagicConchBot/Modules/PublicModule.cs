@@ -1,19 +1,17 @@
-﻿namespace MagicConchBot.Modules
+﻿using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using MagicConchBot.Resources;
+
+namespace MagicConchBot.Modules
 {
-    using System;
-    using System.Diagnostics;
-    using System.Globalization;
-    using System.Linq;
-    using System.Runtime.InteropServices;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
-
-    using Discord;
-    using Discord.Commands;
-    using Discord.WebSocket;
-
-    using MagicConchBot.Resources;
-
     [Name("Default Commands")]
     public class PublicModule : ModuleBase
     {
@@ -26,9 +24,9 @@
             "Try asking again"
         };
 
-        private static int questionCount;
+        private static int _questionCount;
 
-        private static int responseNumber;
+        private static int _responseNumber;
 
         [Command("info"), Summary("Get info from the server.")]
         public async Task InfoAsync()
@@ -55,7 +53,7 @@
                             $"**Users:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Users.Count)}");
             });
 
-            await ReplyAsync("", false, embed.Build());
+            await ReplyAsync(string.Empty, false, embed.Build());
         }
 
         [Command("conch"), Alias("magicconch"), Summary("Have the Conch declare it's reign.")]
@@ -69,7 +67,7 @@
         {
             if (Regex.IsMatch(question, @"can i have something to eat\?*", RegexOptions.IgnoreCase))
             {
-                switch (questionCount++)
+                switch (_questionCount++)
                 {
                     case 2:
                         await ReplyAsync("Try asking again.", true);
@@ -84,10 +82,10 @@
             }
             else
             {
-                await ReplyAsync($"{Replies[responseNumber++]}");
-                if (responseNumber >= Replies.Length)
+                await ReplyAsync($"{Replies[_responseNumber++]}");
+                if (_responseNumber >= Replies.Length)
                 {
-                    responseNumber = 0;
+                    _responseNumber = 0;
                 }
             }
         }

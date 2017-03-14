@@ -1,11 +1,11 @@
-﻿namespace MagicConchBot.Resources
-{
-    using Discord;
+﻿using Discord;
 
+namespace MagicConchBot.Resources
+{
     public static class Constants
     {
         public const string RepoLink = "https://github.com/IlmrynX/MagicConchBot";
 
-        public static Color MaterialBlue = new Color(33, 150, 243);
+        public static Color MaterialBlue { get; } = new Color(33, 150, 243);
     }
 }

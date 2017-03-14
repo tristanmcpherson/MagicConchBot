@@ -7,15 +7,13 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.IO;
+using MagicConchBot.Common.Types;
+using Newtonsoft.Json;
+
 namespace MagicConchBot.Resources
 {
-    using System;
-    using System.IO;
-
-    using MagicConchBot.Common.Types;
-
-    using Newtonsoft.Json;
-
     /// <summary>
     /// The configuration file.
     /// </summary>
@@ -35,16 +33,16 @@ namespace MagicConchBot.Resources
         public Configuration()
         {
             Owners = new ulong[] { 0 };
-            Token = "";
-            GoogleApiKey = "";
-            ApplicationName = "";
-            ServerMusicPath = "";
-            ServerMusicUrlBase = "";
+            Token = string.Empty;
+            GoogleApiKey = string.Empty;
+            ApplicationName = string.Empty;
+            ServerMusicPath = string.Empty;
+            ServerMusicUrlBase = string.Empty;
             DefaultPlaylist = new Playlist();
-            WrongChannelError = "";
-            RequiredRole = "";
+            WrongChannelError = string.Empty;
+            RequiredRole = string.Empty;
             OwnerGuildId = 0;
-            BotControlChannel = "";
+            BotControlChannel = string.Empty;
         }
 
         /// <summary> Gets or sets the bot's command prefix. Please don't pick `!`. </summary>

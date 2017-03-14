@@ -1,18 +1,16 @@
-﻿namespace MagicConchBot.Attributes
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using MagicConchBot.Resources;
+
+namespace MagicConchBot.Attributes
 {
-    using System.Linq;
-    using System.Threading.Tasks;
-
-    using Discord;
-    using Discord.Commands;
-
-    using MagicConchBot.Resources;
-
     public class RequireBotControlRoleAttribute : PreconditionAttribute
     {
         public override async Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
         {
-            //return PreconditionResult.FromSuccess();
+            // return PreconditionResult.FromSuccess();
             // Get the ID of the bot's owner
             // If this command was executed by that user, return a success
             var config = Configuration.Load();

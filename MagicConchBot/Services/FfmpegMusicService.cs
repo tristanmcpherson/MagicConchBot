@@ -1,25 +1,22 @@
-﻿namespace MagicConchBot.Services
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Audio;
+using log4net;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
+using YoutubeExtractor;
+
+namespace MagicConchBot.Services
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Discord;
-    using Discord.Audio;
-
-    using log4net;
-
-    using MagicConchBot.Common.Enums;
-    using MagicConchBot.Common.Interfaces;
-    using MagicConchBot.Common.Types;
-    using MagicConchBot.Helpers;
-
-    using YoutubeExtractor;
-
     public class FfmpegMusicService : IMusicService
     {
         private const int SampleFrequency = 48000;
@@ -31,7 +28,7 @@
         private const int MinVolume = 0;
 
         private static readonly ILog Log =
-            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+            LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         private static readonly string[] DirectPlayFormats = { "webm", "mp3", "avi", "wav", "mp4", "flac" };
 
@@ -96,7 +93,7 @@
                             LastSong = CurrentSong;
                         }
  
-                        if (!songQueue.TryPeek(out var currentSong))
+                        if (!songQueue.TryPeek(out Song currentSong))
                         {
                             continue;
                         }
@@ -111,14 +108,14 @@
                         CurrentSong.TokenSource = new CancellationTokenSource();
                         CurrentSong.StreamUrl = await ResolveStreamFromUrlAsync(CurrentSong.Url);
 
-                        if (CurrentSong.StreamUrl == "")
+                        if (CurrentSong.StreamUrl == string.Empty)
                         {
                             Log.Debug($"Couldn't resolve stream url from url: {CurrentSong.Url}");
                             return;
                         }
 
                         var seekArg = (int)CurrentSong.StartTime.TotalSeconds == 0
-                            ? ""
+                            ? string.Empty
                             : $"-ss {CurrentSong.StartTime.TotalSeconds} ";
 
                         var startInfo = new ProcessStartInfo
@@ -133,6 +130,11 @@
 
                         var process = Process.Start(startInfo);
 
+                        if (process == null)
+                        {
+                            throw new Exception("ffmpeg process could not be created.");
+                        }
+
                         var bytesSent = 0;
                         var buffer = new byte[FrameBytes];
                         var retryCount = 0;
@@ -141,25 +143,29 @@
 
                         try
                         {
-                            using (var pcmStream = audio.CreatePCMStream(SamplesPerFrame))
+                            using (var pcmStream = audio.CreatePCMStream(SamplesPerFrame, 2, null, 5000))
                             {
                                 Log.Debug("Playing song.");
                                 await PlayerAsync(msg).ConfigureAwait(false);
 
                                 while (true)
                                 {
-                                    if (process == null)
+                                    if (CurrentSong.Length - CurrentSong.CurrentTime < TimeSpan.FromSeconds(1))
                                     {
-                                        throw new Exception("ffmpeg process could not be created.");
+                                        break;
                                     }
 
-                                    var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, FrameBytes,
-                                        CurrentSong.TokenSource.Token);
+                                    var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length);
 
                                     if (byteCount == 0)
                                     {
-                                        await Task.Delay(100).ConfigureAwait(false);
+                                        Log.Warn($"Read 0 bytes. Retrying. Retries at {retryCount}.");
+                                        await Task.Delay(500);
                                         retryCount++;
+                                    }
+                                    else
+                                    {
+                                        retryCount = 0;
                                     }
 
                                     if (retryCount == 20)
@@ -194,7 +200,7 @@
                             {
                                 if (PlayMode == PlayMode.Queue)
                                 {
-                                    songQueue.TryDequeue(out var _);
+                                    songQueue.TryDequeue(out Song _);
                                 }
                             }
 
@@ -221,7 +227,7 @@
                         return;
                     }
 
-                    var message = await msg.Channel.SendMessageAsync("", false, song.GetEmbed("", true, true));
+                    var message = await msg.Channel.SendMessageAsync(string.Empty, false, song.GetEmbed(string.Empty, true, true));
 
                     while (CurrentSong != null)
                     {
@@ -232,7 +238,7 @@
                         }
 
                         CurrentSong.TokenSource.Token.ThrowIfCancellationRequested();
-                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", true, true));
+                        await message.ModifyAsync(m => m.Embed = song.GetEmbed(string.Empty, true, true));
                         await Task.Delay(2000);
                     }
 
@@ -279,7 +285,7 @@
             }
 
             CurrentSong.TokenSource.Cancel();
-            return PlayMode == PlayMode.Queue || songQueue.TryDequeue(out var _);
+            return PlayMode == PlayMode.Queue || songQueue.TryDequeue(out Song _);
         }
 
         public void QueueSong(Song song)
@@ -304,7 +310,7 @@
             var stack = new Stack<Song>();
             for (var i = 0; i <= songNumber; i++)
             {
-                songQueue.TryDequeue(out var song);
+                songQueue.TryDequeue(out Song song);
                 stack.Push(song);
             }
 
@@ -323,7 +329,7 @@
         {
             while (songQueue.Count > 0)
             {
-                songQueue.TryDequeue(out var _);
+                songQueue.TryDequeue(out Song _);
             }
         }
 

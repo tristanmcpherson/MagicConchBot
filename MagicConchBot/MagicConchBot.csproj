@@ -118,6 +118,9 @@
     <Reference Include="Google.Apis.YouTube.v3, Version=1.21.0.760, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
       <HintPath>..\packages\Google.Apis.YouTube.v3.1.21.0.760\lib\net45\Google.Apis.YouTube.v3.dll</HintPath>
     </Reference>
+    <Reference Include="HtmlAgilityPack, Version=1.4.9.5, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
     <Reference Include="libvideo">
       <HintPath>..\..\..\..\..\..\Documents\GitHub\libvideo\src\libvideo\bin\Debug\libvideo.dll</HintPath>
     </Reference>
@@ -126,6 +129,9 @@
     </Reference>
     <Reference Include="log4net, Version=2.0.7.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.7\lib\net45-full\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="MediaWiki.NET">
+      <HintPath>..\..\..\..\..\..\Documents\Visual Studio 2017\Projects\MediaWiki.NET\MediaWiki.NET\bin\Debug\MediaWiki.NET.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.dll</HintPath>
@@ -237,8 +243,10 @@
     <Compile Include="Handlers\CmdSrv.cs" />
     <Compile Include="Handlers\CommandHandler.cs" />
     <Compile Include="Helpers\AudioHelper.cs" />
+    <Compile Include="Helpers\Extensions.cs" />
     <Compile Include="Modules\MusicContextModuleBase.cs" />
     <Compile Include="Modules\QueueModule.cs" />
+    <Compile Include="Modules\WikiModule.cs" />
     <Compile Include="Resources\Configuration.cs" />
     <Compile Include="Common\Types\Song.cs" />
     <Compile Include="Modules\HelpModule.cs" />
@@ -256,6 +264,7 @@
     <Compile Include="Services\Mp3ConverterService.cs" />
     <Compile Include="Services\MusicServiceProvider.cs" />
     <Compile Include="Services\SoundCloudInfoService.cs" />
+    <Compile Include="Services\StardewValleyService.cs" />
     <Compile Include="Services\WebmHostingService.cs" />
     <Compile Include="Services\YouTubeInfoService.cs" />
   </ItemGroup>

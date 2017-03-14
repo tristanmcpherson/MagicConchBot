@@ -1,37 +1,35 @@
-﻿namespace MagicConchBot.Services
+﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Discord;
+using log4net;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Resources;
+
+namespace MagicConchBot.Services
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Diagnostics;
-    using System.IO;
-    using System.Net;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Discord;
-
-    using log4net;
-
-    using MagicConchBot.Common.Types;
-    using MagicConchBot.Resources;
-
     public class Mp3ConverterService
     {
         private static readonly ILog Log =
-            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+            LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        private static string serverPath;
-        private static string serverUrl;
+        private static string _serverPath;
+        private static string _serverUrl;
 
-        private readonly ConcurrentDictionary<string, Guid> urlToUniqueFile;
+        private readonly ConcurrentDictionary<string, Guid> _urlToUniqueFile;
 
         public Mp3ConverterService()
         {
             var config = Configuration.Load();
 
-            urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
-            serverPath = config.ServerMusicPath;
-            serverUrl = config.ServerMusicUrlBase;
+            _urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
+            _serverPath = config.ServerMusicPath;
+            _serverUrl = config.ServerMusicUrlBase;
 
             Recipients = new ConcurrentBag<IUser>();
             GeneratingMp3 = false;
@@ -45,17 +43,17 @@
         {
             return await Task.Factory.StartNew(() =>
             {
-                if (!urlToUniqueFile.TryGetValue(song.StreamUrl, out var guid))
+                if (!_urlToUniqueFile.TryGetValue(song.StreamUrl, out Guid guid))
                 {
                     guid = Guid.NewGuid();
-                    urlToUniqueFile.TryAdd(song.StreamUrl, guid);
+                    _urlToUniqueFile.TryAdd(song.StreamUrl, guid);
                 }
 
                 var outputFile = song.Name + "_" + guid + ".mp3";
                 var downloadFile = outputFile + ".raw";
 
-                var outputUrl = serverUrl + Uri.EscapeDataString(outputFile);
-                var destinationPath = Path.Combine(serverPath, outputFile);
+                var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
+                var destinationPath = Path.Combine(_serverPath, outputFile);
 
                 if (File.Exists(destinationPath))
                 {
@@ -102,7 +100,7 @@
                 GeneratingMp3 = false;
 
                 return outputUrl;
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current);
         }
     }
 }

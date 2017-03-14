@@ -1,23 +1,21 @@
-﻿namespace MagicConchBot.Services
+﻿using System;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Resources;
+
+namespace MagicConchBot.Services
 {
-    using System;
-    using System.Linq;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
-
-    using Google.Apis.Services;
-    using Google.Apis.YouTube.v3;
-
-    using MagicConchBot.Common.Types;
-    using MagicConchBot.Resources;
-
     public class GoogleApiService
     {
-        private readonly YouTubeService youtubeService;
+        private readonly YouTubeService _youtubeService;
 
         public GoogleApiService()
         {
-            youtubeService = new YouTubeService(new BaseClientService.Initializer
+            _youtubeService = new YouTubeService(new BaseClientService.Initializer
             {
                 ApiKey = Configuration.Load().GoogleApiKey,
                 ApplicationName = Configuration.Load().ApplicationName
@@ -26,7 +24,7 @@
 
         public async Task<string> GetFirstVideoByKeywordsAsync(string keywords)
         {
-            var searchListRequest = youtubeService.Search.List("snippet");
+            var searchListRequest = _youtubeService.Search.List("snippet");
             searchListRequest.Q = keywords; // Replace with your search term.
             searchListRequest.MaxResults = 1;
             searchListRequest.Type = "video";
@@ -38,7 +36,7 @@
 
         public async Task<Song> GetVideoInfoByIdAsync(string id)
         {
-            var search = youtubeService.Videos.List("snippet,contentDetails");
+            var search = _youtubeService.Videos.List("snippet,contentDetails");
             search.Id = id;
             var video = (await search.ExecuteAsync()).Items.First();
             var regex = new Regex(@"PT((?<H>\d+)H)?(?<M>\d+)M(?<S>\d+)S");
@@ -49,9 +47,9 @@
             var m = match.Groups["M"].Value;
             var s = match.Groups["S"].Value;
 
-            var totalDuration = new TimeSpan(h == "" ? 0 : Convert.ToInt32(h), 
-                                             m == "" ? 0 : Convert.ToInt32(m),
-                                             s == "" ? 0 : Convert.ToInt32(s));
+            var totalDuration = new TimeSpan(h == string.Empty ? 0 : Convert.ToInt32(h), 
+                                             m == string.Empty ? 0 : Convert.ToInt32(m),
+                                             s == string.Empty ? 0 : Convert.ToInt32(s));
 
             return new Song(video.Snippet.Title, totalDuration, $"https://www.youtube.com/watch?v={video.Id}", video.Snippet.Thumbnails.Default__.Url);
         }

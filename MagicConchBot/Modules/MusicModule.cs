@@ -1,48 +1,46 @@
-﻿namespace MagicConchBot.Modules
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using log4net;
+using MagicConchBot.Attributes;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Services;
+
+namespace MagicConchBot.Modules
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.Linq;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
-
-    using Discord;
-    using Discord.Commands;
-
-    using log4net;
-
-    using MagicConchBot.Attributes;
-    using MagicConchBot.Common.Interfaces;
-    using MagicConchBot.Common.Types;
-    using MagicConchBot.Services;
-
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]
     [Name("Music Commands")]
     public class MusicModule : ModuleBase<MusicCommandContext>
     {
         private static readonly ILog Log =
-            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+            LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         private static readonly Regex UrlRegex =
             new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
-        private readonly GoogleApiService googleApiService;
-        private readonly List<IMusicInfoService> musicInfoServices;
-        private readonly ChanService chanService;
-        private readonly YouTubeInfoService youtubeInfoService;
+        private readonly GoogleApiService _googleApiService;
+        private readonly List<IMusicInfoService> _musicInfoServices;
+        private readonly ChanService _chanService;
+        private readonly YouTubeInfoService _youtubeInfoService;
 
         public MusicModule(IDependencyMap map)
         {
-            musicInfoServices = new List<IMusicInfoService>
+            _musicInfoServices = new List<IMusicInfoService>
             {
                 map.Get<YouTubeInfoService>(),
                 map.Get<SoundCloudInfoService>()
             };
-            googleApiService = map.Get<GoogleApiService>();
-            chanService = map.Get<ChanService>();
-            youtubeInfoService = map.Get<YouTubeInfoService>();
+            _googleApiService = map.Get<GoogleApiService>();
+            _chanService = map.Get<ChanService>();
+            _youtubeInfoService = map.Get<YouTubeInfoService>();
         }
         
         [Command("play"), Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
@@ -76,7 +74,7 @@
                 if (TimeSpan.TryParseExact(terms.Last(), new []{@"mm\:ss", @"hh\:mm\:ss"}, CultureInfo.InvariantCulture,  out startTime))
                 {
                     // last term is a time mark, remove it
-                    urlOrQuery = urlOrQuery.Replace(" " + terms.Last(), "");
+                    urlOrQuery = urlOrQuery.Replace(" " + terms.Last(), string.Empty);
                 }
                 else
                 {
@@ -91,10 +89,10 @@
             else
             {
                 // input is not a url, search for it on YouTube
-                url = await googleApiService.GetFirstVideoByKeywordsAsync(urlOrQuery);
+                url = await _googleApiService.GetFirstVideoByKeywordsAsync(urlOrQuery);
             }
 
-            foreach (var service in musicInfoServices)
+            foreach (var service in _musicInfoServices)
             {
                 if (!service.Regex.IsMatch(url))
                 {
@@ -117,7 +115,7 @@
             if (song == null)
             {
                 // url invalid
-                if (url == "")
+                if (url == string.Empty)
                 {
                     await ReplyAsync("Incorrect input or invalid url specified.");
                     return;
@@ -187,7 +185,7 @@
             }
             else
             {
-                await ReplyAsync("", false, song.GetEmbed());
+                await ReplyAsync(string.Empty, false, song.GetEmbed());
             }
         }
             
@@ -213,7 +211,7 @@
             if (!mp3Service.GeneratingMp3)
             {
                 var url = await mp3Service.GenerateMp3Async(currentSong);
-                foreach (var user in mp3Service.Recipients)
+                while (mp3Service.Recipients.TryTake(out IUser user))
                 {
                     var dm = await user.CreateDMChannelAsync();
                     await dm.SendMessageAsync($"Requested url at: {url}");
@@ -224,15 +222,18 @@
         [Command("ygyl")]
         public async Task YouGrooveYouLoseAsync(string board = "wsg")
         {
-            var songUrls = await chanService.GetPostsWithVideosAsync(board);
+            var songUrls = await _chanService.GetPostsWithVideosAsync(board);
 
             foreach (var songUrl in songUrls)
             {
-                var song = !songUrl.EndsWith("webm") ? await youtubeInfoService.GetSongInfoAsync(songUrl) : new Song(songUrl);
+                var song = !songUrl.EndsWith("webm") ? await _youtubeInfoService.GetSongInfoAsync(songUrl) : new Song(songUrl);
                 Context.MusicService.QueueSong(song);
             }
 
-            await Context.MusicService.PlayAsync(Context.Message);
+            if (Context.MusicService.CurrentSong == null)
+            {
+                await Context.MusicService.PlayAsync(Context.Message);
+            }
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿namespace MagicConchBot.Helpers
-{
-    using System;
-    using System.Diagnostics.Contracts;
+﻿using System;
+using System.Diagnostics.Contracts;
 
+namespace MagicConchBot.Helpers
+{
     public static class AudioHelper
     {
         public static unsafe byte[] AdjustVolume(byte[] audioSamples, float volume)
@@ -28,7 +28,7 @@
 
                 for (var i = count; i != 0; i--, src++)
                 {
-                    *src = (short)(((*src) * volumeFixed) >> 16);
+                    *src = (short)((*src * volumeFixed) >> 16);
                 }
             }
 

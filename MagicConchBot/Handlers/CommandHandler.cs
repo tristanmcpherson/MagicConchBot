@@ -1,49 +1,46 @@
-﻿namespace MagicConchBot.Handlers
+﻿using System.Reflection;
+using System.Threading.Tasks;
+using Discord.Commands;
+using Discord.WebSocket;
+using log4net;
+using MagicConchBot.Modules;
+using MagicConchBot.Resources;
+using MagicConchBot.Services;
+
+namespace MagicConchBot.Handlers
 {
-    using System;
-    using System.Reflection;
-    using System.Threading.Tasks;
-
-    using Discord.Commands;
-    using Discord.WebSocket;
-
-    using log4net;
-
-    using MagicConchBot.Modules;
-    using MagicConchBot.Resources;
-    using MagicConchBot.Services;
-
     public class CommandHandler
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(CommandHandler));
 
-        private CmdSrv commands;
-        private DiscordSocketClient client;
-        private IDependencyMap map;
+        private CmdSrv _commands;
+        private DiscordSocketClient _client;
+        private IDependencyMap _map;
 
         public void ConfigureServices(IDependencyMap depMap)
         {
-            map = depMap;
-            map.Add(new GoogleApiService());
-            map.Add(new YouTubeInfoService(map));
-            map.Add(new SoundCloudInfoService());
-            map.Add(new ChanService());
+            _map = depMap;
+            _map.Add(new GoogleApiService());
+            _map.Add(new YouTubeInfoService(_map));
+            _map.Add(new SoundCloudInfoService());
+            _map.Add(new ChanService());
+            _map.Add(new StardewValleyService());
         }
 
         public async Task InstallAsync()
         {
             // Create Command Service, inject it into Dependency Map
-            client = map.Get<DiscordSocketClient>();
-            commands = new CmdSrv();
+            _client = _map.Get<DiscordSocketClient>();
+            _commands = new CmdSrv();
 
-            map.Add(commands);
+            _map.Add(_commands);
 
-            await commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
-            client.MessageReceived += HandleCommandAsync;
-            client.GuildAvailable += HandleGuildAvailableAsync;
-            client.JoinedGuild += HandleJoinedGuildAsync;
-            client.MessageReceived += HandleMessageReceivedAsync;
+            _client.MessageReceived += HandleCommandAsync;
+            _client.GuildAvailable += HandleGuildAvailableAsync;
+            _client.JoinedGuild += HandleJoinedGuildAsync;
+            _client.MessageReceived += HandleMessageReceivedAsync; 
         }
 
         public async Task HandleCommandAsync(SocketMessage parameterMessage)
@@ -59,16 +56,16 @@
             var argPos = 0;
 
             // Determine if the message has a valid prefix, adjust argPos 
-            if (!(message.HasMentionPrefix(client.CurrentUser, ref argPos) || message.HasCharPrefix('!', ref argPos)))
+            if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasCharPrefix('!', ref argPos)))
             {
                 return;
             }
 
             // Create a Command Context
-            var context = new MusicCommandContext(client, message);
+            var context = new MusicCommandContext(_client, message);
 
             // Execute the Command, store the result
-            var result = await commands.ExecuteAsync(context, argPos, map, MultiMatchHandling.Best);
+            var result = await _commands.ExecuteAsync(context, argPos, _map, MultiMatchHandling.Best);
 
             // If the command failed, notify the user
             if (!result.IsSuccess)

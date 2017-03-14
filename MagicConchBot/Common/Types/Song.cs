@@ -1,19 +1,17 @@
+using System;
+using System.Threading;
+using Discord;
+using MagicConchBot.Resources;
+
 namespace MagicConchBot.Common.Types
 {
-    using System;
-    using System.Threading;
-
-    using Discord;
-
-    using MagicConchBot.Resources;
-
     public class Song
     {
         public Song(string name, TimeSpan length, string url, string thumbnailUrl = "") : this(name, length, url, thumbnailUrl, TimeSpan.Zero)
         {
         }
 
-        public Song(string url) : this("", TimeSpan.Zero, url)
+        public Song(string url) : this(string.Empty, TimeSpan.Zero, url)
         {
         }
 
@@ -40,28 +38,30 @@ namespace MagicConchBot.Common.Types
 
         public CancellationTokenSource TokenSource { get; set; }
 
-        private TimeSpan Length { get; } // Length in seconds
+        public TimeSpan Length { get; } // Length in seconds
 
         private string ThumbnailUrl { get; }
 
-        private string TotalTimePretty =>
-            Length > new TimeSpan(0, 59, 59)
-                ? Length.ToString(@"hh\:mm\:ss")
-                : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
+        private string TotalTimePretty
+            => Length >= TimeSpan.FromHours(1)
+                    ? Length.ToString(@"hh\:mm\:ss")
+                    : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
 
         private string CurrentTimePretty
-            => Length > new TimeSpan(0, 59, 59) ? CurrentTime.ToString(@"hh\:mm\:ss") : CurrentTime.ToString(@"mm\:ss");
+            => Length >= TimeSpan.FromHours(1) 
+                    ? CurrentTime.ToString(@"hh\:mm\:ss") 
+                    : CurrentTime.ToString(@"mm\:ss");
 
         public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false)
         {
             var builder = new EmbedBuilder { Color = Constants.MaterialBlue };
             builder.AddField(x =>
             {
-                x.WithName(title == "" ? Name == "" ? "Default" :  Name : title)
+                x.WithName(title == string.Empty ? Name == string.Empty ? "Default" :  Name : title)
                     .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" + (showDuration ? $"{CurrentTimePretty} / {TotalTimePretty}" : $"{TotalTimePretty}"));
             });
 
-            if (ThumbnailUrl != "" && embedThumbnail)
+            if (ThumbnailUrl != string.Empty && embedThumbnail)
             {
                 builder.WithThumbnailUrl(ThumbnailUrl);
             }

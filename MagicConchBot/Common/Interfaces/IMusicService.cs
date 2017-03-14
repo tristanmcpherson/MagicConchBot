@@ -1,13 +1,11 @@
-﻿namespace MagicConchBot.Common.Interfaces
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Discord;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Types;
+
+namespace MagicConchBot.Common.Interfaces
 {
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-
-    using Discord;
-
-    using MagicConchBot.Common.Enums;
-    using MagicConchBot.Common.Types;
-
     public interface IMusicService
     {
         int Volume { get; set; }

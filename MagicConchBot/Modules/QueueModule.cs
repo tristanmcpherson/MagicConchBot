@@ -1,13 +1,11 @@
-﻿namespace MagicConchBot.Modules
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Discord.Commands;
+using MagicConchBot.Attributes;
+using MagicConchBot.Common.Enums;
+
+namespace MagicConchBot.Modules
 {
-    using System.Linq;
-    using System.Threading.Tasks;
-
-    using Discord.Commands;
-
-    using MagicConchBot.Attributes;
-    using MagicConchBot.Common.Enums;
-
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]
     [Name("Queue Commands"), Group("queue")]
@@ -24,10 +22,10 @@
                 return;
             }
 
-            await ReplyAsync("", false, songs.First().GetEmbed());
+            await ReplyAsync(string.Empty, false, songs.First().GetEmbed());
             for (var i = 1; i < songs.Count; i++)
             {
-                await ReplyAsync("", false, songs[i].GetEmbed($"{i}: {songs[i].Name}"));
+                await ReplyAsync(string.Empty, false, songs[i].GetEmbed($"{i}: {songs[i].Name}"));
             }
         }
 

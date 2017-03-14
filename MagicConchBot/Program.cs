@@ -1,22 +1,19 @@
-﻿namespace MagicConchBot
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Audio;
+using Discord.Commands;
+using Discord.WebSocket;
+using log4net;
+using MagicConchBot.Handlers;
+using MagicConchBot.Resources;
+using MagicConchBot.Services;
+
+namespace MagicConchBot
 {
-    using System;
-    using System.IO;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Discord;
-    using Discord.Audio;
-    using Discord.Commands;
-    using Discord.WebSocket;
-
-    using log4net;
-
-    using MagicConchBot.Handlers;
-    using MagicConchBot.Resources;
-    using MagicConchBot.Services;
-
     public class Program
     {
         // https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
@@ -65,8 +62,7 @@
 
                     Thread.Sleep(100);
                 }
-
-                Task.WaitAll(task);
+                
                 Thread.Sleep(500);
             }
             finally
@@ -100,7 +96,7 @@
 
                 await handler.InstallAsync().ConfigureAwait(false);
 
-                //Configuration.Load().Token
+                // Configuration.Load().Token
                 await client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
                 await client.ConnectAsync().ConfigureAwait(false);
 
@@ -111,7 +107,7 @@
             }
             catch (Exception ex)
             {
-                await WriteToLog(new LogMessage(LogSeverity.Critical, "", "", ex));
+                await WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, string.Empty, ex));
             }
             finally
             {

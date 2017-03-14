@@ -1,12 +1,11 @@
-﻿namespace MagicConchBot.Services
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using FChan.Library;
+
+namespace MagicConchBot.Services
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
-
-    using FChan.Library;
-
     public class ChanService
     {
         private static readonly Regex YgylRegex = new Regex(@"ygyl|you groove you lose|you groove", RegexOptions.IgnoreCase);
@@ -24,7 +23,7 @@
                 foreach (var thread in page.Threads)
                 {
                     var t = thread.Posts.First();
-                    if (YgylRegex.IsMatch(t.Subject ?? "") || YgylRegex.IsMatch(t.Comment ?? "") || YgylRegex.IsMatch(t.Name ?? ""))
+                    if (YgylRegex.IsMatch(t.Subject ?? string.Empty) || YgylRegex.IsMatch(t.Comment ?? string.Empty) || YgylRegex.IsMatch(t.Name ?? string.Empty))
                     {
                         foreach (var post in thread.Posts)
                         {
@@ -35,7 +34,7 @@
                             }
                             else if (post.Comment.Contains("youtube.com"))
                             {
-                                var cleanedPost = post.Comment.Replace("<wbr>", "");
+                                var cleanedPost = post.Comment.Replace("<wbr>", string.Empty);
                                 var match = YouTubeRegex.Match(cleanedPost);
                                 videos.Add(match.Value);
                             }

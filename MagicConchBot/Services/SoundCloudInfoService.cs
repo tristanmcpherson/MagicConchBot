@@ -1,16 +1,13 @@
-﻿namespace MagicConchBot.Services
+﻿using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Resources;
+using SoundCloud.API.Client;
+using SoundCloud.API.Client.Objects.TrackPieces;
+
+namespace MagicConchBot.Services
 {
-    using System;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
-
-    using MagicConchBot.Common.Interfaces;
-    using MagicConchBot.Common.Types;
-    using MagicConchBot.Resources;
-
-    using SoundCloud.API.Client;
-    using SoundCloud.API.Client.Objects.TrackPieces;
-
     public class SoundCloudInfoService : IMusicInfoService
     {
         public SoundCloudInfoService()
@@ -28,7 +25,7 @@
         public async Task<Song> GetSongInfoAsync(string url)
         {
             var track = Client.Resolve.GetTrack(url);
-            var artwork = track.Artwork.Url(SCArtworkFormat.T300X300);
+            var artwork = track.Artwork.Url(SCArtworkFormat.T500X500);
 
             return new Song(track.Title, track.Duration, url, artwork);
         }

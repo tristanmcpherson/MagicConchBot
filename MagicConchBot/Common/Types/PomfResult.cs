@@ -1,7 +1,7 @@
-﻿namespace MagicConchBot.Common.Types
-{
-    using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
+namespace MagicConchBot.Common.Types
+{
     public class PomfFile
     {
         public string name { get; set; }

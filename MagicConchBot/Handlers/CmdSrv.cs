@@ -1,12 +1,11 @@
-﻿namespace MagicConchBot.Handlers
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Threading.Tasks;
+using Discord.Commands;
+
+namespace MagicConchBot.Handlers
 {
-    using System.Collections.Generic;
-    using System.Collections.Immutable;
-    using System.Linq;
-    using System.Threading.Tasks;
-
-    using Discord.Commands;
-
     public class CmdSrv : CommandService
     {
         public new Task<IResult> ExecuteAsync(ICommandContext context, int argPos, IDependencyMap dependencyMap = null, MultiMatchHandling multiMatchHandling = MultiMatchHandling.Exception)

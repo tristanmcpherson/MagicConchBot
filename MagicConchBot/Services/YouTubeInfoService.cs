@@ -1,21 +1,19 @@
-﻿namespace MagicConchBot.Services
+﻿using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Discord.Commands;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+
+namespace MagicConchBot.Services
 {
-    using System;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
-
-    using Discord.Commands;
-
-    using MagicConchBot.Common.Interfaces;
-    using MagicConchBot.Common.Types;
-
     public class YouTubeInfoService : IMusicInfoService
     {
-        private readonly GoogleApiService googleApiService;
+        private readonly GoogleApiService _googleApiService;
 
         public YouTubeInfoService(IDependencyMap map)
         {
-            googleApiService = map.Get<GoogleApiService>();
+            _googleApiService = map.Get<GoogleApiService>();
         }
 
         public Regex Regex { get; } 
@@ -31,12 +29,12 @@
             }
 
             var videoId = match.Groups["VideoId"].Value;
-            var song = await googleApiService.GetVideoInfoByIdAsync(videoId);
-            if (match.Groups["Time"].Value != "")
+            var song = await _googleApiService.GetVideoInfoByIdAsync(videoId);
+            if (match.Groups["Time"].Value != string.Empty)
             {
                 song.StartTime = TimeSpan.FromSeconds(Convert.ToInt32(match.Groups["Time"].Value));
             }
-            else if (match.Groups["TimeAlt"].Value != "")
+            else if (match.Groups["TimeAlt"].Value != string.Empty)
             {
                 song.StartTime = TimeSpan.Parse(match.Groups["TimeAlt"].Value);
             }
