@@ -244,6 +244,7 @@
     <Compile Include="Handlers\CommandHandler.cs" />
     <Compile Include="Helpers\AudioHelper.cs" />
     <Compile Include="Helpers\Extensions.cs" />
+    <Compile Include="Modules\FunModule.cs" />
     <Compile Include="Modules\MusicContextModuleBase.cs" />
     <Compile Include="Modules\QueueModule.cs" />
     <Compile Include="Modules\WikiModule.cs" />

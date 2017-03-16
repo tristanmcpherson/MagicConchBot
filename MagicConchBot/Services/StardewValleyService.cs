@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using HtmlAgilityPack;
 using System.Threading.Tasks;
@@ -21,7 +22,9 @@ namespace MagicConchBot.Services
         {
             var search = await _wiki.SearchExact(query);
             if (search == null)
+            {
                 return null;
+            }
 
             var sections = await _wiki.GetSections(search.title);
 
@@ -33,9 +36,13 @@ namespace MagicConchBot.Services
             }
             else
             {
-                var section = sections.FirstOrDefault(s => string.Equals(s.line, sectionName, StringComparison.InvariantCultureIgnoreCase));
+                sectionName = sectionName.ToLowerInvariant();
+                var section = sections.FirstOrDefault(s => s.line.ToLower() == sectionName);
                 if (section == null)
+                {
                     return null;
+                }
+
                 var sectionNum = Convert.ToInt32(section.index);
                 sectionText = await _wiki.GetHtmlSection(search.title, sectionNum);
             }
@@ -45,13 +52,13 @@ namespace MagicConchBot.Services
 
             var sb = new StringBuilder();
 
-            if (sectionName == "Gifting")
+            if (sectionName == "gifting")
             {
                 var node = document.DocumentNode.SelectSingleNode("//table[@id='roundedborder']");
 
                 var reactions = from reactionNode
                     in node.SelectNodes(@"//tr[position() > 1]")
-                    select new VillagerReaction
+                    select new
                     {
                         Reaction = reactionNode.SelectSingleNode(".//th").InnerText.Trim(),
                         Villagers = reactionNode.SelectNodes(".//td/div/a[2]").Select(v => v.InnerText)
@@ -59,7 +66,18 @@ namespace MagicConchBot.Services
 
                 foreach (var reaction in reactions)
                 {
-                    sb.Append(reaction + "\n\n");
+                    sb.Append($"**{reaction.Reaction}**: \n" + string.Join(", ", reaction.Villagers) + "\n\n");
+                }
+            }
+            else if (sectionName == "stages")
+            {
+                var table = document.DocumentNode.SelectSingleNode("//table[@id='roundedborder']");
+
+                var stages = table.SelectNodes(@".//tr[1]/th").Zip(table.SelectNodes(@".//tr[3]/td"), (a, b) => new { Title = a.InnerText.Trim(), Stage = b.InnerText.Trim() });
+
+                foreach (var stage in stages)
+                {
+                    sb.Append($"**{stage.Title}**: {stage.Stage}\n");
                 }
             }
             else
@@ -67,7 +85,9 @@ namespace MagicConchBot.Services
                 var nodes = document.DocumentNode.SelectNodes("//following-sibling::p");
 
                 if (nodes == null)
+                {
                     throw new Exception($"Parsing exception. Query: {query}");
+                }
 
                 foreach (var node in nodes)
                 {
@@ -85,22 +105,6 @@ namespace MagicConchBot.Services
             }
 
             return sb.ToString();
-        }
-    }
-
-    public class VillagerReaction
-    {
-        public string Reaction;
-        public IEnumerable<string> Villagers;
-
-        public VillagerReaction()
-        {
-            Villagers = new List<string>();
-        }
-
-        public override string ToString()
-        {
-            return $"**{Reaction}**: \n" + string.Join(", ", Villagers);
         }
     }
 }

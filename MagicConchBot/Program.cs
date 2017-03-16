@@ -19,8 +19,8 @@ namespace MagicConchBot
         // https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
         private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
 
-        private static DiscordSocketClient client;
-        private static CommandHandler handler;
+        private static DiscordSocketClient _client;
+        private static CommandHandler _handler;
 
         public static void Main()
         {
@@ -48,7 +48,7 @@ namespace MagicConchBot
                             var config = Configuration.Load();
                             var serverId = config.OwnerGuildId;
                             Console.WriteLine("Skipping song.");
-                            var channel = (IMessageChannel)client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
+                            var channel = (IMessageChannel)_client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
                             if (MusicServiceProvider.GetService(serverId).Skip())
                             {
                                 channel.SendMessageAsync("Skipping song at request of owner.");
@@ -80,25 +80,25 @@ namespace MagicConchBot
 
             try
             {
-                handler = new CommandHandler();
-                handler.ConfigureServices(map);
+                _handler = new CommandHandler();
+                _handler.ConfigureServices(map);
 
-                client = new DiscordSocketClient(new DiscordSocketConfig
+                _client = new DiscordSocketClient(new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Info,
                     AudioMode = AudioMode.Outgoing
                 });
 
-                client.Log += WriteToLog;
+                _client.Log += WriteToLog;
 
                 // Login and connect to Discord.
-                map.Add(client);
+                map.Add(_client);
 
-                await handler.InstallAsync().ConfigureAwait(false);
+                await _handler.InstallAsync().ConfigureAwait(false);
 
                 // Configuration.Load().Token
-                await client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
-                await client.ConnectAsync().ConfigureAwait(false);
+                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
+                await _client.ConnectAsync().ConfigureAwait(false);
 
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
             }
@@ -112,7 +112,7 @@ namespace MagicConchBot
             finally
             {
                 MusicServiceProvider.StopAll();
-                client.DisconnectAsync();
+                _client.DisconnectAsync();
             }
         }
 

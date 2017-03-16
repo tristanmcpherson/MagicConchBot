@@ -20,9 +20,9 @@ namespace MagicConchBot.Services
     public class FfmpegMusicService : IMusicService
     {
         private const int SampleFrequency = 48000;
-        private const int Milliseconds = 5;
+        private const int Milliseconds = 20;
         private const int SamplesPerFrame = SampleFrequency * Milliseconds / 1000;
-        private const int FrameBytes = 960; // 2 channel, 16 bit
+        private const int FrameBytes = 3840; // 2 channel, 16 bit
 
         private const int MaxVolume = 100;
         private const int MinVolume = 0;
@@ -143,24 +143,27 @@ namespace MagicConchBot.Services
 
                         try
                         {
-                            using (var pcmStream = audio.CreatePCMStream(SamplesPerFrame, 2, null, 5000))
+                            using (var pcmStream = audio.CreatePCMStream(SamplesPerFrame, 2, null, 2000))
                             {
                                 Log.Debug("Playing song.");
                                 await PlayerAsync(msg).ConfigureAwait(false);
 
                                 while (true)
                                 {
-                                    if (CurrentSong.Length - CurrentSong.CurrentTime < TimeSpan.FromSeconds(1))
-                                    {
-                                        break;
-                                    }
+                                    
 
                                     var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length);
 
                                     if (byteCount == 0)
                                     {
                                         Log.Warn($"Read 0 bytes. Retrying. Retries at {retryCount}.");
-                                        await Task.Delay(500);
+                                        await Task.Delay(100);
+                                        retryCount++;
+                                    }
+                                    else if (byteCount != FrameBytes)
+                                    {
+                                        Log.Warn($"Read {byteCount} bytes instead of the buffer size. Warning!!!");
+                                        await Task.Delay(20);
                                         retryCount++;
                                     }
                                     else
@@ -178,7 +181,7 @@ namespace MagicConchBot.Services
 
                                     buffer = AudioHelper.AdjustVolume(buffer, currentVolume);
 
-                                    await pcmStream.WriteAsync(buffer, 0, byteCount, CurrentSong.TokenSource.Token).ConfigureAwait(false);
+                                    await pcmStream.WriteAsync(buffer, 0, byteCount, CurrentSong.TokenSource.Token);
                                     bytesSent += byteCount;
                                     CurrentSong.CurrentTime = CurrentSong.StartTime +
                                                                 TimeSpan.FromSeconds(bytesSent /
@@ -258,8 +261,11 @@ namespace MagicConchBot.Services
         public bool Stop()
         {
             ClearQueue();
-            tokenSource.Cancel();
-            CurrentSong?.TokenSource.Cancel();
+            if (CurrentSong != null && !CurrentSong.IsPaused)
+            {
+                tokenSource.Cancel();
+                CurrentSong.TokenSource.Cancel();
+            }
             return true;
         }
 
@@ -351,12 +357,12 @@ namespace MagicConchBot.Services
             {
                 streamUrl = url;
             }
-            else if (url.Contains("youtube.com"))
-            {
-                var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
-                var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
-                streamUrl = video.DownloadUrl;
-            }
+            //else if (url.Contains("youtube.com"))
+            //{
+            //    var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
+            //    var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
+            //    streamUrl = video.DownloadUrl;
+            //}
             else
             {
                 Log.Debug("Retrieving url using youtube-dl");
