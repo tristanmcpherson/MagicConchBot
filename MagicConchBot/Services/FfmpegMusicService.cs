@@ -32,16 +32,16 @@ namespace MagicConchBot.Services
 
         private static readonly string[] DirectPlayFormats = { "webm", "mp3", "avi", "wav", "mp4", "flac" };
 
-        private readonly ConcurrentQueue<Song> songQueue;
-        private IAudioClient audio;
+        private readonly ConcurrentQueue<Song> _songQueue;
+        private IAudioClient _audio;
 
-        private CancellationTokenSource tokenSource;
+        private CancellationTokenSource _tokenSource;
 
-        private float currentVolume = 0.5f;
+        private float _currentVolume = 0.5f;
 
         public FfmpegMusicService()
         {
-            songQueue = new ConcurrentQueue<Song>();
+            _songQueue = new ConcurrentQueue<Song>();
             PlayMode = PlayMode.Queue;
             CurrentSong = null;
             LastSong = null;
@@ -57,7 +57,7 @@ namespace MagicConchBot.Services
         {
             get
             {
-                return (int)(currentVolume * 100);
+                return (int)(_currentVolume * 100);
             }
 
             set
@@ -72,13 +72,13 @@ namespace MagicConchBot.Services
                     value = MaxVolume;
                 }
 
-                currentVolume = (float)(value / 100m);
+                _currentVolume = (float)(value / 100m);
             }
         }
 
         public async Task PlayAsync(IUserMessage msg)
         {
-            tokenSource = new CancellationTokenSource();
+            _tokenSource = new CancellationTokenSource();
 
             await Task.Factory.StartNew(async () =>
             {
@@ -86,14 +86,14 @@ namespace MagicConchBot.Services
                 {
                     await JoinChannelAsync(msg).ConfigureAwait(false);
 
-                    while (!tokenSource.Token.IsCancellationRequested && !songQueue.IsEmpty)
+                    while (!_tokenSource.Token.IsCancellationRequested && !_songQueue.IsEmpty)
                     {
                         if (CurrentSong != null)
                         {
                             LastSong = CurrentSong;
                         }
- 
-                        if (!songQueue.TryPeek(out Song currentSong))
+
+                        if (!_songQueue.TryPeek(out Song currentSong))
                         {
                             continue;
                         }
@@ -114,7 +114,7 @@ namespace MagicConchBot.Services
                             return;
                         }
 
-                        var seekArg = (int)CurrentSong.StartTime.TotalSeconds == 0
+                        var seekArg = (int) CurrentSong.StartTime.TotalSeconds == 0
                             ? string.Empty
                             : $"-ss {CurrentSong.StartTime.TotalSeconds} ";
 
@@ -128,12 +128,7 @@ namespace MagicConchBot.Services
                             CreateNoWindow = true
                         };
 
-                        var process = Process.Start(startInfo);
 
-                        if (process == null)
-                        {
-                            throw new Exception("ffmpeg process could not be created.");
-                        }
 
                         var bytesSent = 0;
                         var buffer = new byte[FrameBytes];
@@ -141,73 +136,92 @@ namespace MagicConchBot.Services
 
                         Log.Debug("Creating PCM stream.");
 
-                        try
+                        using (var process = Process.Start(startInfo))
                         {
-                            using (var pcmStream = audio.CreatePCMStream(SamplesPerFrame, 2, null, 2000))
+                            if (process == null)
                             {
-                                Log.Debug("Playing song.");
-                                await PlayerAsync(msg).ConfigureAwait(false);
-
-                                while (true)
-                                {
-                                    
-
-                                    var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length);
-
-                                    if (byteCount == 0)
-                                    {
-                                        Log.Warn($"Read 0 bytes. Retrying. Retries at {retryCount}.");
-                                        await Task.Delay(100);
-                                        retryCount++;
-                                    }
-                                    else if (byteCount != FrameBytes)
-                                    {
-                                        Log.Warn($"Read {byteCount} bytes instead of the buffer size. Warning!!!");
-                                        await Task.Delay(20);
-                                        retryCount++;
-                                    }
-                                    else
-                                    {
-                                        retryCount = 0;
-                                    }
-
-                                    if (retryCount == 20)
-                                    {
-                                        Log.Warn($"Failed. Retries: {retryCount}");
-                                        break;
-                                    }
-
-                                    CurrentSong.TokenSource.Token.ThrowIfCancellationRequested();
-
-                                    buffer = AudioHelper.AdjustVolume(buffer, currentVolume);
-
-                                    await pcmStream.WriteAsync(buffer, 0, byteCount, CurrentSong.TokenSource.Token);
-                                    bytesSent += byteCount;
-                                    CurrentSong.CurrentTime = CurrentSong.StartTime +
-                                                                TimeSpan.FromSeconds(bytesSent /
-                                                                                    (1000d * FrameBytes / Milliseconds));
-                                }
-                            }
-                        }
-                        catch (OperationCanceledException ex)
-                        {
-                            Log.Info("Song cancelled: " + ex.Message);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Debug(ex.ToString());
-                        }
-                        finally
-                        {
-                            if (!CurrentSong.IsPaused)
-                            {
-                                if (PlayMode == PlayMode.Queue)
-                                {
-                                    songQueue.TryDequeue(out Song _);
-                                }
+                                throw new Exception("ffmpeg process could not be created.");
                             }
 
-                            CurrentSong = null;
+                            try
+                            {
+                                using (var pcmStream = _audio.CreatePCMStream(SamplesPerFrame, 2, null, 2000))
+                                {
+                                    Log.Debug("Playing song.");
+                                    await PlayerAsync(msg).ConfigureAwait(false);
+
+                                    while (true)
+                                    {
+                                        var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0,
+                                            buffer.Length);
+
+                                        if (byteCount == 0)
+                                        {
+                                            if (process.HasExited)
+                                            {
+                                                Log.Error("Process exited before stream finished?");
+                                            }
+                                            else if (process.StandardOutput.EndOfStream)
+                                            {
+                                                Log.Error("StandardOutput end of stream D:");
+                                            }
+
+                                            Log.Warn($"Read 0 bytes. Retrying. Retries at {retryCount}.");
+                                            await Task.Delay(100);
+                                            retryCount++;
+                                        }
+                                        else if (byteCount != FrameBytes)
+                                        {
+                                            Log.Warn($"Read {byteCount} bytes instead of the buffer size. Warning!!!");
+                                            await Task.Delay(20);
+                                            retryCount++;
+                                        }
+                                        else
+                                        {
+                                            retryCount = 0;
+                                        }
+
+                                        if (retryCount == 20)
+                                        {
+                                            Log.Warn($"Failed. Retries: {retryCount}");
+                                            break;
+                                        }
+
+                                        CurrentSong.TokenSource.Token.ThrowIfCancellationRequested();
+
+                                        buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
+
+                                        await pcmStream.WriteAsync(buffer, 0, byteCount, CurrentSong.TokenSource.Token);
+                                        bytesSent += byteCount;
+                                        CurrentSong.CurrentTime = CurrentSong.StartTime +
+                                                                  TimeSpan.FromSeconds(bytesSent /
+                                                                                       (1000d * FrameBytes /
+                                                                                        Milliseconds));
+                                    }
+
+                                    process.WaitForExit(3000);
+                                }
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                Log.Info("Song cancelled: " + ex.Message);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(ex.ToString());
+                            }
+                            finally
+                            {
+                                if (!CurrentSong.IsPaused)
+                                {
+                                    if (PlayMode == PlayMode.Queue)
+                                    {
+                                        _songQueue.TryDequeue(out Song _);
+                                    }
+                                }
+
+                                CurrentSong = null;
+                            }
                         }
                     }
                 }
@@ -215,7 +229,7 @@ namespace MagicConchBot.Services
                 {
                     await LeaveChannelAsync().ConfigureAwait(false);
                 }
-            }, tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         public async Task PlayerAsync(IMessage msg)
@@ -263,7 +277,7 @@ namespace MagicConchBot.Services
             ClearQueue();
             if (CurrentSong != null && !CurrentSong.IsPaused)
             {
-                tokenSource.Cancel();
+                _tokenSource.Cancel();
                 CurrentSong.TokenSource.Cancel();
             }
             return true;
@@ -279,29 +293,29 @@ namespace MagicConchBot.Services
             CurrentSong.IsPaused = true;
             CurrentSong.StartTime = CurrentSong.CurrentTime;
             CurrentSong.TokenSource.Cancel();
-            tokenSource.Cancel();
+            _tokenSource.Cancel();
             return true;
         }
 
         public bool Skip()
         {
-            if (CurrentSong == null || songQueue.Count == 0)
+            if (CurrentSong == null || _songQueue.Count == 0)
             {
                 return false;
             }
 
             CurrentSong.TokenSource.Cancel();
-            return PlayMode == PlayMode.Queue || songQueue.TryDequeue(out Song _);
+            return PlayMode == PlayMode.Queue || _songQueue.TryDequeue(out Song _);
         }
 
         public void QueueSong(Song song)
         {
-            songQueue.Enqueue(song);
+            _songQueue.Enqueue(song);
         }
 
         public Song DequeueSong(int songNumber)
         {
-            if (songNumber < 0 || songNumber > songQueue.Count)
+            if (songNumber < 0 || songNumber > _songQueue.Count)
             {
                 return null;
             }
@@ -316,7 +330,7 @@ namespace MagicConchBot.Services
             var stack = new Stack<Song>();
             for (var i = 0; i <= songNumber; i++)
             {
-                songQueue.TryDequeue(out Song song);
+                _songQueue.TryDequeue(out Song song);
                 stack.Push(song);
             }
 
@@ -325,7 +339,7 @@ namespace MagicConchBot.Services
 
             while (stack.Count > 0)
             {
-                songQueue.Enqueue(stack.Pop());
+                _songQueue.Enqueue(stack.Pop());
             }
 
             return removedSong;
@@ -333,9 +347,9 @@ namespace MagicConchBot.Services
 
         public void ClearQueue()
         {
-            while (songQueue.Count > 0)
+            while (_songQueue.Count > 0)
             {
-                songQueue.TryDequeue(out Song _);
+                _songQueue.TryDequeue(out Song _);
             }
         }
 
@@ -346,7 +360,7 @@ namespace MagicConchBot.Services
 
         public List<Song> QueuedSongs()
         {
-            return new List<Song>(songQueue.ToArray());
+            return new List<Song>(_songQueue.ToArray());
         }
 
         private static async Task<string> ResolveStreamFromUrlAsync(string url)
@@ -357,12 +371,12 @@ namespace MagicConchBot.Services
             {
                 streamUrl = url;
             }
-            //else if (url.Contains("youtube.com"))
-            //{
-            //    var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
-            //    var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
-            //    streamUrl = video.DownloadUrl;
-            //}
+            else if (url.Contains("youtube.com"))
+            {
+                var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
+                var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
+                streamUrl = video.DownloadUrl;
+            }
             else
             {
                 Log.Debug("Retrieving url using youtube-dl");
@@ -419,14 +433,14 @@ namespace MagicConchBot.Services
             }
 
             // Get the IAudioClient by calling the JoinAsync method
-            audio = await channel.ConnectAsync();
+            _audio = await channel.ConnectAsync();
         }
 
         private async Task LeaveChannelAsync()
         {
-            if (audio != null && audio.ConnectionState == ConnectionState.Connected)
+            if (_audio != null && _audio.ConnectionState == ConnectionState.Connected)
             {
-                await audio?.DisconnectAsync();
+                await _audio?.DisconnectAsync();
             }
         }
     }

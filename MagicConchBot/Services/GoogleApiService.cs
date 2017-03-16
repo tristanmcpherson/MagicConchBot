@@ -25,7 +25,7 @@ namespace MagicConchBot.Services
         public async Task<string> GetFirstVideoByKeywordsAsync(string keywords)
         {
             var searchListRequest = _youtubeService.Search.List("snippet");
-            searchListRequest.Q = keywords; // Replace with your search term.
+            searchListRequest.Q = keywords;
             searchListRequest.MaxResults = 1;
             searchListRequest.Type = "video";
             var videos = await searchListRequest.ExecuteAsync();
