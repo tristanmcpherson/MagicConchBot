@@ -18,32 +18,48 @@ namespace MagicConchBot.Modules
             {
                 if (words[i] == "")
                     continue;
+                
+                words[i] = words[i].ToLower();
 
-                var capitalized = CapitalizedLetters(words[i]);
-
-                if (Regex.IsMatch(words[i], "th", RegexOptions.IgnoreCase))
+                if (words[i] == "third")
+                {
+                    words[i] = "turd";
+                }
+                else
                 {
                     words[i] = words[i].Replace("th", "t");
-                    words[i] = words[i].Replace("Th", "T");
                 }
+
+                words[i] = words[i].Replace("a", "u");
+
             }
 
+            await ReplyAsync($"Ghaussi: {string.Join(" ", words)}");
         }
 
         private List<int> CapitalizedLetters(string s)
         {
             var capitalizedChars = new List<int>();
+
             for (int i = 0; i < s.Length; i++)
             {
                 if (char.ToUpper(s[i]) == s[i])
                     capitalizedChars.Add(i);
             }
+
             return capitalizedChars;
         }
 
-        private string Capitalize(string s)
+        private string Capitalize(string input, List<int> caps)
         {
-            return char.ToUpper(s[0]) + s.Substring(1);
+            var charArray = input.ToCharArray();
+
+            foreach (var index in caps)
+            {
+                charArray[index] = char.ToUpper(input[index]);
+            }
+
+            return new string(charArray);
         }
     }
 }

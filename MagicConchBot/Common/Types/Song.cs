@@ -24,8 +24,6 @@ namespace MagicConchBot.Common.Types
             StartTime = startTime;
         }
 
-        public bool IsPaused { get; set; }
-
         public string Name { get; }
 
         public string Url { get; }
