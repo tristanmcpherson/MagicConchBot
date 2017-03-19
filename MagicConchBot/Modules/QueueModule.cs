@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
 using MagicConchBot.Attributes;
@@ -14,7 +15,7 @@ namespace MagicConchBot.Modules
         [Command, Summary("Lists all the songs in the queue.")]
         public async Task ListQueueAsync()
         {
-            var songs = Context.MusicService.QueuedSongs();
+            var songs = Context.MusicService.SongList;
 
             if (songs.Count == 0)
             {
@@ -22,10 +23,29 @@ namespace MagicConchBot.Modules
                 return;
             }
 
-            await ReplyAsync(string.Empty, false, songs.First().GetEmbed());
-            for (var i = 1; i < songs.Count; i++)
+            if (songs.Count < 10)
             {
-                await ReplyAsync(string.Empty, false, songs[i].GetEmbed($"{i}: {songs[i].Name}"));
+                await ReplyAsync(string.Empty, false, songs.First().GetEmbed());
+                for (var i = 1; i < songs.Count; i++)
+                {
+                    await ReplyAsync(string.Empty, false, songs[i].GetEmbed($"{i}: {songs[i].Name}"));
+                }
+            }
+            else
+            {
+                var sb = new StringBuilder();
+                for (var i = 0; i < songs.Count; i++)
+                {
+                    if (sb.Length > 1500)
+                    {
+                        await ReplyAsync(sb.ToString());
+                        sb.Clear();
+                    }
+
+                    sb.Append($"`{i + 1}` {songs[i].Name} - **[{songs[i].LengthPretty}]**\n");
+                }
+
+                await ReplyAsync(sb.ToString());
             }
         }
 
@@ -39,15 +59,34 @@ namespace MagicConchBot.Modules
         [Command("remove")]
         public async Task RemoveAsync([Summary("Song number to remove.")] int songNumber)
         {
-            var song = Context.MusicService.DequeueSong(songNumber);
-            await ReplyAsync("Successfully removed song from queue:", false, song.GetEmbed($"{song.Name}"));
+            var song = Context.MusicService.RemoveSong(songNumber);
+            if (song == null)
+            {
+                await ReplyAsync($"No song at position: {songNumber}");
+            }
+            else
+            {
+                await ReplyAsync("Successfully removed song from queue:", false, song.GetEmbed($"{song.Name}"));
+            }
         }
 
         [Command("mode"), Alias("changemode"), Summary("Change the queue mode to queue (removes songs after playing) or playlist (keeps on playing through the queue).")]
         public async Task ChangeModeAsync([Summary("The mode to change to, either `playlist` or `queue`.")] string mode)
         {
-            Context.MusicService.PlayMode = mode.ToLower() == "playlist" ? PlayMode.Playlist : PlayMode.Queue;
-            await ReplyAsync($"Play mode changed to {mode}");
+            if (mode.ToLower() == "queue")
+            {
+                Context.MusicService.PlayMode = PlayMode.Queue;
+                await ReplyAsync("Successfully changed mode to queue mode.");
+            }
+            else if (mode.ToLower() == "playlist")
+            {
+                Context.MusicService.PlayMode = PlayMode.Playlist;
+                await ReplyAsync("Successfully changed mode to playlist mode.");
+            }
+            else
+            {
+                await ReplyAsync("Invalid play mode. Available play modes: Queue, Playlist");
+            }
         }
     }
 }

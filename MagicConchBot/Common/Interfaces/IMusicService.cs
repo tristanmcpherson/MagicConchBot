@@ -10,11 +10,15 @@ namespace MagicConchBot.Common.Interfaces
     {
         int Volume { get; set; }
 
+        List<Song> SongList { get;  }
+
         Song LastSong { get; }
 
         Song CurrentSong { get; }
 
         PlayMode PlayMode { get; set; }
+
+        MusicState State { get; set; }
 
         Task PlayAsync(IUserMessage msg);
 
@@ -24,12 +28,10 @@ namespace MagicConchBot.Common.Interfaces
 
         bool Skip();
 
-        void QueueSong(Song song);
+        void AddSong(Song song);
 
-        Song DequeueSong(int songNumber);
+        Song RemoveSong(int songNumber);
 
         void ClearQueue();
-
-        List<Song> QueuedSongs();
     }
 }

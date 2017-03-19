@@ -61,6 +61,12 @@ namespace MagicConchBot.Handlers
                 return;
             }
 
+            // Handle case of !! or !!! (some prefixes for other bots)
+            if (message.Content.Split('!').Length > 2)
+            {
+                return;
+            }
+
             // Create a Command Context
             var context = new MusicCommandContext(_client, message);
 

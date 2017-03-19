@@ -40,7 +40,7 @@ namespace MagicConchBot.Common.Types
 
         private string ThumbnailUrl { get; }
 
-        private string TotalTimePretty
+        public string LengthPretty
             => Length >= TimeSpan.FromHours(1)
                     ? Length.ToString(@"hh\:mm\:ss")
                     : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
@@ -56,7 +56,7 @@ namespace MagicConchBot.Common.Types
             builder.AddField(x =>
             {
                 x.WithName(title == string.Empty ? Name == string.Empty ? "Default" :  Name : title)
-                    .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" + (showDuration ? $"{CurrentTimePretty} / {TotalTimePretty}" : $"{TotalTimePretty}"));
+                    .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" + (showDuration ? $"{CurrentTimePretty} / {LengthPretty}" : $"{LengthPretty}"));
             });
 
             if (ThumbnailUrl != string.Empty && embedThumbnail)

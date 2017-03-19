@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,7 +31,6 @@ namespace MagicConchBot.Services
 
         private static readonly string[] DirectPlayFormats = { "webm", "mp3", "avi", "wav", "mp4", "flac" };
 
-        private readonly List<Song> _songList;
         private IAudioClient _audio;
 
         private CancellationTokenSource _tokenSource;
@@ -41,11 +39,14 @@ namespace MagicConchBot.Services
 
         public FfmpegMusicService()
         {
-            _songList = new List<Song>();
+            SongList = new List<Song>();
             PlayMode = PlayMode.Queue;
             CurrentSong = null;
             LastSong = null;
+            State = MusicState.Stopped;
         }
+
+        public List<Song> SongList { get; }
 
         public MusicState State { get; set; }
 
@@ -76,7 +77,7 @@ namespace MagicConchBot.Services
                     value = MaxVolume;
                 }
 
-                _currentVolume = (float)(value / 100m);
+                _currentVolume = value / 100f;
             }
         }
 
@@ -90,19 +91,20 @@ namespace MagicConchBot.Services
                 {
                     await JoinChannelAsync(msg).ConfigureAwait(false);
 
-                    while (!_tokenSource.Token.IsCancellationRequested && _songList.Count > 0 && _songIndex < _songList.Count)
+                    while (true)
                     {
+
                         if (CurrentSong != null)
                         {
                             LastSong = CurrentSong;
                         }
 
-                        CurrentSong = _songList[_songIndex];
-
-                        if (CurrentSong == null)
+                        if (_songIndex < 0 || _songIndex >= SongList.Count)
                         {
                             return;
                         }
+
+                        CurrentSong = SongList[_songIndex];
 
                         State = MusicState.Loading;
                         
@@ -115,91 +117,12 @@ namespace MagicConchBot.Services
                             return;
                         }
 
-                        var seekArg = (int) CurrentSong.StartTime.TotalSeconds == 0
-                            ? string.Empty
-                            : $"-ss {CurrentSong.StartTime.TotalSeconds} ";
-
-                        var startInfo = new ProcessStartInfo
-                        {
-                            FileName = "ffmpeg",
-                            Arguments = seekArg + $"-i {CurrentSong.StreamUrl} -f s16le -ar 48000 -ac 2 pipe:1",
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = false,
-                            CreateNoWindow = true
-                        };
-
-                        var bytesSent = 0;
-                        var buffer = new byte[FrameBytes];
-                        var retryCount = 0;
-
-                        Log.Debug("Creating PCM stream.");
+                        _tokenSource.Token.ThrowIfCancellationRequested();
 
                         try
                         {
-                            using (var process = Process.Start(startInfo))
-                            {
-                                if (process == null)
-                                {
-                                    throw new Exception("ffmpeg process could not be created.");
-                                }
 
-                                using (var pcmStream = _audio.CreatePCMStream(SamplesPerFrame, 2, null, 2000))
-                                {
-                                    State = MusicState.Playing;
-                                    Log.Debug("Playing song.");
-                                    await PlayerAsync(msg).ConfigureAwait(false);
-
-                                    while (true)
-                                    {
-                                        _tokenSource.Token.ThrowIfCancellationRequested();
-
-                                        var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0,
-                                            buffer.Length);
-
-                                        if (byteCount == 0)
-                                        {
-                                            if (CurrentSong.Length - CurrentSong.CurrentTime <= TimeSpan.FromSeconds(1))
-                                            {
-                                                break;
-                                            }
-
-                                            Log.Warn($"Read 0 bytes. Retrying. Retries at {retryCount}.");
-                                            await Task.Delay(100);
-                                            retryCount++;
-                                        }
-                                        else if (byteCount != FrameBytes)
-                                        {
-                                            Log.Warn($"Read {byteCount} bytes instead of the buffer size. Warning!!!");
-                                            await Task.Delay(20);
-                                            retryCount++;
-                                        }
-                                        else
-                                        {
-                                            retryCount = 0;
-                                        }
-
-                                        if (retryCount == 20)
-                                        {
-                                            Log.Warn($"Failed. Retries: {retryCount}");
-                                            break;
-                                        }
-
-                                        CurrentSong.TokenSource.Token.ThrowIfCancellationRequested();
-
-                                        buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
-
-                                        await pcmStream.WriteAsync(buffer, 0, byteCount, CurrentSong.TokenSource.Token);
-                                        bytesSent += byteCount;
-                                        CurrentSong.CurrentTime = CurrentSong.StartTime +
-                                                                  TimeSpan.FromSeconds(bytesSent /
-                                                                                       (1000d * FrameBytes /
-                                                                                        Milliseconds));
-                                    }
-
-                                    process.WaitForExit(3000);
-                                }
-                            }
+                            await PlaySong(msg.Channel, CurrentSong);
                         }
                         catch (OperationCanceledException ex)
                         {
@@ -215,11 +138,11 @@ namespace MagicConchBot.Services
                             {
                                 if (PlayMode == PlayMode.Queue)
                                 {
-                                    _songList.Remove(CurrentSong);
+                                    SongList.Remove(CurrentSong);
                                 }
                                 else
                                 {
-                                    if (++_songIndex == _songList.Count)
+                                    if (++_songIndex == SongList.Count)
                                     {
                                         _songIndex = 0;
                                     }
@@ -227,8 +150,6 @@ namespace MagicConchBot.Services
 
                                 State = MusicState.Stopped;
                             }
-
-                            CurrentSong = null;
                         }
                     }
                 }
@@ -239,7 +160,84 @@ namespace MagicConchBot.Services
             }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
-        public async Task PlayerAsync(IMessage msg)
+        private async Task PlaySong(IMessageChannel msgChannel, Song song)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = $"-i {song.StreamUrl} -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -ac 2 pipe:1 -loglevel quiet",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+            };
+
+            var bytesSent = 0;
+            var buffer = new byte[FrameBytes];
+            var retryCount = 0;
+
+            Log.Debug("Creating PCM stream.");
+
+            using (var process = Process.Start(startInfo))
+            {
+                if (process == null)
+                {
+                    throw new Exception("ffmpeg process could not be created.");
+                }
+
+                using (var pcmStream = _audio.CreatePCMStream(SamplesPerFrame, 2, null, 2000))
+                {
+                    State = MusicState.Playing;
+                    Log.Debug("Playing song.");
+                    await PlayerAsync(msgChannel).ConfigureAwait(false);
+
+                    while (true)
+                    {
+                        var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0,
+                            buffer.Length);
+
+                        if (byteCount == 0)
+                        {
+                            if (song.Length - song.CurrentTime <= TimeSpan.FromSeconds(1))
+                            {
+                                Log.Info("Read 0 bytes but song is finished.");
+                                break;
+                            }
+
+                            await Task.Delay(100);
+                            retryCount++;
+                        }
+                        else if (byteCount != FrameBytes)
+                        {
+                            Log.Warn($"Read {byteCount} bytes instead of the buffer size. Warning!!!");
+                            await Task.Delay(20);
+                            retryCount++;
+                        }
+                        else
+                        {
+                            retryCount = 0;
+                        }
+
+                        if (retryCount == 20)
+                        {
+                            Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
+                            break;
+                        }
+
+                        song.TokenSource.Token.ThrowIfCancellationRequested();
+
+                        buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
+
+                        await pcmStream.WriteAsync(buffer, 0, byteCount, song.TokenSource.Token);
+                        bytesSent += byteCount;
+                        song.CurrentTime = song.StartTime +
+                                           TimeSpan.FromSeconds(bytesSent /
+                                                                (1000d * FrameBytes /
+                                                                 Milliseconds));
+                    }
+                }
+            }
+        }
+
+        public async Task PlayerAsync(IMessageChannel channel)
         {
             await Task.Factory.StartNew(async () =>
             {
@@ -251,9 +249,9 @@ namespace MagicConchBot.Services
                         return;
                     }
 
-                    var message = await msg.Channel.SendMessageAsync(string.Empty, false, song.GetEmbed(string.Empty, true, true));
+                    var message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true));
 
-                    while (CurrentSong != null)
+                    while (State == MusicState.Playing || State == MusicState.Loading)
                     {
                         // Song changed. Stop updating song info.
                         if (CurrentSong.Url != song.Url)
@@ -261,11 +259,11 @@ namespace MagicConchBot.Services
                             break;
                         }
 
-                        CurrentSong.TokenSource.Token.ThrowIfCancellationRequested();
-                        await message.ModifyAsync(m => m.Embed = song.GetEmbed(string.Empty, true, true));
-                        await Task.Delay(2000);
+                        song.TokenSource.Token.ThrowIfCancellationRequested();
+                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true));
+                        await Task.Delay(4600);
                     }
-
+                    
                     await message.DeleteAsync();
                 }
                 catch (OperationCanceledException ex)
@@ -317,14 +315,14 @@ namespace MagicConchBot.Services
             return true;
         }
 
-        public void QueueSong(Song song)
+        public void AddSong(Song song)
         {
-            _songList.Add(song);
+            SongList.Add(song);
         }
 
-        public Song DequeueSong(int songNumber)
+        public Song RemoveSong(int songNumber)
         {
-            if (songNumber < 0 || songNumber > _songList.Count)
+            if (songNumber < 0 || songNumber > SongList.Count)
             {
                 return null;
             }
@@ -334,25 +332,20 @@ namespace MagicConchBot.Services
                 Stop();
             }
 
-            var removedSong = _songList[songNumber];
-            _songList.Remove(removedSong);
+            var removedSong = SongList[songNumber];
+            SongList.Remove(removedSong);
 
             return removedSong;
         }
 
         public void ClearQueue()
         {
-            _songList.Clear();
+            SongList.Clear();
         }
 
         public void ChangePlayMode(PlayMode mode)
         {
             PlayMode = mode;
-        }
-
-        public List<Song> QueuedSongs()
-        {
-            return _songList.ToList();
         }
 
         private static async Task<string> ResolveStreamFromUrlAsync(string url)
