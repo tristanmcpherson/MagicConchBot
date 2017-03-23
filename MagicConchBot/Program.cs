@@ -30,6 +30,7 @@ namespace MagicConchBot
         {
             EnsureConfigExists();
             ConfigureLogs();
+            MusicServiceProvider.OnLoad();
 
             Console.WriteLine("Starting Magic Conch Bot. Press 'q' at any time to quit.");
             var cts = new CancellationTokenSource();
@@ -158,7 +159,7 @@ namespace MagicConchBot
 
         private static Task WriteToLog(LogMessage message)
         {
-            if (message.Message.Contains("Unknown OpCode"))
+            if (message.Message != null && message.Message.Contains("Unknown OpCode"))
             {
                 return Task.CompletedTask;
             }

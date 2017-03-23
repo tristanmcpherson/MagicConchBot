@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.IO;
 using MagicConchBot.Common.Interfaces;
 using NLog;
 
@@ -10,6 +11,15 @@ namespace MagicConchBot.Services
         private static readonly ConcurrentDictionary<ulong, Mp3ConverterService> Mp3Services = new ConcurrentDictionary<ulong, Mp3ConverterService>();
 
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+        public static void OnLoad()
+        {
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
 
         public static void AddServices(ulong guildId, IMusicService service, Mp3ConverterService mp3Service)
         {

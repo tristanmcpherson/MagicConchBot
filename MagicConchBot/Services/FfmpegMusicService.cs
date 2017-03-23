@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +36,8 @@ namespace MagicConchBot.Services
 
         private float _currentVolume = 0.5f;
 
+        private readonly ConcurrentDictionary<string, Guid> _songIdDictionary;
+
         public FfmpegMusicService()
         {
             SongList = new List<Song>();
@@ -41,6 +45,7 @@ namespace MagicConchBot.Services
             CurrentSong = null;
             LastSong = null;
             State = MusicState.Stopped;
+            _songIdDictionary = new ConcurrentDictionary<string, Guid>();
         }
 
         public List<Song> SongList { get; }
@@ -120,7 +125,9 @@ namespace MagicConchBot.Services
                         try
                         {
 
-                            await PlaySong(msg.Channel, CurrentSong);
+                            //await PlaySong(msg.Channel, CurrentSong);
+                            await FFmpegToFile(CurrentSong);
+                            await PlaySongFromFfmpeg(msg.Channel, CurrentSong);
                         }
                         catch (OperationCanceledException ex)
                         {
@@ -191,6 +198,140 @@ namespace MagicConchBot.Services
                     {
                         var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0,
                             buffer.Length);
+
+                        if (byteCount == 0)
+                        {
+                            if (song.Length - song.CurrentTime <= TimeSpan.FromSeconds(1))
+                            {
+                                Log.Info("Read 0 bytes but song is finished.");
+                                break;
+                            }
+
+                            await Task.Delay(100);
+                            retryCount++;
+                        }
+                        else if (byteCount != FrameBytes)
+                        {
+                            Log.Warn($"Read {byteCount} bytes instead of the buffer size. Warning!!!");
+                            await Task.Delay(20);
+                            retryCount++;
+                        }
+                        else
+                        {
+                            retryCount = 0;
+                        }
+
+                        if (retryCount == 20)
+                        {
+                            Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
+                            break;
+                        }
+
+                        song.TokenSource.Token.ThrowIfCancellationRequested();
+
+                        buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
+
+                        await pcmStream.WriteAsync(buffer, 0, byteCount, song.TokenSource.Token);
+                        bytesSent += byteCount;
+                        song.CurrentTime = song.StartTime +
+                                           TimeSpan.FromSeconds(bytesSent /
+                                                                (1000d * FrameBytes /
+                                                                 Milliseconds));
+                    }
+                }
+            }
+        }
+
+        private async Task FFmpegToFile(Song song)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = $"-i {song.StreamUrl} -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -ac 2 pipe:1 -loglevel quiet",
+                UseShellExecute = false,
+                RedirectStandardOutput = true
+            };
+
+            if (!_songIdDictionary.TryGetValue(song.StreamUrl, out var guid))
+            {
+                guid = Guid.NewGuid();
+                _songIdDictionary.TryAdd(song.StreamUrl, guid);
+            }
+
+            var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
+            var outputFile = Path.Combine(directory, $"{guid}.raw");
+
+            // File exists but no way to verify file is not corrupted so delete
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            if (File.Exists(outputFile))
+            {
+                File.Delete(outputFile);
+            }
+            
+            // Start writing file, 80kb buffer to ensure we can send enough data without issue
+            var buffer = new byte[81920];
+            
+            using (var outfile = new FileStream(outputFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read))
+            {
+                using (var process = Process.Start(startInfo))
+                {
+                    if (process == null)
+                    {
+                        throw new Exception("ffmpeg process could not be created.");
+                    }
+
+                    while (!song.TokenSource.Token.IsCancellationRequested)
+                    {
+                        var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, song.TokenSource.Token);
+
+                        if (byteCount == 0)
+                        {
+                            return;
+                        }
+
+                        await outfile.WriteAsync(buffer, 0, byteCount, song.TokenSource.Token);
+                    }
+                }
+            }
+        }
+
+        private async Task PlaySongFromFfmpeg(IMessageChannel msgChannel, Song song)
+        {
+            Log.Debug("Creating PCM stream.");
+
+            if (!_songIdDictionary.TryGetValue(song.StreamUrl, out var guid))
+            {
+                // Something went wrong here, guid should've been created.
+                throw new Exception("No guid created for Song.");
+            }
+
+            var inFile = Path.Combine(Directory.GetCurrentDirectory(), "temp", $"{guid}.raw");
+
+
+            while (!File.Exists(inFile))
+            {
+                await Task.Delay(100);
+            }
+
+            var buffer = new byte[FrameBytes];
+            var retryCount = 0;
+            var bytesSent = 0;
+
+            using (var inStream = new FileStream(inFile, FileMode.Open, FileAccess.Read))
+            {
+                using (var pcmStream = _audio.CreatePCMStream(AudioApplication.Music, SamplesPerFrame, 2, null, 2000))
+                {
+                    State = MusicState.Playing;
+                    Log.Debug("Playing song.");
+                    await PlayerAsync(msgChannel).ConfigureAwait(false);
+
+                    while (true)
+                    {
+                        var byteCount = await inStream.ReadAsync(buffer, 0, buffer.Length);
 
                         if (byteCount == 0)
                         {
