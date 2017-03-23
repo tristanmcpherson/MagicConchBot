@@ -126,8 +126,8 @@ namespace MagicConchBot.Services
                         {
 
                             //await PlaySong(msg.Channel, CurrentSong);
-                            await FFmpegToFile(CurrentSong);
-                            await PlaySongFromFfmpeg(msg.Channel, CurrentSong);
+                            await Task.Factory.StartNew(async () => await TranscodeSong(CurrentSong).ConfigureAwait(false));
+                            await PlaySong(msg.Channel, CurrentSong).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException ex)
                         {
@@ -165,84 +165,7 @@ namespace MagicConchBot.Services
             }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
-        private async Task PlaySong(IMessageChannel msgChannel, Song song)
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "ffmpeg",
-                Arguments = $"-i {song.StreamUrl} -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -ac 2 pipe:1 -loglevel quiet",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-            };
-
-            var bytesSent = 0;
-            var buffer = new byte[FrameBytes];
-            var retryCount = 0;
-
-            Log.Debug("Creating PCM stream.");
-
-            using (var process = Process.Start(startInfo))
-            {
-                if (process == null)
-                {
-                    throw new Exception("ffmpeg process could not be created.");
-                }
-
-                using (var pcmStream = _audio.CreatePCMStream(AudioApplication.Music, SamplesPerFrame, 2, null, 2000))
-                {
-                    State = MusicState.Playing;
-                    Log.Debug("Playing song.");
-                    await PlayerAsync(msgChannel).ConfigureAwait(false);
-
-                    while (true)
-                    {
-                        var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0,
-                            buffer.Length);
-
-                        if (byteCount == 0)
-                        {
-                            if (song.Length - song.CurrentTime <= TimeSpan.FromSeconds(1))
-                            {
-                                Log.Info("Read 0 bytes but song is finished.");
-                                break;
-                            }
-
-                            await Task.Delay(100);
-                            retryCount++;
-                        }
-                        else if (byteCount != FrameBytes)
-                        {
-                            Log.Warn($"Read {byteCount} bytes instead of the buffer size. Warning!!!");
-                            await Task.Delay(20);
-                            retryCount++;
-                        }
-                        else
-                        {
-                            retryCount = 0;
-                        }
-
-                        if (retryCount == 20)
-                        {
-                            Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
-                            break;
-                        }
-
-                        song.TokenSource.Token.ThrowIfCancellationRequested();
-
-                        buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
-
-                        await pcmStream.WriteAsync(buffer, 0, byteCount, song.TokenSource.Token);
-                        bytesSent += byteCount;
-                        song.CurrentTime = song.StartTime +
-                                           TimeSpan.FromSeconds(bytesSent /
-                                                                (1000d * FrameBytes /
-                                                                 Milliseconds));
-                    }
-                }
-            }
-        }
-
-        private async Task FFmpegToFile(Song song)
+        private async Task TranscodeSong(Song song)
         {
             var startInfo = new ProcessStartInfo
             {
@@ -271,11 +194,12 @@ namespace MagicConchBot.Services
             {
                 File.Delete(outputFile);
             }
-            
+
+            Log.Debug("Ffmpeg started.");
             // Start writing file, 80kb buffer to ensure we can send enough data without issue
             var buffer = new byte[81920];
             
-            using (var outfile = new FileStream(outputFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read))
+            using (var outfile = new FileStream(outputFile, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
             {
                 using (var process = Process.Start(startInfo))
                 {
@@ -290,16 +214,18 @@ namespace MagicConchBot.Services
 
                         if (byteCount == 0)
                         {
-                            return;
+                            break;
                         }
 
                         await outfile.WriteAsync(buffer, 0, byteCount, song.TokenSource.Token);
                     }
+
                 }
             }
+            Log.Debug("Ffmpeg complete.");
         }
 
-        private async Task PlaySongFromFfmpeg(IMessageChannel msgChannel, Song song)
+        private async Task PlaySong(IMessageChannel msgChannel, Song song)
         {
             Log.Debug("Creating PCM stream.");
 
@@ -321,7 +247,7 @@ namespace MagicConchBot.Services
             var retryCount = 0;
             var bytesSent = 0;
 
-            using (var inStream = new FileStream(inFile, FileMode.Open, FileAccess.Read))
+            using (var inStream = new FileStream(inFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 using (var pcmStream = _audio.CreatePCMStream(AudioApplication.Music, SamplesPerFrame, 2, null, 2000))
                 {
