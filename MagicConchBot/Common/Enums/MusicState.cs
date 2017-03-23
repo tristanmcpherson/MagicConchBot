@@ -2,7 +2,7 @@ namespace MagicConchBot.Common.Enums
 {
     public enum MusicState
     {
-        Stopped,
+        Stopped = 0,
         Loading,
         Paused,
         Playing

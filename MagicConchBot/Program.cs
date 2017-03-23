@@ -1,29 +1,36 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Audio;
 using Discord.Commands;
 using Discord.WebSocket;
-using log4net;
 using MagicConchBot.Handlers;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
+using NLog;
+using NLog.Conditions;
+using NLog.Config;
+using NLog.Targets;
 
 namespace MagicConchBot
 {
     public class Program
     {
         // https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
-        private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private static DiscordSocketClient _client;
         private static CommandHandler _handler;
 
         public static void Main()
         {
+            EnsureConfigExists();
+            ConfigureLogs();
+
             Console.WriteLine("Starting Magic Conch Bot. Press 'q' at any time to quit.");
             var cts = new CancellationTokenSource();
 
@@ -72,10 +79,44 @@ namespace MagicConchBot
             }
         }
 
+        private static void ConfigureLogs()
+        {
+            // Step 1. Create configuration object 
+            var config = new LoggingConfiguration();
+
+            // Step 2. Create targets and add them to the configuration 
+            var consoleTarget = new ColoredConsoleTarget();
+
+            config.AddTarget("console", consoleTarget);
+
+            var fileTarget = new FileTarget();
+            config.AddTarget("file", fileTarget);
+
+            consoleTarget.UseDefaultRowHighlightingRules = false;
+            
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Info"), ConsoleOutputColor.Green, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Debug"), ConsoleOutputColor.Yellow, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Fatal"), ConsoleOutputColor.Red, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Warn"), ConsoleOutputColor.Blue, ConsoleOutputColor.Black));
+
+            // Step 3. Set target properties 
+            consoleTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
+            fileTarget.FileName = "log.txt";
+            fileTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
+
+            // Step 4. Define rules
+            var rule1 = new LoggingRule("*", LogLevel.Debug, consoleTarget);
+            config.LoggingRules.Add(rule1);
+
+            var rule2 = new LoggingRule("*", LogLevel.Debug, fileTarget);
+            config.LoggingRules.Add(rule2);
+
+            // Step 5. Activate the configuration
+            LogManager.Configuration = config;
+        }
+
         private static async Task MainAsync(CancellationToken cancellationToken)
         {
-            EnsureConfigExists();
-
             var map = new DependencyMap();
 
             try
@@ -86,7 +127,6 @@ namespace MagicConchBot
                 _client = new DiscordSocketClient(new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Info,
-                    AudioMode = AudioMode.Outgoing
                 });
 
                 _client.Log += WriteToLog;
@@ -98,7 +138,7 @@ namespace MagicConchBot
 
                 // Configuration.Load().Token
                 await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
-                await _client.ConnectAsync().ConfigureAwait(false);
+                await _client.StartAsync().ConfigureAwait(false);
 
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
             }
@@ -112,7 +152,7 @@ namespace MagicConchBot
             finally
             {
                 MusicServiceProvider.StopAll();
-                _client.DisconnectAsync();
+                await _client.StopAsync();
             }
         }
 
@@ -126,18 +166,18 @@ namespace MagicConchBot
             switch (message.Severity)
             {
                 case LogSeverity.Debug:
-                    Log.Debug(message.Message, message.Exception);
+                    Log.Debug(message.Exception, message.Message);
                     break;
                 case LogSeverity.Verbose:
                 case LogSeverity.Info:
-                    Log.Info(message.Message, message.Exception);
+                    Log.Info(message.Exception, message.Message);
                     break;
                 case LogSeverity.Warning:
-                    Log.Warn(message.Message, message.Exception);
+                    Log.Warn(message.Exception, message.Message);
                     break;
                 case LogSeverity.Error:
                 case LogSeverity.Critical:
-                    Log.Fatal(message.Message, message.Exception);
+                    Log.Fatal(message.Exception, message.Message);
                     break;
             }
 

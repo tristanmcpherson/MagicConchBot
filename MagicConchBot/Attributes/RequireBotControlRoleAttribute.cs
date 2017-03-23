@@ -8,7 +8,9 @@ namespace MagicConchBot.Attributes
 {
     public class RequireBotControlRoleAttribute : PreconditionAttribute
     {
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public override async Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             // return PreconditionResult.FromSuccess();
             // Get the ID of the bot's owner

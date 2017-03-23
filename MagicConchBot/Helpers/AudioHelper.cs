@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
 
 namespace MagicConchBot.Helpers
 {
@@ -7,11 +6,6 @@ namespace MagicConchBot.Helpers
     {
         public static unsafe byte[] AdjustVolume(byte[] audioSamples, float volume)
         {
-            Contract.Requires(audioSamples != null);
-            Contract.Requires(audioSamples.Length % 2 == 0);
-            Contract.Requires(volume >= 0f && volume <= 1f);
-            Contract.Assert(BitConverter.IsLittleEndian);
-
             if (Math.Abs(volume - 1f) < 0.0001f)
             {
                 return audioSamples;
