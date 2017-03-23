@@ -170,7 +170,7 @@ namespace MagicConchBot.Services
             var startInfo = new ProcessStartInfo
             {
                 FileName = "ffmpeg",
-                Arguments = $"-i {song.StreamUrl} -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -ac 2 pipe:1 -loglevel quiet",
+                Arguments = $"-i {song.StreamUrl} -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -ac 2 pipe:1 -threads 1 -loglevel quiet",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             };
@@ -196,6 +196,10 @@ namespace MagicConchBot.Services
             }
 
             Log.Debug("Ffmpeg started.");
+
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             // Start writing file, 80kb buffer to ensure we can send enough data without issue
             var buffer = new byte[81920];
             
@@ -207,6 +211,8 @@ namespace MagicConchBot.Services
                     {
                         throw new Exception("ffmpeg process could not be created.");
                     }
+
+                    process.PriorityClass = ProcessPriorityClass.BelowNormal;
 
                     while (!song.TokenSource.Token.IsCancellationRequested)
                     {
@@ -222,7 +228,9 @@ namespace MagicConchBot.Services
 
                 }
             }
-            Log.Debug("Ffmpeg complete.");
+
+            stopwatch.Stop();
+            Log.Debug($"Ffmpeg complete. Time: {stopwatch.Elapsed}");
         }
 
         private async Task PlaySong(IMessageChannel msgChannel, Song song)
