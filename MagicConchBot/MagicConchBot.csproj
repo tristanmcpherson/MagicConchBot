@@ -24,8 +24,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="temp\**" />
     <Compile Remove="Wiki\**" />
+    <EmbeddedResource Remove="temp\**" />
     <EmbeddedResource Remove="Wiki\**" />
+    <None Remove="temp\**" />
     <None Remove="Wiki\**" />
   </ItemGroup>
 
