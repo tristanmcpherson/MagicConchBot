@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
-using log4net;
 using MagicConchBot.Common.Interfaces;
+using NLog;
 
 namespace MagicConchBot.Services
 {
@@ -9,7 +9,7 @@ namespace MagicConchBot.Services
         private static readonly ConcurrentDictionary<ulong, IMusicService> MusicServices = new ConcurrentDictionary<ulong, IMusicService>();
         private static readonly ConcurrentDictionary<ulong, Mp3ConverterService> Mp3Services = new ConcurrentDictionary<ulong, Mp3ConverterService>();
 
-        private static readonly ILog Log = LogManager.GetLogger(typeof(MusicServiceProvider));
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         public static void AddServices(ulong guildId, IMusicService service, Mp3ConverterService mp3Service)
         {

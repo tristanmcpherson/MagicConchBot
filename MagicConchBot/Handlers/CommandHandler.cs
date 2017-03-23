@@ -2,16 +2,16 @@
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
-using log4net;
 using MagicConchBot.Modules;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
+using NLog;
 
 namespace MagicConchBot.Handlers
 {
     public class CommandHandler
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(CommandHandler));
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private CmdSrv _commands;
         private DiscordSocketClient _client;
@@ -33,7 +33,7 @@ namespace MagicConchBot.Handlers
             _client = _map.Get<DiscordSocketClient>();
             _commands = new CmdSrv();
 
-            _map.Add(_commands);
+            //_map.Add(_commands);
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
 

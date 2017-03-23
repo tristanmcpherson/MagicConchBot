@@ -1,21 +1,19 @@
 ﻿using System.Linq;
 using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Text;
 using HtmlAgilityPack;
 using System.Threading.Tasks;
-using MediaWiki.NET;
+using Wiki.Net;
 
 namespace MagicConchBot.Services
 {
     public class StardewValleyService
     {
-        private readonly Wiki _wiki;
+        private readonly MediaWiki _wiki;
 
         public StardewValleyService()
         {
-            _wiki = new Wiki("http://stardewvalleywiki.com/mediawiki");
+            _wiki = new MediaWiki("http://stardewvalleywiki.com/mediawiki");
         }
 
         public async Task<string> GetSummaryFromSearchAsync(string query, string sectionName = "")

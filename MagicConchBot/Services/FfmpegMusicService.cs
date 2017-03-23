@@ -2,17 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
-using log4net;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
-using YoutubeExtractor;
+using NLog;
 
 namespace MagicConchBot.Services
 {
@@ -26,8 +24,7 @@ namespace MagicConchBot.Services
         private const int MaxVolume = 100;
         private const int MinVolume = 0;
 
-        private static readonly ILog Log =
-            LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private static readonly string[] DirectPlayFormats = { "webm", "mp3", "avi", "wav", "mp4", "flac" };
 
@@ -93,6 +90,7 @@ namespace MagicConchBot.Services
 
                     while (true)
                     {
+                        _tokenSource.Token.ThrowIfCancellationRequested();
 
                         if (CurrentSong != null)
                         {
@@ -183,7 +181,7 @@ namespace MagicConchBot.Services
                     throw new Exception("ffmpeg process could not be created.");
                 }
 
-                using (var pcmStream = _audio.CreatePCMStream(SamplesPerFrame, 2, null, 2000))
+                using (var pcmStream = _audio.CreatePCMStream(AudioApplication.Music, SamplesPerFrame, 2, null, 2000))
                 {
                     State = MusicState.Playing;
                     Log.Debug("Playing song.");
@@ -251,7 +249,7 @@ namespace MagicConchBot.Services
 
                     var message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true));
 
-                    while (State == MusicState.Playing || State == MusicState.Loading)
+                    while (State == MusicState.Playing)
                     {
                         // Song changed. Stop updating song info.
                         if (CurrentSong.Url != song.Url)
@@ -261,7 +259,7 @@ namespace MagicConchBot.Services
 
                         song.TokenSource.Token.ThrowIfCancellationRequested();
                         await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true));
-                        await Task.Delay(4600);
+                        await Task.Delay(4700);
                     }
                     
                     await message.DeleteAsync();
@@ -297,10 +295,13 @@ namespace MagicConchBot.Services
                 return false;
             }
 
-            State = MusicState.Paused;
             CurrentSong.StartTime = CurrentSong.CurrentTime;
-            CurrentSong.TokenSource.Cancel();
+
             _tokenSource.Cancel();
+
+            CurrentSong.TokenSource.Cancel();
+            State = MusicState.Paused;
+
             return true;
         }
 
@@ -356,12 +357,12 @@ namespace MagicConchBot.Services
             {
                 streamUrl = url;
             }
-            else if (url.Contains("youtube.com"))
-            {
-                var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
-                var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
-                streamUrl = video.DownloadUrl;
-            }
+            //else if (url.Contains("youtube.com"))
+            //{
+            //    var videos = await DownloadUrlResolver.GetDownloadUrlsAsync(url);
+            //    var video = videos.OrderByDescending(info => info.AudioBitrate).ThenBy(info => info.Resolution).First();
+            //    streamUrl = video.DownloadUrl;
+            //}
             else
             {
                 Log.Debug("Retrieving url using youtube-dl");
@@ -410,22 +411,30 @@ namespace MagicConchBot.Services
 
         private async Task JoinChannelAsync(IMessage msg)
         {
-            var channel = (msg.Author as IGuildUser)?.VoiceChannel;
-            if (channel == null)
+            try
             {
-                await msg.Channel.SendMessageAsync("User must be in a voice channel.");
-                return;
-            }
+                var channel = (msg.Author as IGuildUser)?.VoiceChannel;
+                if (channel == null)
+                {
+                    await msg.Channel.SendMessageAsync("User must be in a voice channel.");
+                    return;
+                }
 
-            // Get the IAudioClient by calling the JoinAsync method
-            _audio = await channel.ConnectAsync();
+                // Get the IAudioClient by calling the JoinAsync method
+                _audio = await channel.ConnectAsync();
+                Log.Info("Connected to audio channel.");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex);
+            }
         }
 
         private async Task LeaveChannelAsync()
         {
             if (_audio != null && _audio.ConnectionState == ConnectionState.Connected)
             {
-                await _audio?.DisconnectAsync();
+                await _audio?.StopAsync();
             }
         }
     }

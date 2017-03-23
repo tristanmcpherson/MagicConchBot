@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using log4net;
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Services;
+using NLog;
 
 namespace MagicConchBot.Modules
 {
@@ -21,8 +20,7 @@ namespace MagicConchBot.Modules
     [Name("Music Commands")]
     public class MusicModule : ModuleBase<MusicCommandContext>
     {
-        private static readonly ILog Log =
-            LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private static readonly Regex UrlRegex =
             new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
@@ -106,10 +104,8 @@ namespace MagicConchBot.Modules
             {
                 await ReplyAsync("Queueing songs from playlist. This may take awhile, please wait.");
                 var songs = await _googleApiService.GetSongsByPlaylistAsync(playlistId);
-                foreach (var s in songs)
-                {
-                    Context.MusicService.AddSong(s);
-                }
+                
+                Context.MusicService.SongList.AddRange(songs);
 
                 await ReplyAsync($"Queued {songs.Count} songs from playlist.");
             }
@@ -207,7 +203,15 @@ namespace MagicConchBot.Modules
                 await ReplyAsync(string.Empty, false, song.GetEmbed());
             }
         }
-            
+
+        [Command("loop"), Alias("repeat")]
+        public async Task Loop()
+        {
+            Context.MusicService.PlayMode = PlayMode.Playlist;
+            await ReplyAsync(
+                "Successfully changed mode to playlist mode. Songs will not be removed from queue after they are done playing.");
+        }
+
         [Command("mp3"), Summary("Generates a link to the mp3 of the current song playing or the last song played.")]
         public async Task GenerateMp3Async()
         {
