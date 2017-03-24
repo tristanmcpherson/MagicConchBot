@@ -3,9 +3,8 @@ using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Resources;
-using SoundCloud.API.Client.Objects.TrackPieces;
 using SoundCloud.API.Client;
-
+using SoundCloud.API.Client.Objects.TrackPieces;
 
 namespace MagicConchBot.Services
 {
@@ -21,7 +20,8 @@ namespace MagicConchBot.Services
 
         public IUnauthorizedSoundCloudClient Client { get; set; }
 
-        public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?soundcloud\.com\/(?:[a-z0-9-]+\/?)+", RegexOptions.IgnoreCase);
+        public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?soundcloud\.com\/(?:[a-z0-9-]+\/?)+",
+            RegexOptions.IgnoreCase);
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public async Task<Song> GetSongInfoAsync(string url)

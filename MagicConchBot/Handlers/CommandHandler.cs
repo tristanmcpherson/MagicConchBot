@@ -12,9 +12,9 @@ namespace MagicConchBot.Handlers
     public class CommandHandler
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        private DiscordSocketClient _client;
 
         private CmdSrv _commands;
-        private DiscordSocketClient _client;
         private IDependencyMap _map;
 
         public void ConfigureServices(IDependencyMap depMap)
@@ -40,7 +40,7 @@ namespace MagicConchBot.Handlers
             _client.MessageReceived += HandleCommandAsync;
             _client.GuildAvailable += HandleGuildAvailableAsync;
             _client.JoinedGuild += HandleJoinedGuildAsync;
-            _client.MessageReceived += HandleMessageReceivedAsync; 
+            _client.MessageReceived += HandleMessageReceivedAsync;
         }
 
         public async Task HandleCommandAsync(SocketMessage parameterMessage)
@@ -48,24 +48,18 @@ namespace MagicConchBot.Handlers
             // Don't handle the command if it is a system message
             var message = parameterMessage as SocketUserMessage;
             if (message == null)
-            {
                 return;
-            }
 
             // Mark where the prefix ends and the command begins
             var argPos = 0;
 
             // Determine if the message has a valid prefix, adjust argPos 
             if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasCharPrefix('!', ref argPos)))
-            {
                 return;
-            }
 
             // Handle case of !! or !!! (some prefixes for other bots)
             if (message.Content.Split('!').Length > 2)
-            {
                 return;
-            }
 
             // Create a Command Context
             var context = new MusicCommandContext(_client, message);
@@ -75,34 +69,27 @@ namespace MagicConchBot.Handlers
 
             // If the command failed, notify the user
             if (!result.IsSuccess)
-            {
                 if (result.ErrorReason == Configuration.Load().WrongChannelError)
-                {
                     await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
-                }
                 else
-                {
                     await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
-                }
-            }
         }
 
         private static async Task HandleMessageReceivedAsync(SocketMessage arg)
         {
             foreach (var attachment in arg.Attachments)
-            {
                 if (attachment.Filename.EndsWith(".webm"))
                 {
                     Log.Info($"Url: {attachment.Url}");
                     Log.Info($"Proxy: {attachment.ProxyUrl}");
                     await Task.Delay(1);
                 }
-            }
         }
 
         private static async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
-            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
+            await arg.DefaultChannel.SendMessageAsync(
+                $"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
         }
 
         private static Task HandleGuildAvailableAsync(SocketGuild guild)

@@ -15,24 +15,22 @@ using Newtonsoft.Json;
 namespace MagicConchBot.Resources
 {
     /// <summary>
-    /// The configuration file.
+    ///     The configuration file.
     /// </summary>
     public class Configuration
     {
         /// <summary> The location to this config file relative to the launch directory. </summary>
-        [JsonIgnore]
-        public const string JsonPath = "Configuration.json";
+        [JsonIgnore] public const string JsonPath = "Configuration.json";
 
         /// <summary> The location of your bot's DLL, ignored by the JSON parser. </summary>
-        [JsonIgnore]
-        public static readonly string Appdir = AppContext.BaseDirectory;
+        [JsonIgnore] public static readonly string Appdir = AppContext.BaseDirectory;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Configuration"/> class.
+        ///     Initializes a new instance of the <see cref="Configuration" /> class.
         /// </summary>
         public Configuration()
         {
-            Owners = new ulong[] { 0 };
+            Owners = new ulong[] {0};
             Token = string.Empty;
             GoogleApiKey = string.Empty;
             ApplicationName = string.Empty;
@@ -84,13 +82,13 @@ namespace MagicConchBot.Resources
         public string SoundCloudClientId { get; set; }
 
         /// <summary>
-        /// Load the configuration from the specified file location. 
+        ///     Load the configuration from the specified file location.
         /// </summary>
         /// <param name="dir">
-        /// The optional path to save the JSON to.
+        ///     The optional path to save the JSON to.
         /// </param>
         /// <returns>
-        /// The <see cref="Configuration"/> instance loaded.
+        ///     The <see cref="Configuration" /> instance loaded.
         /// </returns>
         public static Configuration Load(string dir = JsonPath)
         {
@@ -99,19 +97,19 @@ namespace MagicConchBot.Resources
         }
 
         /// <summary>
-        /// Convert the configuration to a JSON string. 
+        ///     Convert the configuration to a JSON string.
         /// </summary>
         /// <returns>
-        /// The serialized <see cref="string"/> JSON of this instance.
+        ///     The serialized <see cref="string" /> JSON of this instance.
         /// </returns>
         public string ToJson()
             => JsonConvert.SerializeObject(this, Formatting.Indented);
 
         /// <summary>
-        /// Save the configuration to the specified file location. 
+        ///     Save the configuration to the specified file location.
         /// </summary>
         /// <param name="dir">
-        /// The optional path to save the JSON to.
+        ///     The optional path to save the JSON to.
         /// </param>
         public void Save(string dir = JsonPath)
         {

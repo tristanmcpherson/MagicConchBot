@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -58,9 +56,7 @@ namespace MagicConchBot
         private static void HandleKeypress()
         {
             if (!Console.KeyAvailable)
-            {
                 return;
-            }
 
             var key = Console.ReadKey(true).Key;
             if (key == ConsoleKey.Q)
@@ -76,13 +72,9 @@ namespace MagicConchBot
                     (IMessageChannel)
                     _client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
                 if (MusicServiceProvider.GetService(serverId).Skip())
-                {
                     channel.SendMessageAsync("Skipping song at request of owner.");
-                }
                 else
-                {
                     Console.WriteLine("No song to skip.");
-                }
             }
         }
 
@@ -97,7 +89,7 @@ namespace MagicConchBot
 
                 _client = new DiscordSocketClient(new DiscordSocketConfig
                 {
-                    LogLevel = LogSeverity.Info,
+                    LogLevel = LogSeverity.Info
                 });
 
                 _client.Log += WriteToLog;
@@ -141,11 +133,19 @@ namespace MagicConchBot
             config.AddTarget("file", fileTarget);
 
             consoleTarget.UseDefaultRowHighlightingRules = false;
-            
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Info"), ConsoleOutputColor.Green, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Debug"), ConsoleOutputColor.Yellow, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Fatal"), ConsoleOutputColor.Red, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Warn"), ConsoleOutputColor.Blue, ConsoleOutputColor.Black));
+
+            consoleTarget.RowHighlightingRules.Add(
+                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Info"),
+                    ConsoleOutputColor.Green, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(
+                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Debug"),
+                    ConsoleOutputColor.Yellow, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(
+                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Fatal"),
+                    ConsoleOutputColor.Red, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(
+                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Warn"),
+                    ConsoleOutputColor.Blue, ConsoleOutputColor.Black));
 
             // Step 3. Set target properties 
             consoleTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
@@ -166,9 +166,7 @@ namespace MagicConchBot
         private static Task WriteToLog(LogMessage message)
         {
             if (message.Message != null && message.Message.Contains("Unknown OpCode"))
-            {
                 return Task.CompletedTask;
-            }
 
             switch (message.Severity)
             {
@@ -194,18 +192,18 @@ namespace MagicConchBot
         private static void EnsureConfigExists()
         {
             var loc = Path.Combine(AppContext.BaseDirectory, "Configuration.json");
-            
+
             // Check if the configuration file exists.
-            if (!File.Exists(loc))                              
+            if (!File.Exists(loc))
             {
-                var config = new Configuration();               // Create a new configuration object.
+                var config = new Configuration(); // Create a new configuration object.
 
                 Console.WriteLine("The configuration file has been created at 'Configuration.json', " +
                                   "please enter your information and restart.");
                 Console.Write("Token: ");
 
-                config.Token = Console.ReadLine();              // Read the bot token from console.
-                config.Save();                                  // Save the new configuration object to file.
+                config.Token = Console.ReadLine(); // Read the bot token from console.
+                config.Save(); // Save the new configuration object to file.
             }
 
             Console.WriteLine("Configuration Loaded...");

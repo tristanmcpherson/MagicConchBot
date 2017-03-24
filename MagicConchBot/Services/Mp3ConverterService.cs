@@ -51,9 +51,7 @@ namespace MagicConchBot.Services
             var destinationPath = Path.Combine(_serverPath, outputFile);
 
             if (File.Exists(destinationPath))
-            {
                 return outputUrl;
-            }
 
             GeneratingMp3 = true;
 

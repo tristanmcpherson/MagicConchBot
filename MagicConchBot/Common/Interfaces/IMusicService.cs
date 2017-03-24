@@ -10,7 +10,7 @@ namespace MagicConchBot.Common.Interfaces
     {
         int Volume { get; set; }
 
-        List<Song> SongList { get;  }
+        List<Song> SongList { get; }
 
         Song LastSong { get; }
 
@@ -18,7 +18,7 @@ namespace MagicConchBot.Common.Interfaces
 
         PlayMode PlayMode { get; set; }
 
-        MusicState State { get; set; }
+        MusicState State { get; }
 
         Task PlayAsync(IUserMessage msg);
 

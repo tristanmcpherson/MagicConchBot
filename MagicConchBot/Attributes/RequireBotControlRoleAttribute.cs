@@ -9,7 +9,8 @@ namespace MagicConchBot.Attributes
     public class RequireBotControlRoleAttribute : PreconditionAttribute
     {
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        public override async Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+        public override async Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command,
+            IDependencyMap map)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             // return PreconditionResult.FromSuccess();
@@ -20,27 +21,17 @@ namespace MagicConchBot.Attributes
             var isOwner = config.Owners.Contains(context.User.Id);
 
             if (context.Channel.Name != config.BotControlChannel)
-            {
                 if (context.Guild.Id == config.OwnerGuildId)
-                {
                     return PreconditionResult.FromError(config.WrongChannelError);
-                }
-            }
 
             if (isOwner)
-            {
                 return PreconditionResult.FromSuccess();
-            }
 
             if (requiredRole == null)
-            {
                 return PreconditionResult.FromError($"No role named 'Conch Control' exists.");
-            }
 
-            if (((IGuildUser)context.User).RoleIds.Contains(requiredRole.Id))
-            {
+            if (((IGuildUser) context.User).RoleIds.Contains(requiredRole.Id))
                 return PreconditionResult.FromSuccess();
-            }
 
             return PreconditionResult.FromError($"You must have the role {config.RequiredRole} to run this command.");
         }

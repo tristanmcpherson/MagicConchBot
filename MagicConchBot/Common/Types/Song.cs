@@ -7,7 +7,8 @@ namespace MagicConchBot.Common.Types
 {
     public class Song
     {
-        public Song(string name, TimeSpan length, string url, string thumbnailUrl = "") : this(name, length, url, thumbnailUrl, TimeSpan.Zero)
+        public Song(string name, TimeSpan length, string url, string thumbnailUrl = "")
+            : this(name, length, url, thumbnailUrl, TimeSpan.Zero)
         {
         }
 
@@ -42,27 +43,26 @@ namespace MagicConchBot.Common.Types
 
         public string LengthPretty
             => Length >= TimeSpan.FromHours(1)
-                    ? Length.ToString(@"hh\:mm\:ss")
-                    : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
+                ? Length.ToString(@"hh\:mm\:ss")
+                : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
 
         private string CurrentTimePretty
-            => Length >= TimeSpan.FromHours(1) 
-                    ? CurrentTime.ToString(@"hh\:mm\:ss") 
-                    : CurrentTime.ToString(@"mm\:ss");
+            => Length >= TimeSpan.FromHours(1)
+                ? CurrentTime.ToString(@"hh\:mm\:ss")
+                : CurrentTime.ToString(@"mm\:ss");
 
         public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false)
         {
-            var builder = new EmbedBuilder { Color = Constants.MaterialBlue };
+            var builder = new EmbedBuilder {Color = Constants.MaterialBlue};
             builder.AddField(x =>
             {
-                x.WithName(title == string.Empty ? Name == string.Empty ? "Default" :  Name : title)
-                    .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" + (showDuration ? $"{CurrentTimePretty} / {LengthPretty}" : $"{LengthPretty}"));
+                x.WithName(title == string.Empty ? Name == string.Empty ? "Default" : Name : title)
+                    .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" +
+                               (showDuration ? $"{CurrentTimePretty} / {LengthPretty}" : $"{LengthPretty}"));
             });
 
             if (ThumbnailUrl != string.Empty && embedThumbnail)
-            {
                 builder.WithThumbnailUrl(ThumbnailUrl);
-            }
 
             return builder.Build();
         }
