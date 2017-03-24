@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -23,53 +26,27 @@ namespace MagicConchBot
 
         private static DiscordSocketClient _client;
         private static CommandHandler _handler;
+        private static CancellationTokenSource _cts;
 
         public static void Main()
         {
+            Console.WriteLine($"Version: {Assembly.GetEntryAssembly().GetName().Version}");
             EnsureConfigExists();
             ConfigureLogs();
             MusicServiceProvider.OnLoad();
 
             Console.WriteLine("Starting Magic Conch Bot. Press 'q' at any time to quit.");
-            var cts = new CancellationTokenSource();
 
             try
             {
-                Task.Factory.StartNew(async () => await MainAsync(cts.Token), cts.Token);
+                _cts = new CancellationTokenSource();
+                Task.Factory.StartNew(async () => await MainAsync(_cts.Token), _cts.Token);
 
-                while (true)
+                while (!_cts.Token.IsCancellationRequested)
                 {
-                    if (Console.KeyAvailable)
-                    {
-                        var key = Console.ReadKey(true).Key;
-                        if (key == ConsoleKey.Q)
-                        {
-                            cts.Cancel();
-                            break;
-                        }
-
-                        // Skip song
-                        if (key == ConsoleKey.S)
-                        {
-                            var config = Configuration.Load();
-                            var serverId = config.OwnerGuildId;
-                            Console.WriteLine("Skipping song.");
-                            var channel = (IMessageChannel)_client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
-                            if (MusicServiceProvider.GetService(serverId).Skip())
-                            {
-                                channel.SendMessageAsync("Skipping song at request of owner.");
-                            }
-                            else
-                            {
-                                Console.WriteLine("No song to skip.");
-                            }
-                        }
-                    }
-
+                    HandleKeypress();
                     Thread.Sleep(100);
                 }
-                
-                Thread.Sleep(500);
             }
             finally
             {
@@ -78,40 +55,35 @@ namespace MagicConchBot
             }
         }
 
-        private static void ConfigureLogs()
+        private static void HandleKeypress()
         {
-            // Step 1. Create configuration object 
-            var config = new LoggingConfiguration();
+            if (!Console.KeyAvailable)
+            {
+                return;
+            }
 
-            // Step 2. Create targets and add them to the configuration 
-            var consoleTarget = new ColoredConsoleTarget();
-
-            config.AddTarget("console", consoleTarget);
-
-            var fileTarget = new FileTarget();
-            config.AddTarget("file", fileTarget);
-
-            consoleTarget.UseDefaultRowHighlightingRules = false;
-            
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Info"), ConsoleOutputColor.Green, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Debug"), ConsoleOutputColor.Yellow, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Fatal"), ConsoleOutputColor.Red, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Warn"), ConsoleOutputColor.Blue, ConsoleOutputColor.Black));
-
-            // Step 3. Set target properties 
-            consoleTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
-            fileTarget.FileName = "log.txt";
-            fileTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
-
-            // Step 4. Define rules
-            var rule1 = new LoggingRule("*", LogLevel.Debug, consoleTarget);
-            config.LoggingRules.Add(rule1);
-
-            var rule2 = new LoggingRule("*", LogLevel.Debug, fileTarget);
-            config.LoggingRules.Add(rule2);
-
-            // Step 5. Activate the configuration
-            LogManager.Configuration = config;
+            var key = Console.ReadKey(true).Key;
+            if (key == ConsoleKey.Q)
+            {
+                _cts.Cancel();
+            }
+            else if (key == ConsoleKey.S)
+            {
+                var config = Configuration.Load();
+                var serverId = config.OwnerGuildId;
+                Console.WriteLine("Skipping song.");
+                var channel =
+                    (IMessageChannel)
+                    _client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
+                if (MusicServiceProvider.GetService(serverId).Skip())
+                {
+                    channel.SendMessageAsync("Skipping song at request of owner.");
+                }
+                else
+                {
+                    Console.WriteLine("No song to skip.");
+                }
+            }
         }
 
         private static async Task MainAsync(CancellationToken cancellationToken)
@@ -153,6 +125,42 @@ namespace MagicConchBot
                 MusicServiceProvider.StopAll();
                 await _client.StopAsync();
             }
+        }
+
+        private static void ConfigureLogs()
+        {
+            // Step 1. Create configuration object 
+            var config = new LoggingConfiguration();
+
+            // Step 2. Create targets and add them to the configuration 
+            var consoleTarget = new ColoredConsoleTarget();
+
+            config.AddTarget("console", consoleTarget);
+
+            var fileTarget = new FileTarget();
+            config.AddTarget("file", fileTarget);
+
+            consoleTarget.UseDefaultRowHighlightingRules = false;
+            
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Info"), ConsoleOutputColor.Green, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Debug"), ConsoleOutputColor.Yellow, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Fatal"), ConsoleOutputColor.Red, ConsoleOutputColor.Black));
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Warn"), ConsoleOutputColor.Blue, ConsoleOutputColor.Black));
+
+            // Step 3. Set target properties 
+            consoleTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
+            fileTarget.FileName = "log.txt";
+            fileTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
+
+            // Step 4. Define rules
+            var rule1 = new LoggingRule("*", LogLevel.Debug, consoleTarget);
+            config.LoggingRules.Add(rule1);
+
+            var rule2 = new LoggingRule("*", LogLevel.Debug, fileTarget);
+            config.LoggingRules.Add(rule2);
+
+            // Step 5. Activate the configuration
+            LogManager.Configuration = config;
         }
 
         private static Task WriteToLog(LogMessage message)
