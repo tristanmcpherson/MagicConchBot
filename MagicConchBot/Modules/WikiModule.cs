@@ -1,9 +1,9 @@
-﻿using Discord;
-using System.Linq;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 using MagicConchBot.Helpers;
 using MagicConchBot.Services;
-using System.Threading.Tasks;
-using Discord.Commands;
 
 namespace MagicConchBot.Modules
 {
@@ -16,8 +16,9 @@ namespace MagicConchBot.Modules
             _service = service;
         }
 
-        [Command("sdv"), Summary("Searches the StardewValley Wiki for information")]
-        public async Task StardewValleySearchAsync([Remainder, Summary("The query to look up.")] string query)
+        [Command("sdv")]
+        [Summary("Searches the StardewValley Wiki for information")]
+        public async Task StardewValleySearchAsync([Remainder] [Summary("The query to look up.")] string query)
         {
             var split = query.Split('#');
             var section = "";
@@ -52,7 +53,6 @@ namespace MagicConchBot.Modules
                     {
                         embedBuilder.WithDescription(part);
                         await ReplyAsync("", false, embedBuilder.Build());
-
                     }
                 }
                 else

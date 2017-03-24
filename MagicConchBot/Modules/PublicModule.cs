@@ -28,7 +28,8 @@ namespace MagicConchBot.Modules
 
         private static int _responseNumber;
 
-        [Command("info"), Summary("Get info from the server.")]
+        [Command("info")]
+        [Summary("Get info from the server.")]
         public async Task InfoAsync()
         {
             var application = await Context.Client.GetApplicationInfoAsync();
@@ -38,32 +39,36 @@ namespace MagicConchBot.Modules
             embed.AddField(f =>
             {
                 f.WithName("Info")
-                 .WithValue($"**Author:**\n{application.Owner.Username} (ID {application.Owner.Id})\n\n" +
-                            $"**Library:**\nDiscord.Net ({DiscordConfig.Version})\n\n" +
-                            $"**Runtime:**\n{RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n\n" +
-                            $"**Uptime:**\n{GetUptime()}\n\n" +
-                            $"**GitHub:**\n{Constants.RepoLink}\n\n\n\n");
+                    .WithValue($"**Author:**\n{application.Owner.Username} (ID {application.Owner.Id})\n\n" +
+                               $"**Library:**\nDiscord.Net ({DiscordConfig.Version})\n\n" +
+                               $"**Runtime:**\n{RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n\n" +
+                               $"**Uptime:**\n{GetUptime()}\n\n" +
+                               $"**GitHub:**\n{Constants.RepoLink}\n\n\n\n");
             });
             embed.AddField(f =>
             {
                 f.WithName("Stats")
-                 .WithValue($"**Heap Size:**\n{GetHeapSize()} MB\n\n" +
-                            $"**Guilds:**\n{((DiscordSocketClient) Context.Client).Guilds.Count}\n\n" +
-                            $"**Channels:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
-                            $"**Users:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Users.Count)}");
+                    .WithValue($"**Heap Size:**\n{GetHeapSize()} MB\n\n" +
+                               $"**Guilds:**\n{((DiscordSocketClient) Context.Client).Guilds.Count}\n\n" +
+                               $"**Channels:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
+                               $"**Users:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Users.Count)}");
             });
 
             await ReplyAsync(string.Empty, false, embed.Build());
         }
 
-        [Command("conch"), Alias("magicconch"), Summary("Have the Conch declare it's reign.")]
+        [Command("conch")]
+        [Alias("magicconch")]
+        [Summary("Have the Conch declare it's reign.")]
         public async Task MagicConchAsync()
         {
             await ReplyAsync("All hail the magic conch.", true);
         }
 
-        [Command("conch"), Alias("magicconch"), Summary("Ask the magic conch a question.")]
-        public async Task MagicConchAsync([Remainder, Summary("The question to ask.")] string question)
+        [Command("conch")]
+        [Alias("magicconch")]
+        [Summary("Ask the magic conch a question.")]
+        public async Task MagicConchAsync([Remainder] [Summary("The question to ask.")] string question)
         {
             if (Regex.IsMatch(question, @"can i have something to eat\?*", RegexOptions.IgnoreCase))
             {
@@ -84,15 +89,14 @@ namespace MagicConchBot.Modules
             {
                 await ReplyAsync($"{Replies[_responseNumber++]}");
                 if (_responseNumber >= Replies.Length)
-                {
                     _responseNumber = 0;
-                }
             }
         }
 
         private static string GetUptime()
             => (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss");
 
-        private static string GetHeapSize() => Math.Round(GC.GetTotalMemory(true) / (1024.0 * 1024.0), 2).ToString(CultureInfo.InvariantCulture);
+        private static string GetHeapSize()
+            => Math.Round(GC.GetTotalMemory(true) / (1024.0 * 1024.0), 2).ToString(CultureInfo.InvariantCulture);
     }
 }

@@ -68,16 +68,17 @@ namespace MagicConchBot.Services
             var s = match.Groups["S"].Value;
 
             var totalDuration = new TimeSpan(h == string.Empty ? 0 : Convert.ToInt32(h),
-                                             m == string.Empty ? 0 : Convert.ToInt32(m),
-                                             s == string.Empty ? 0 : Convert.ToInt32(s));
+                m == string.Empty ? 0 : Convert.ToInt32(m),
+                s == string.Empty ? 0 : Convert.ToInt32(s));
 
-            return new Song(video.Snippet.Title, totalDuration, $"https://www.youtube.com/watch?v={video.Id}", video.Snippet.Thumbnails.Default__.Url);
+            return new Song(video.Snippet.Title, totalDuration, $"https://www.youtube.com/watch?v={video.Id}",
+                video.Snippet.Thumbnails.Default__.Url);
         }
 
         public async Task<List<Song>> GetSongsByPlaylistAsync(string id)
         {
             // https://www.youtube.com/watch?v=TzU1PjYr0DA&list=LLHtXpGu4WCdfqE3TZ9rg2xg
-            
+
             var search = _youtubeService.PlaylistItems.List("snippet,contentDetails");
             search.MaxResults = 50;
             search.PlaylistId = id;

@@ -25,9 +25,10 @@ namespace MagicConchBot.Modules
         private static readonly Regex UrlRegex =
             new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
+        private readonly ChanService _chanService;
+
         private readonly GoogleApiService _googleApiService;
         private readonly List<IMusicInfoService> _musicInfoServices;
-        private readonly ChanService _chanService;
         private readonly YouTubeInfoService _youtubeInfoService;
 
         public MusicModule(IDependencyMap map)
@@ -41,8 +42,11 @@ namespace MagicConchBot.Modules
             _chanService = map.Get<ChanService>();
             _youtubeInfoService = map.Get<YouTubeInfoService>();
         }
-        
-        [Command("play"), Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
+
+        [Command("play")]
+        [Summary(
+            "Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube."
+        )]
         public async Task PlayAsync()
         {
             if (Context.MusicService.State == MusicState.Playing || Context.MusicService.State == MusicState.Loading)
@@ -59,9 +63,13 @@ namespace MagicConchBot.Modules
                 await ReplyAsync("No songs currently in the queue.");
             }
         }
-        
-        [Command("play"), Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
-        public async Task PlayAsync([Remainder, Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
+
+        [Command("play")]
+        [Summary(
+            "Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube."
+        )]
+        public async Task PlayAsync(
+            [Remainder] [Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
         {
             var terms = query.Split(' ');
             var startTime = TimeSpan.Zero;
@@ -69,27 +77,16 @@ namespace MagicConchBot.Modules
             Song song = null;
 
             if (terms.Length > 1)
-            {
-                if (TimeSpan.TryParseExact(terms.Last(), new []{@"mm\:ss", @"hh\:mm\:ss"}, CultureInfo.InvariantCulture,  out startTime))
-                {
-                    // last term is a time mark, remove it
+                if (TimeSpan.TryParseExact(terms.Last(), new[] {@"mm\:ss", @"hh\:mm\:ss"}, CultureInfo.InvariantCulture,
+                    out startTime))
                     query = query.Replace(" " + terms.Last(), string.Empty);
-                }
                 else
-                {
                     startTime = TimeSpan.Zero;
-                }
-            }
 
             if (UrlRegex.IsMatch(query))
-            {
                 url = query;
-            }
             else
-            {
-                // input is not a url, search for it on YouTube
                 url = await _googleApiService.GetFirstVideoByKeywordsAsync(query);
-            }
 
             // url invalid
             if (string.IsNullOrEmpty(url))
@@ -104,29 +101,24 @@ namespace MagicConchBot.Modules
             {
                 await ReplyAsync("Queueing songs from playlist. This may take awhile, please wait.");
                 var songs = await _googleApiService.GetSongsByPlaylistAsync(playlistId);
-                
+
                 Context.MusicService.SongList.AddRange(songs);
 
                 await ReplyAsync($"Queued {songs.Count} songs from playlist.");
             }
             else
             {
-
                 foreach (var service in _musicInfoServices)
                 {
                     var match = service.Regex.Match(url);
                     if (!match.Success)
-                    {
                         continue;
-                    }
 
                     song = await service.GetSongInfoAsync(url);
 
                     // url may contain time info but it is specified, overwrite
                     if (startTime != TimeSpan.Zero)
-                    {
                         song.StartTime = startTime;
-                    }
 
                     // song info found, stop info service search
                     break;
@@ -134,10 +126,7 @@ namespace MagicConchBot.Modules
 
                 // Song info not found from search or url
                 if (song == null)
-                {
-                    // url valid
                     song = new Song(url);
-                }
 
                 // valid url but song information not found by any song info service
                 Log.Info($"Queued song: {song.Name} - {song.Url} at {song.StartTime}.");
@@ -155,56 +144,62 @@ namespace MagicConchBot.Modules
                 await Context.MusicService.PlayAsync(Context.Message);
             }
         }
-        
-        [Command("stop"), Summary("Stops the bot if it is playing music and disconnects it from the voice channel.")]
+
+        [Command("stop")]
+        [Summary("Stops the bot if it is playing music and disconnects it from the voice channel.")]
         public async Task StopAsync()
         {
-            Context.MusicService.Stop();
-            await ReplyAsync(Context.MusicService.CurrentSong != null ? "Music stopped playing." : "No music currently playing.");
+            var stop = Context.MusicService.Stop();
+            await ReplyAsync(stop ? "Music stopped playing." : "No music currently playing.");
         }
-        
-        [Command("pause"), Summary("Pauses the current song.")]
+
+        [Command("pause")]
+        [Summary("Pauses the current song.")]
         public async Task PauseAsync()
         {
             var paused = Context.MusicService.Pause();
             await ReplyAsync(paused ? "Music paused successfully." : "No music currently playing.");
         }
-        
-        [Command("skip"), Summary("Skips the current song if one is playing.")]
+
+        [Command("skip")]
+        [Summary("Skips the current song if one is playing.")]
         public async Task SkipAsync()
         {
             var skipped = Context.MusicService.Skip();
             await ReplyAsync(skipped ? "Skipped current song." : "No song available to skip");
         }
 
-        [Command("volume"), Alias("vol"), Summary("Gets the current volume.")]
+        [Command("volume")]
+        [Alias("vol")]
+        [Summary("Gets the current volume.")]
         public async Task ChangeVolumeAsync()
         {
             await ReplyAsync($"{Context.MusicService.Volume}");
         }
 
-        [Command("volume"), Alias("vol"), Summary("Changes the volume of the current playing song and future songs.")]
-        public async Task ChangeVolumeAsync([Summary("The volume to set the song to from between 0 and 100.")] int volume)
+        [Command("volume")]
+        [Alias("vol")]
+        [Summary("Changes the volume of the current playing song and future songs.")]
+        public async Task ChangeVolumeAsync(
+            [Summary("The volume to set the song to from between 0 and 100.")] int volume)
         {
             Context.MusicService.Volume = volume;
             await ReplyAsync($"Current volume set to {Context.MusicService.Volume}.");
         }
-        
-        [Command("current"), Summary("Displays the current song")]
+
+        [Command("current")]
+        [Summary("Displays the current song")]
         public async Task CurrentSongAsync()
         {
             var song = Context.MusicService.CurrentSong;
             if (song == null)
-            {
                 await ReplyAsync("No song is currently playing.");
-            }
             else
-            {
                 await ReplyAsync(string.Empty, false, song.GetEmbed());
-            }
         }
 
-        [Command("loop"), Alias("repeat")]
+        [Command("loop")]
+        [Alias("repeat")]
         public async Task Loop()
         {
             Context.MusicService.PlayMode = PlayMode.Playlist;
@@ -212,7 +207,8 @@ namespace MagicConchBot.Modules
                 "Successfully changed mode to playlist mode. Songs will not be removed from queue after they are done playing.");
         }
 
-        [Command("mp3"), Summary("Generates a link to the mp3 of the current song playing or the last song played.")]
+        [Command("mp3")]
+        [Summary("Generates a link to the mp3 of the current song playing or the last song played.")]
         public async Task GenerateMp3Async()
         {
             var currentSong = Context.MusicService.CurrentSong ?? Context.MusicService.LastSong;
@@ -227,9 +223,7 @@ namespace MagicConchBot.Modules
             var mp3Service = MusicServiceProvider.GetMp3Service(Context.Guild.Id);
 
             if (!mp3Service.Recipients.Contains(Context.User))
-            {
                 mp3Service.Recipients.Add(Context.User);
-            }
 
             if (!mp3Service.GeneratingMp3)
             {
@@ -249,14 +243,14 @@ namespace MagicConchBot.Modules
 
             foreach (var songUrl in songUrls)
             {
-                var song = !songUrl.EndsWith("webm") ? await _youtubeInfoService.GetSongInfoAsync(songUrl) : new Song(songUrl);
+                var song = !songUrl.EndsWith("webm")
+                    ? await _youtubeInfoService.GetSongInfoAsync(songUrl)
+                    : new Song(songUrl);
                 Context.MusicService.AddSong(song);
             }
 
             if (Context.MusicService.CurrentSong == null)
-            {
                 await Context.MusicService.PlayAsync(Context.Message);
-            }
         }
     }
 }

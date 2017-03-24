@@ -7,8 +7,11 @@ namespace MagicConchBot.Services
 {
     public static class MusicServiceProvider
     {
-        private static readonly ConcurrentDictionary<ulong, IMusicService> MusicServices = new ConcurrentDictionary<ulong, IMusicService>();
-        private static readonly ConcurrentDictionary<ulong, Mp3ConverterService> Mp3Services = new ConcurrentDictionary<ulong, Mp3ConverterService>();
+        private static readonly ConcurrentDictionary<ulong, IMusicService> MusicServices =
+            new ConcurrentDictionary<ulong, IMusicService>();
+
+        private static readonly ConcurrentDictionary<ulong, Mp3ConverterService> Mp3Services =
+            new ConcurrentDictionary<ulong, Mp3ConverterService>();
 
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -16,22 +19,16 @@ namespace MagicConchBot.Services
         {
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
             if (Directory.Exists(directory))
-            {
                 Directory.Delete(directory, true);
-            }
         }
 
         public static void AddServices(ulong guildId, IMusicService service, Mp3ConverterService mp3Service)
         {
             if (!MusicServices.ContainsKey(guildId))
-            {
                 MusicServices.TryAdd(guildId, service);
-            }
 
             if (!Mp3Services.ContainsKey(guildId))
-            {
                 Mp3Services.TryAdd(guildId, mp3Service);
-            }
         }
 
         public static IMusicService GetService(ulong guildId)
@@ -61,12 +58,8 @@ namespace MagicConchBot.Services
         public static void StopAll()
         {
             foreach (var musicService in MusicServices)
-            {
                 if (!musicService.Value.Stop())
-                {
                     Log.Error($"Failed to stop music service for GuildId: {musicService.Key}");
-                }
-            }
         }
     }
 }
