@@ -29,7 +29,7 @@ namespace MagicConchBot.Common.Types
 
         public string Url { get; }
 
-        public string StreamUrl { get; set; }
+        public string StreamUri { get; set; }
 
         public TimeSpan StartTime { get; set; }
 
@@ -46,7 +46,7 @@ namespace MagicConchBot.Common.Types
                 ? Length.ToString(@"hh\:mm\:ss")
                 : (Length == TimeSpan.Zero ? "??" : Length.ToString(@"mm\:ss"));
 
-        private string CurrentTimePretty
+        public string CurrentTimePretty
             => Length >= TimeSpan.FromHours(1)
                 ? CurrentTime.ToString(@"hh\:mm\:ss")
                 : CurrentTime.ToString(@"mm\:ss");

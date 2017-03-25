@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.IO;
 using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Services.Music;
 using NLog;
 
 namespace MagicConchBot.Services
@@ -36,7 +37,11 @@ namespace MagicConchBot.Services
             if (!MusicServices.TryGetValue(guildId, out IMusicService service))
             {
                 Log.Error("Server music service was not created, creating.");
-                service = new FfmpegMusicService();
+                var fileProvider = new HttpStreamingFileProvider();
+                var songPlayer = new FfmpegSongPlayer(fileProvider);
+                var urlResolver = new UrlSteamResolver();
+
+                service = new MusicService(urlResolver, songPlayer);
                 MusicServices.TryAdd(guildId, service);
             }
 

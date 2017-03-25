@@ -20,6 +20,7 @@ namespace MagicConchBot
     public class Program
     {
         // https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
+        // Debug: https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private static DiscordSocketClient _client;
