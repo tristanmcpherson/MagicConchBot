@@ -11,6 +11,7 @@ using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Services;
+using MagicConchBot.Services.Music;
 using NLog;
 
 namespace MagicConchBot.Modules
@@ -138,7 +139,7 @@ namespace MagicConchBot.Modules
             }
 
             // if not playing, start playing and then the player service
-            if (Context.MusicService.AudioState == AudioState.Stopped)
+            if (Context.MusicService.AudioState == AudioState.Stopped || Context.MusicService.AudioState == AudioState.Paused)
             {
                 Log.Info("No song currently playing, playing.");
                 await Context.MusicService.PlayAsync(Context.Message);

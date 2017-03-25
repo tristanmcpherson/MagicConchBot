@@ -1,10 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.IO;
 using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Services.Music;
 using NLog;
 
-namespace MagicConchBot.Services
+namespace MagicConchBot.Services.Music
 {
     public static class MusicServiceProvider
     {

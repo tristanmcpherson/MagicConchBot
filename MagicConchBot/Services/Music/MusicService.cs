@@ -37,8 +37,8 @@ namespace MagicConchBot.Services.Music
 
         public float Volume
         {
-            get { return _songPlayer.Volume; }
-            set { _songPlayer.Volume = value; }
+            get => _songPlayer.Volume;
+            set => _songPlayer.Volume = value;
         }
 
         public List<Song> SongList { get; }
@@ -83,15 +83,10 @@ namespace MagicConchBot.Services.Music
                             _tokenSource.Token.ThrowIfCancellationRequested();
 
                             var streamUri = await _songResolver.GetSongStreamUrl(CurrentSong.Url);
-                            if (streamUri == null)
-                            {
-                                throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
-                            }
-
                             if (CurrentSong.TokenSource == null)
                                 CurrentSong.TokenSource = new CancellationTokenSource();
 
-                            CurrentSong.StreamUri = streamUri;
+                            CurrentSong.StreamUri = streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
 
                             try
                             {
