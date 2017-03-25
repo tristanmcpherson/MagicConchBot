@@ -9,7 +9,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MagicConchBot.Handlers;
 using MagicConchBot.Resources;
-using MagicConchBot.Services;
+using MagicConchBot.Services.Music;
 using NLog;
 using NLog.Conditions;
 using NLog.Config;
