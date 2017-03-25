@@ -49,7 +49,7 @@ namespace MagicConchBot.Modules
         )]
         public async Task PlayAsync()
         {
-            if (Context.MusicService.State == MusicState.Playing || Context.MusicService.State == MusicState.Loading)
+            if (Context.MusicService.AudioState == AudioState.Playing || Context.MusicService.AudioState == AudioState.Loading)
             {
                 await ReplyAsync("Song already playing.");
             }
@@ -132,13 +132,13 @@ namespace MagicConchBot.Modules
                 Log.Info($"Queued song: {song.Name} - {song.Url} at {song.StartTime}.");
 
                 // add to queue
-                Context.MusicService.AddSong(song);
+                Context.MusicService.QueueSong(song);
 
                 await ReplyAsync("Queued song:", false, song.GetEmbed());
             }
 
             // if not playing, start playing and then the player service
-            if (Context.MusicService.State == MusicState.Stopped)
+            if (Context.MusicService.AudioState == AudioState.Stopped)
             {
                 Log.Info("No song currently playing, playing.");
                 await Context.MusicService.PlayAsync(Context.Message);
@@ -180,10 +180,9 @@ namespace MagicConchBot.Modules
         [Command("volume")]
         [Alias("vol")]
         [Summary("Changes the volume of the current playing song and future songs.")]
-        public async Task ChangeVolumeAsync(
-            [Summary("The volume to set the song to from between 0 and 100.")] int volume)
+        public async Task ChangeVolumeAsync([Summary("The volume to set the song to from between 0 and 100.")] int volume)
         {
-            Context.MusicService.Volume = volume;
+            Context.MusicService.Volume = volume == 0 ? 0 : volume / 100f;
             await ReplyAsync($"Current volume set to {Context.MusicService.Volume}.");
         }
 
@@ -246,7 +245,7 @@ namespace MagicConchBot.Modules
                 var song = !songUrl.EndsWith("webm")
                     ? await _youtubeInfoService.GetSongInfoAsync(songUrl)
                     : new Song(songUrl);
-                Context.MusicService.AddSong(song);
+                Context.MusicService.QueueSong(song);
             }
 
             if (Context.MusicService.CurrentSong == null)

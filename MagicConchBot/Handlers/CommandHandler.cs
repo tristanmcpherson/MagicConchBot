@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using MagicConchBot.Modules;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
+using MagicConchBot.Services.Music;
 using NLog;
 
 namespace MagicConchBot.Handlers
@@ -88,13 +89,19 @@ namespace MagicConchBot.Handlers
 
         private static async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
-            await arg.DefaultChannel.SendMessageAsync(
-                $"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
+            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
+            await HandleGuildAvailableAsync(arg);
         }
 
         private static Task HandleGuildAvailableAsync(SocketGuild guild)
         {
-            MusicServiceProvider.AddServices(guild.Id, new FfmpegMusicService(), new Mp3ConverterService());
+            var fileProvider = new HttpStreamingFileProvider();
+            var songPlayer = new FfmpegSongPlayer(fileProvider);
+            var urlResolver = new UrlSteamResolver();
+
+            var musicService = new MusicService(urlResolver, songPlayer);
+
+            MusicServiceProvider.AddServices(guild.Id, musicService, new Mp3ConverterService());
             return Task.CompletedTask;
         }
     }

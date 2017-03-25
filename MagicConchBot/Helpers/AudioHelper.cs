@@ -1,9 +1,15 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Audio;
+using NLog;
 
 namespace MagicConchBot.Helpers
 {
     public static class AudioHelper
     {
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
         public static unsafe byte[] AdjustVolume(byte[] audioSamples, float volume)
         {
             if (Math.Abs(volume - 1f) < 0.0001f)
@@ -23,6 +29,29 @@ namespace MagicConchBot.Helpers
             }
 
             return audioSamples;
+        }
+
+        public static async Task LeaveChannelAsync(IAudioClient audio)
+        {
+            if (audio != null && audio.ConnectionState == ConnectionState.Connected)
+            {
+                await audio.StopAsync();
+            }
+        }
+
+        public static async Task<IAudioClient> JoinChannelAsync(IMessage msg)
+        {
+            try
+            {
+                var channel = (msg.Author as IGuildUser)?.VoiceChannel;
+                return channel == null ? null : await channel.ConnectAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Failed to join channel.");
+            }
+
+            return null;
         }
     }
 }

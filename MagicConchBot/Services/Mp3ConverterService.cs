@@ -38,10 +38,10 @@ namespace MagicConchBot.Services
 
         public async Task<string> GenerateMp3Async(Song song)
         {
-            if (!_urlToUniqueFile.TryGetValue(song.StreamUrl, out Guid guid))
+            if (!_urlToUniqueFile.TryGetValue(song.StreamUri, out Guid guid))
             {
                 guid = Guid.NewGuid();
-                _urlToUniqueFile.TryAdd(song.StreamUrl, guid);
+                _urlToUniqueFile.TryAdd(song.StreamUri, guid);
             }
 
             var outputFile = song.Name + "_" + guid + ".mp3";
@@ -57,7 +57,7 @@ namespace MagicConchBot.Services
 
             using (var webClient = new HttpClient())
             {
-                var bytes = await webClient.GetByteArrayAsync(song.StreamUrl);
+                var bytes = await webClient.GetByteArrayAsync(song.StreamUri);
 
                 File.WriteAllBytes(downloadFile, bytes);
             }
