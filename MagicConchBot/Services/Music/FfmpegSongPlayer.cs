@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
@@ -33,7 +31,7 @@ namespace MagicConchBot.Services.Music
 
         public float Volume
         {
-            get { return _currentVolume; }
+            get => _currentVolume;
 
             set
             {
