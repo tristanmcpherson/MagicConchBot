@@ -40,6 +40,10 @@
 
   <ItemGroup>
     <None Remove="application.log" />
+    <None Remove="build.bat" />
+    <None Remove="copy.sh" />
+    <None Remove="run.bat" />
+    <None Remove="run.sh" />
   </ItemGroup>
 
   <ItemGroup>
