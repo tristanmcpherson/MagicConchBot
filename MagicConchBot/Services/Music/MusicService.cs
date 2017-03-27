@@ -132,13 +132,14 @@ namespace MagicConchBot.Services.Music
         {
             await Task.Factory.StartNew(async () =>
             {
+                IUserMessage message = null;
                 try
                 {
                     var song = CurrentSong;
                     if (song == null)
                         return;
 
-                    var message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true));
+                    message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true));
 
                     while (_songPlayer.AudioState == AudioState.Playing || _songPlayer.AudioState == AudioState.Loading)
                     {
@@ -150,7 +151,6 @@ namespace MagicConchBot.Services.Music
                         await Task.Delay(4700);
                     }
 
-                    await message.DeleteAsync();
                 }
                 catch (OperationCanceledException ex)
                 {
@@ -159,6 +159,11 @@ namespace MagicConchBot.Services.Music
                 catch (Exception ex)
                 {
                     Log.Debug(ex.ToString());
+                }
+                finally
+                {
+                   if (message != null)
+                        await message.DeleteAsync();
                 }
             }, CurrentSong.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }

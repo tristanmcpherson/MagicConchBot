@@ -64,9 +64,17 @@ namespace MagicConchBot.Services.Music
             AudioState = AudioState.Loading;
 
             var inFile = await _fileProvider.GetStreamingFile(song);
-
-            while (new FileInfo(inFile).Length == 0)
+            var waitCount = 0;
+            
+            while (true)
+            {
+                var info = new FileInfo(inFile);
+                if (info.Exists && info.Length != 0)
+                    break;
+                if (++waitCount == 20)
+                    return;
                 await Task.Delay(100, song.TokenSource.Token);
+            }
 
             var startInfo = new ProcessStartInfo
             {
