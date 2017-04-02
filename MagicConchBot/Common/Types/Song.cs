@@ -37,6 +37,8 @@ namespace MagicConchBot.Common.Types
 
         public CancellationTokenSource TokenSource { get; set; }
 
+        public CancellationToken Token => TokenSource.Token;
+
         public TimeSpan Length { get; } // Length in seconds
 
         private string ThumbnailUrl { get; }

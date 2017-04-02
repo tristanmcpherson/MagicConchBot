@@ -100,7 +100,7 @@ namespace MagicConchBot.Modules
             var playlistId = youtubeMatch.Groups["PlaylistId"].Value;
             if (playlistId != "")
             {
-                await ReplyAsync("Queueing songs from playlist. This may take awhile, please wait.");
+                await ReplyAsync("Queueing songs from playlist. This may take a while, please wait.");
                 var songs = await _googleApiService.GetSongsByPlaylistAsync(playlistId);
 
                 Context.MusicService.SongList.AddRange(songs);
@@ -175,7 +175,7 @@ namespace MagicConchBot.Modules
         [Summary("Gets the current volume.")]
         public async Task ChangeVolumeAsync()
         {
-            await ReplyAsync($"{Context.MusicService.Volume}");
+            await ReplyAsync($"Current volume: {Context.MusicService.Volume*100}%.");
         }
 
         [Command("volume")]
@@ -184,7 +184,7 @@ namespace MagicConchBot.Modules
         public async Task ChangeVolumeAsync([Summary("The volume to set the song to from between 0 and 100.")] int volume)
         {
             Context.MusicService.Volume = volume == 0 ? 0 : volume / 100f;
-            await ReplyAsync($"Current volume set to {Context.MusicService.Volume}.");
+            await ReplyAsync($"Current volume set to {Context.MusicService.Volume*100}%.");
         }
 
         [Command("current")]

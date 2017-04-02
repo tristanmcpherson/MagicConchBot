@@ -29,9 +29,10 @@ namespace MagicConchBot
 
         public static void Main()
         {
-            Console.WriteLine($"Version: {Assembly.GetEntryAssembly().GetName().Version}");
-            EnsureConfigExists();
             ConfigureLogs();
+
+            Log.Info($"Version: {Assembly.GetEntryAssembly().GetName().Version}");
+            EnsureConfigExists();
             MusicServiceProvider.OnLoad();
 
             Console.WriteLine("Starting Magic Conch Bot. Press 'q' at any time to quit.");
@@ -49,6 +50,7 @@ namespace MagicConchBot
             }
             finally
             {
+                Log.Info("Bot sucessfully exited.");
                 Console.WriteLine("Press enter to continue . . .");
                 Console.ReadLine();
             }
@@ -69,9 +71,7 @@ namespace MagicConchBot
                 var config = Configuration.Load();
                 var serverId = config.OwnerGuildId;
                 Console.WriteLine("Skipping song.");
-                var channel =
-                    (IMessageChannel)
-                    _client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
+                var channel = (IMessageChannel)_client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
                 if (MusicServiceProvider.GetService(serverId).Skip())
                     channel.SendMessageAsync("Skipping song at request of owner.");
                 else
@@ -135,18 +135,17 @@ namespace MagicConchBot
 
             consoleTarget.UseDefaultRowHighlightingRules = false;
 
-            consoleTarget.RowHighlightingRules.Add(
-                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Info"),
-                    ConsoleOutputColor.Green, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(
-                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Debug"),
-                    ConsoleOutputColor.Yellow, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(
-                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Fatal"),
-                    ConsoleOutputColor.Red, ConsoleOutputColor.Black));
-            consoleTarget.RowHighlightingRules.Add(
-                new ConsoleRowHighlightingRule(ConditionParser.ParseExpression("level == LogLevel.Warn"),
-                    ConsoleOutputColor.Blue, ConsoleOutputColor.Black));
+            ConsoleRowHighlightingRule RowHighlight(LogLevel loglevel, ConsoleOutputColor foregroundColor,
+                ConsoleOutputColor backgroundColor = ConsoleOutputColor.Black)
+            {
+                var condition = ConditionParser.ParseExpression($"level == {loglevel.GetType().Name}.{loglevel}");
+                return new ConsoleRowHighlightingRule(condition, foregroundColor, backgroundColor);
+            }
+
+            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Info, ConsoleOutputColor.Green));
+            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Debug, ConsoleOutputColor.Yellow));
+            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Fatal, ConsoleOutputColor.Red));
+            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Warn, ConsoleOutputColor.Blue));
 
             // Step 3. Set target properties 
             consoleTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
@@ -198,13 +197,12 @@ namespace MagicConchBot
             if (!File.Exists(loc))
             {
                 var config = new Configuration(); // Create a new configuration object.
+                config.Save(); // Save the new configuration object to file.
 
-                Console.WriteLine("The configuration file has been created at 'Configuration.json', " +
-                                  "please enter your information and restart.");
+                Console.WriteLine("The configuration file has been created at 'Configuration.json', please enter your information and restart.");
                 Console.Write("Token: ");
 
                 config.Token = Console.ReadLine(); // Read the bot token from console.
-                config.Save(); // Save the new configuration object to file.
             }
 
             Console.WriteLine("Configuration Loaded...");
