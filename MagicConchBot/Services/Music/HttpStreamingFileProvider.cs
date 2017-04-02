@@ -53,8 +53,7 @@ namespace MagicConchBot.Services.Music
                 var totalBytes = 0;
                 var buffer = new byte[4096];
                 var retryCount = 0;
-                using (
-                    var outFile = new FileStream(outputFile, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
+                using (var outFile = new FileStream(outputFile, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
                 using (var httpClient = new HttpClient())
                 {
                     using (var stream = await httpClient.GetStreamAsync(song.StreamUri))
@@ -70,7 +69,7 @@ namespace MagicConchBot.Services.Music
                             }
 
                             var bytesDownloaded = await stream.ReadAsync(buffer, 0, buffer.Length,
-                                song.TokenSource.Token);
+                                song.Token);
                             totalBytes += bytesDownloaded;
 
                             if (bytesDownloaded == 0)
@@ -81,12 +80,12 @@ namespace MagicConchBot.Services.Music
                                 await Task.Delay(50);
                             }
 
-                            await outFile.WriteAsync(buffer, 0, bytesDownloaded, song.TokenSource.Token);
+                            await outFile.WriteAsync(buffer, 0, bytesDownloaded, song.Token);
                         }
                     }
                 }
                 Log.Debug("Finished downloading file.");
-            }, song.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, song.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
             return outputFile;
         }

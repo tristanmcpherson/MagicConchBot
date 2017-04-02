@@ -21,6 +21,6 @@ namespace MagicConchBot.Common.Interfaces
 
     public interface ISongResolver
     {
-        Task<string> GetSongStreamUrl(string url);
+        Task<string> GetSongStreamUrl(string uri);
     }
 }

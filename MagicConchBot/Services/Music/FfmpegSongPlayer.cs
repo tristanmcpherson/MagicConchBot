@@ -54,95 +54,110 @@ namespace MagicConchBot.Services.Music
 
         public async Task PlaySong(IAudioClient audio, Song song)
         {
-            _song = song;
-            //if (!_songIdDictionary.TryGetValue(song.Url, out var guid))
-            if (audio.ConnectionState != ConnectionState.Connected)
+            if (audio == null || audio.ConnectionState != ConnectionState.Connected)
             {
                 return;
             }
 
+            _song = song;
+
             AudioState = AudioState.Loading;
 
-            var inFile = await _fileProvider.GetStreamingFile(song);
-            var waitCount = 0;
-            
-            while (true)
+            try
             {
-                var info = new FileInfo(inFile);
-                if (info.Exists && info.Length != 0)
-                    break;
-                if (++waitCount == 20)
-                    return;
-                await Task.Delay(100, song.TokenSource.Token);
-            }
+                var uri = new Uri(song.StreamUri).IsFile;
+                var inFile = uri ? song.StreamUri : await _fileProvider.GetStreamingFile(song);
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "ffmpeg",
-                Arguments =
-                    $"-re -i \"{inFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -ac 2 -loglevel quiet pipe:1",
-                UseShellExecute = false,
-                RedirectStandardOutput = true
-            };
+                var waitCount = 0;
 
-            var buffer = new byte[FrameBytes];
-            var retryCount = 0;
-            var bytesSent = 0;
-
-            using (var process = Process.Start(startInfo))
-            {
-                if (process == null)
+                while (true)
                 {
-                    Log.Error("Failed to created ffmpeg process.");
-                    return;
+                    var info = new FileInfo(inFile);
+                    if (info.Exists && info.Length >= FrameBytes)
+                        break;
+
+                    if (++waitCount == 20)
+                        throw new Exception("Streaming file took too long to download. Stopping.");
+                    
+                    await Task.Delay(100, song.Token);
                 }
 
-                Log.Debug($"Creating PCM stream for file {inFile}");
-
-                using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music, SamplesPerFrame))
+                var startInfo = new ProcessStartInfo
                 {
-                    AudioState = AudioState.Playing;
-                    Log.Debug("Playing song.");
+                    FileName = "ffmpeg",
+                    Arguments = $"-re -i \"{inFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ac 2 -ar 48000 -loglevel quiet pipe:1",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true
+                };
 
-                    while (!song.TokenSource.IsCancellationRequested)
+                var buffer = new byte[FrameBytes];
+                var retryCount = 0;
+                var bytesSent = 0;
+
+                using (var process = Process.Start(startInfo))
+                {
+                    if (process == null)
                     {
-                        var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length);
+                        throw new Exception("Failed to created ffmpeg process.");
+                    }
 
-                        if (byteCount == 0)
+                    Log.Debug($"Creating PCM stream for file {inFile}");
+
+                    using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music, SamplesPerFrame))
+                    {
+                        AudioState = AudioState.Playing;
+                        Log.Debug("Playing song.");
+
+                        while (!song.TokenSource.IsCancellationRequested)
                         {
-                            if (song.Length - song.CurrentTime <= TimeSpan.FromSeconds(1))
+                            var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, song.Token);
+
+                            if (byteCount == 0)
                             {
-                                Log.Info("Read 0 bytes but song is finished.");
+                                if (song.Length - song.CurrentTime <= TimeSpan.FromSeconds(1))
+                                {
+                                    Log.Info("Read 0 bytes but song is finished.");
+                                    break;
+                                }
+
+                                await Task.Delay(100);
+                                retryCount++;
+                            }
+                            else
+                            {
+                                retryCount = 0;
+                            }
+
+                            if (retryCount == 50)
+                            {
+                                Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
                                 break;
                             }
 
-                            await Task.Delay(100);
-                            retryCount++;
+                            song.Token.ThrowIfCancellationRequested();
+
+                            buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
+
+                            await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
+                            bytesSent += byteCount;
+                            song.CurrentTime = song.StartTime +
+                                               TimeSpan.FromSeconds(bytesSent /
+                                                                    (1000d * FrameBytes /
+                                                                     Milliseconds));
                         }
-                        else
-                        {
-                            retryCount = 0;
-                        }
-
-                        if (retryCount == 50)
-                        {
-                            Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
-                            break;
-                        }
-
-                        song.TokenSource.Token.ThrowIfCancellationRequested();
-
-                        buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
-
-                        await pcmStream.WriteAsync(buffer, 0, byteCount, song.TokenSource.Token);
-                        bytesSent += byteCount;
-                        song.CurrentTime = song.StartTime +
-                                           TimeSpan.FromSeconds(bytesSent /
-                                                                (1000d * FrameBytes /
-                                                                 Milliseconds));
                     }
                 }
-
+            }
+            catch (OperationCanceledException ex)
+            {
+                Log.Info("Song cancelled: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+            }
+            finally
+            {
                 if (AudioState != AudioState.Paused)
                 {
                     AudioState = AudioState.Stopped;

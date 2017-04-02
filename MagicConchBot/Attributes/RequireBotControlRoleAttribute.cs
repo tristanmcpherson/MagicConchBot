@@ -19,6 +19,10 @@ namespace MagicConchBot.Attributes
             var config = Configuration.Load();
             var requiredRole = context.Guild.Roles.FirstOrDefault(r => r.Name == config.RequiredRole);
             var isOwner = config.Owners.Contains(context.User.Id);
+            var isBlacklist = config.Blacklist.Contains(context.User.Id);
+
+            if (isBlacklist)
+                return PreconditionResult.FromError("You are not allowed to use the bot.");
 
             if (context.Channel.Name != config.BotControlChannel)
                 if (context.Guild.Id == config.OwnerGuildId)

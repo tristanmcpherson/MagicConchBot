@@ -8,6 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using MagicConchBot.Common.Types;
 using Newtonsoft.Json;
@@ -31,6 +32,7 @@ namespace MagicConchBot.Resources
         public Configuration()
         {
             Owners = new ulong[] {0};
+            Blacklist = new ulong[] {0};
             Token = string.Empty;
             GoogleApiKey = string.Empty;
             ApplicationName = string.Empty;
@@ -41,6 +43,7 @@ namespace MagicConchBot.Resources
             RequiredRole = string.Empty;
             OwnerGuildId = 0;
             BotControlChannel = string.Empty;
+            LocalMusicPath = string.Empty;
         }
 
         /// <summary> Gets or sets the bot's command prefix. Please don't pick `!`. </summary>
@@ -48,6 +51,8 @@ namespace MagicConchBot.Resources
 
         /// <summary> Gets or sets the ids of users who will have owner access to the bot. </summary>
         public ulong[] Owners { get; set; }
+
+        public ulong[] Blacklist { get; set; }
 
         /// <summary> Gets or sets the bot's login token. </summary>
         public string Token { get; set; }
@@ -72,14 +77,31 @@ namespace MagicConchBot.Resources
 
         /// <summary> Gets or sets the name of the role required to use bot music commands. </summary>
         public string RequiredRole { get; set; }
-
+        
+        /// <summary>
+        /// Gets or sets the id of the bot owner's guild.
+        /// </summary>
         public ulong OwnerGuildId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the channel name in which bot commands can be 
+        /// </summary>
         public string BotControlChannel { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Client Secret for the SoundCloud API.
+        /// </summary>
         public string SoundCloudClientSecret { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Client Id for the SoundCloud API.
+        /// </summary>
         public string SoundCloudClientId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the local path for music to be played from.
+        /// </summary>
+        public string LocalMusicPath { get; set; }
 
         /// <summary>
         ///     Load the configuration from the specified file location.

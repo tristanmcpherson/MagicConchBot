@@ -35,13 +35,7 @@ namespace MagicConchBot.Services.Music
         {
             if (!MusicServices.TryGetValue(guildId, out IMusicService service))
             {
-                Log.Error("Server music service was not created, creating.");
-                var fileProvider = new HttpStreamingFileProvider();
-                var songPlayer = new FfmpegSongPlayer(fileProvider);
-                var urlResolver = new UrlSteamResolver();
-
-                service = new MusicService(urlResolver, songPlayer);
-                MusicServices.TryAdd(guildId, service);
+                Log.Error("Server music service was not created. Cancelling.");
             }
 
             return service;
@@ -62,8 +56,8 @@ namespace MagicConchBot.Services.Music
         public static void StopAll()
         {
             foreach (var musicService in MusicServices)
-                if (!musicService.Value.Stop())
-                    Log.Error($"Failed to stop music service for GuildId: {musicService.Key}");
+                if (musicService.Value.Stop())
+                    Log.Info($"Successfully stopped music for GuildId: {musicService.Key}");
         }
     }
 }
