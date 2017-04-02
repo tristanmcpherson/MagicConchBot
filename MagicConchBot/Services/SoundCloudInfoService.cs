@@ -22,10 +22,8 @@ namespace MagicConchBot.Services
 
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?soundcloud\.com\/(?:[a-z0-9-]+\/?)+",
             RegexOptions.IgnoreCase);
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+        
         public async Task<Song> GetSongInfoAsync(string url)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             var track = await Client.Resolve.GetTrack(url);
             var artwork = track.Artwork.Url(SCArtworkFormat.T500X500);

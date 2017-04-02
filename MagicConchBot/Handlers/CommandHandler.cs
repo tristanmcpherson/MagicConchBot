@@ -1,7 +1,9 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
+using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Modules;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
@@ -97,9 +99,10 @@ namespace MagicConchBot.Handlers
         {
             var fileProvider = new HttpStreamingFileProvider();
             var songPlayer = new FfmpegSongPlayer(fileProvider);
-            var urlResolver = new UrlSteamResolver();
+            var urlResolver = new UrlStreamResolver();
+            var fileResolver = new LocalStreamResolver();
 
-            var musicService = new MusicService(urlResolver, songPlayer);
+            var musicService = new MusicService(new List<ISongResolver> { fileResolver, urlResolver }, songPlayer);
 
             MusicServiceProvider.AddServices(guild.Id, musicService, new Mp3ConverterService());
             return Task.CompletedTask;

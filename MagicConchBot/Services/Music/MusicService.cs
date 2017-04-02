@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -17,15 +18,15 @@ namespace MagicConchBot.Services.Music
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private readonly ISongPlayer _songPlayer;
-        private readonly ISongResolver _songResolver;
+        private readonly List<ISongResolver> _songResolvers;
 
         private int _songIndex;
 
         private CancellationTokenSource _tokenSource;
 
-        public MusicService(ISongResolver songResolver, ISongPlayer songPlayer)
+        public MusicService(List<ISongResolver> songResolvers, ISongPlayer songPlayer)
         {
-            _songResolver = songResolver;
+            _songResolvers = songResolvers;
             _songPlayer = songPlayer;
             SongList = new List<Song>();
             PlayMode = PlayMode.Queue;
@@ -58,74 +59,81 @@ namespace MagicConchBot.Services.Music
 
             IAudioClient audioClient = null;
 
-                await Task.Factory.StartNew(async () =>
+            await Task.Factory.StartNew(async () =>
+            {
+                try
                 {
-                    try
-                    {
-                        audioClient = await AudioHelper.JoinChannelAsync(msg).ConfigureAwait(false);
+                    audioClient = await AudioHelper.JoinChannelAsync(msg).ConfigureAwait(false);
 
-                        if (audioClient == null)
-                        {
-                            await msg.Channel.SendMessageAsync("Failed to join voice channel.");
+                    if (audioClient == null)
+                    {
+                        await msg.Channel.SendMessageAsync("Failed to join voice channel.");
+                        return;
+                    }
+
+                    while (!_tokenSource.IsCancellationRequested)
+                    {
+                        if (CurrentSong != null)
+                            LastSong = CurrentSong;
+
+                        if (_songIndex < 0 || _songIndex >= SongList.Count)
                             return;
+
+                        CurrentSong = SongList[_songIndex];
+
+                        _tokenSource.Token.ThrowIfCancellationRequested();
+
+                        string streamUri = null;
+                        foreach (var resolver in _songResolvers)
+                        {
+                            var uri = await resolver.GetSongStreamUrl(CurrentSong.Url);
+                            if (uri == null)
+                            {
+                                continue;
+                            }
+                            streamUri = uri;
+                            break;
                         }
 
-                        while (!_tokenSource.IsCancellationRequested)
+                        if (CurrentSong.TokenSource == null || CurrentSong.TokenSource.IsCancellationRequested)
+                            CurrentSong.TokenSource = new CancellationTokenSource();
+
+                        CurrentSong.StreamUri = streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
+
+                        await StatusUpdaterAsync(msg.Channel).ConfigureAwait(false);
+
+                        try
                         {
-                            if (CurrentSong != null)
-                                LastSong = CurrentSong;
+                            await _songPlayer.PlaySong(audioClient, CurrentSong);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex.ToString());
+                        }
+                        finally
+                        {
+                            Log.Info($"Song ended at {CurrentSong.CurrentTimePretty} / {CurrentSong.LengthPretty}");
 
-                            if (_songIndex < 0 || _songIndex >= SongList.Count)
-                                return;
-
-                            CurrentSong = SongList[_songIndex];
-
-                            _tokenSource.Token.ThrowIfCancellationRequested();
-
-                            var streamUri = await _songResolver.GetSongStreamUrl(CurrentSong.Url);
-                            if (CurrentSong.TokenSource == null)
-                                CurrentSong.TokenSource = new CancellationTokenSource();
-
-                            CurrentSong.StreamUri = streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
-
-                            try
+                            if (_songPlayer.AudioState != AudioState.Paused)
                             {
-                                await StatusUpdaterAsync(msg.Channel).ConfigureAwait(false);
-                                await _songPlayer.PlaySong(audioClient, CurrentSong);
-                            }
-                            catch (OperationCanceledException ex)
-                            {
-                                Log.Info("Song cancelled: " + ex.Message);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Debug(ex.ToString());
-                            }
-                            finally
-                            {
-                                Log.Info($"Song ended at {CurrentSong.CurrentTimePretty} / {CurrentSong.LengthPretty}");
-
-                                if (_songPlayer.AudioState != AudioState.Paused)
+                                if (PlayMode == PlayMode.Queue)
                                 {
-                                    if (PlayMode == PlayMode.Queue)
-                                    {
-                                        SongList.Remove(CurrentSong);
-                                    }
-                                    else
-                                    {
-                                        if (++_songIndex == SongList.Count)
-                                            _songIndex = 0;
-                                    }
+                                    SongList.Remove(CurrentSong);
+                                }
+                                else
+                                {
+                                    if (++_songIndex == SongList.Count)
+                                        _songIndex = 0;
                                 }
                             }
                         }
                     }
-                    finally
-                    {
-                        await AudioHelper.LeaveChannelAsync(audioClient).ConfigureAwait(false);
-                    }
-                }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            
+                }
+                finally
+                {
+                    await AudioHelper.LeaveChannelAsync(audioClient).ConfigureAwait(false);
+                }
+            }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         private async Task StatusUpdaterAsync(IMessageChannel channel)
@@ -147,6 +155,8 @@ namespace MagicConchBot.Services.Music
                         if (CurrentSong.Url != song.Url)
                             break;
 
+                        song.Token.ThrowIfCancellationRequested();
+
                         await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true));
                         await Task.Delay(4700);
                     }
@@ -165,7 +175,7 @@ namespace MagicConchBot.Services.Music
                    if (message != null)
                         await message.DeleteAsync();
                 }
-            }, CurrentSong.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, CurrentSong.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         public bool Stop()

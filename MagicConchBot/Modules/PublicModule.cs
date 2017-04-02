@@ -36,6 +36,8 @@ namespace MagicConchBot.Modules
 
             var embed = new EmbedBuilder {Color = Constants.MaterialBlue};
 
+            var osUptime = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? await GetLinuxUptime() : "";
+
             embed.AddField(f =>
             {
                 f.WithName("Info")
@@ -43,6 +45,7 @@ namespace MagicConchBot.Modules
                                $"**Library:**\nDiscord.Net ({DiscordConfig.Version})\n\n" +
                                $"**Runtime:**\n{RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n\n" +
                                $"**Uptime:**\n{GetUptime()}\n\n" +
+                               (osUptime == "" ? "" : $"**OS Uptime:**\n{osUptime}\n\n") +
                                $"**GitHub:**\n{Constants.RepoLink}\n\n\n\n");
             });
             embed.AddField(f =>
@@ -98,5 +101,18 @@ namespace MagicConchBot.Modules
 
         private static string GetHeapSize()
             => Math.Round(GC.GetTotalMemory(true) / (1024.0 * 1024.0), 2).ToString(CultureInfo.InvariantCulture);
+
+        private static async Task<string> GetLinuxUptime()
+        {
+            var processInfo = new ProcessStartInfo("uptime", "-s")
+            {
+                RedirectStandardOutput =  true,
+                UseShellExecute = false
+            };
+            var uptimeProcess = Process.Start(processInfo);
+            var output = await uptimeProcess.StandardOutput.ReadLineAsync();
+            var upSince = DateTime.ParseExact(output, "yyyy-MM-dd HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
+            return (upSince - DateTime.Now).ToString(@"dd\.hh\:mm\:ss");
+        }
     }
 }
