@@ -49,8 +49,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="1.0.0-rc-00652" />
-    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.23.0.760" />
+    <PackageReference Include="Discord.Net" Version="1.0.0-rc2-00679" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.24.1.760" />
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.0.0" />
     <PackageReference Include="NLog" Version="5.0.0-beta06" />

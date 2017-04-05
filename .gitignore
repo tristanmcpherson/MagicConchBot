@@ -260,3 +260,5 @@ paket-files/
 __pycache__/
 *.pyc
 /MagicConchBot/temp
+/MagicConchBot/nuget.exe
+/MagicConchBot/nuget.exe

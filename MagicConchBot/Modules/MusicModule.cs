@@ -66,28 +66,35 @@ namespace MagicConchBot.Modules
         }
 
         [Command("play")]
-        [Summary(
-            "Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube."
-        )]
-        public async Task PlayAsync(
-            [Remainder] [Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
+        [Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
+        public async Task PlayAsync([Remainder] [Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
         {
             var terms = query.Split(' ');
             var startTime = TimeSpan.Zero;
+
             string url;
             Song song = null;
 
             if (terms.Length > 1)
-                if (TimeSpan.TryParseExact(terms.Last(), new[] {@"mm\:ss", @"hh\:mm\:ss"}, CultureInfo.InvariantCulture,
-                    out startTime))
+            {
+                if (TimeSpan.TryParseExact(terms.Last(), new[] {@"mm\:ss", @"hh\:mm\:ss"}, CultureInfo.InvariantCulture, out startTime))
                     query = query.Replace(" " + terms.Last(), string.Empty);
                 else
                     startTime = TimeSpan.Zero;
+                
+            }
 
-            if (UrlRegex.IsMatch(query))
-                url = query;
-            else
+            if (!UrlRegex.IsMatch(query))
+            {
+                if ((terms.FirstOrDefault() ?? "") == "yt")
+                    query = query.Replace(terms.First() + " ", string.Empty);
+
                 url = await _googleApiService.GetFirstVideoByKeywordsAsync(query);
+            }
+            else
+            {
+                url = query;
+            }
 
             // url invalid
             if (string.IsNullOrEmpty(url))
