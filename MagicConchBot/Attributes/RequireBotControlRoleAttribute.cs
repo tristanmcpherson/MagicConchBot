@@ -21,6 +21,9 @@ namespace MagicConchBot.Attributes
             var isOwner = config.Owners.Contains(context.User.Id);
             var isBlacklist = config.Blacklist.Contains(context.User.Id);
 
+            if (isOwner)
+                return PreconditionResult.FromSuccess();
+
             if (isBlacklist)
                 return PreconditionResult.FromError("You are not allowed to use the bot.");
 
@@ -28,11 +31,8 @@ namespace MagicConchBot.Attributes
                 if (context.Guild.Id == config.OwnerGuildId)
                     return PreconditionResult.FromError(config.WrongChannelError);
 
-            if (isOwner)
-                return PreconditionResult.FromSuccess();
-
             if (requiredRole == null)
-                return PreconditionResult.FromError($"No role named 'Conch Control' exists.");
+                return PreconditionResult.FromSuccess();
 
             if (((IGuildUser) context.User).RoleIds.Contains(requiredRole.Id))
                 return PreconditionResult.FromSuccess();
