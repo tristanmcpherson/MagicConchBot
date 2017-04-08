@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -80,6 +79,7 @@ namespace MagicConchBot.Services.Music
                             return;
 
                         CurrentSong = SongList[_songIndex];
+                        CurrentSong.TokenSource = new CancellationTokenSource();
 
                         _tokenSource.Token.ThrowIfCancellationRequested();
 
@@ -87,19 +87,14 @@ namespace MagicConchBot.Services.Music
                         foreach (var resolver in _songResolvers)
                         {
                             var uri = await resolver.GetSongStreamUrl(CurrentSong.Url);
-                            if (uri == null)
+                            if (uri != null)
                             {
-                                continue;
+                                streamUri = uri;
+                                break;
                             }
-                            streamUri = uri;
-                            break;
                         }
 
-                        if (CurrentSong.TokenSource == null || CurrentSong.TokenSource.IsCancellationRequested)
-                            CurrentSong.TokenSource = new CancellationTokenSource();
-
                         CurrentSong.StreamUri = streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
-
                         await StatusUpdaterAsync(msg.Channel).ConfigureAwait(false);
 
                         try

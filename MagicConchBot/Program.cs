@@ -101,7 +101,7 @@ namespace MagicConchBot
                 await _handler.InstallAsync().ConfigureAwait(false);
 
                 // Configuration.Load().Token
-                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token);
+                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token).ConfigureAwait(false);
                 await _client.StartAsync().ConfigureAwait(false);
 
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
