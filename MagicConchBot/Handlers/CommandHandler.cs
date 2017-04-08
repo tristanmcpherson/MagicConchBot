@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -81,12 +82,14 @@ namespace MagicConchBot.Handlers
         private static async Task HandleMessageReceivedAsync(SocketMessage arg)
         {
             foreach (var attachment in arg.Attachments)
+            {
                 if (attachment.Filename.EndsWith(".webm"))
                 {
                     Log.Info($"Url: {attachment.Url}");
                     Log.Info($"Proxy: {attachment.ProxyUrl}");
                     await Task.Delay(1);
                 }
+            }
         }
 
         private static async Task HandleJoinedGuildAsync(SocketGuild arg)
