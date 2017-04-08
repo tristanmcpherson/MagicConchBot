@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
@@ -15,11 +16,8 @@ namespace MagicConchBot.Services.Music
     public class FfmpegSongPlayer : ISongPlayer
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-
-        private const int SampleFrequency = 48000;
+        
         private const int Milliseconds = 20;
-        private const int SamplesPerFrame = SampleFrequency * Milliseconds / 1000;
-        private const int FrameBytes = 3840; // 2 channel, 16 bit
 
         private const int MaxVolume = 1;
         private const int MinVolume = 0;
@@ -73,7 +71,7 @@ namespace MagicConchBot.Services.Music
                 while (true)
                 {
                     var info = new FileInfo(inFile);
-                    if (info.Exists && info.Length >= FrameBytes)
+                    if (info.Exists && info.Length >= 4096)
                         break;
 
                     if (++waitCount == 20)
@@ -90,7 +88,7 @@ namespace MagicConchBot.Services.Music
                     RedirectStandardOutput = true
                 };
 
-                var buffer = new byte[FrameBytes];
+                var buffer = new byte[4096];
                 var retryCount = 0;
                 var bytesSent = 0;
 
@@ -103,7 +101,7 @@ namespace MagicConchBot.Services.Music
 
                     Log.Debug($"Creating PCM stream for file {inFile}");
 
-                    using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music, SamplesPerFrame))
+                    using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music))
                     {
                         AudioState = AudioState.Playing;
                         Log.Debug("Playing song.");
@@ -142,9 +140,10 @@ namespace MagicConchBot.Services.Music
                             bytesSent += byteCount;
                             song.CurrentTime = song.StartTime +
                                                TimeSpan.FromSeconds(bytesSent /
-                                                                    (1000d * FrameBytes /
+                                                                    (1000d * 4096 /
                                                                      Milliseconds));
                         }
+                        await pcmStream.FlushAsync();
                     }
                 }
             }
