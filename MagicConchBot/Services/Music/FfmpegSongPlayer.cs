@@ -88,7 +88,7 @@ namespace MagicConchBot.Services.Music
                     RedirectStandardOutput = true
                 };
 
-                var buffer = new byte[4096];
+                var buffer = new byte[3840];
                 var retryCount = 0;
                 var bytesSent = 0;
 
@@ -112,24 +112,23 @@ namespace MagicConchBot.Services.Music
 
                             if (byteCount == 0)
                             {
-                                if (song.Length - song.CurrentTime <= TimeSpan.FromSeconds(1))
+                                if (song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(250))
                                 {
                                     Log.Info("Read 0 bytes but song is finished.");
                                     break;
                                 }
 
                                 await Task.Delay(100);
-                                retryCount++;
+
+                                if (++retryCount == 50)
+                                {
+                                    Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
+                                    break;
+                                }
                             }
                             else
                             {
                                 retryCount = 0;
-                            }
-
-                            if (retryCount == 50)
-                            {
-                                Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
-                                break;
                             }
 
                             song.Token.ThrowIfCancellationRequested();
@@ -140,7 +139,7 @@ namespace MagicConchBot.Services.Music
                             bytesSent += byteCount;
                             song.CurrentTime = song.StartTime +
                                                TimeSpan.FromSeconds(bytesSent /
-                                                                    (1000d * 4096 /
+                                                                    (1000d * 3840 /
                                                                      Milliseconds));
                         }
                         await pcmStream.FlushAsync();
