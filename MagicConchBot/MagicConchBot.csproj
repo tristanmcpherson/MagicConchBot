@@ -44,6 +44,9 @@
     <None Remove="build.bat" />
     <None Remove="copy.sh" />
     <None Remove="DecentTrack.wav" />
+    <None Remove="ffmpeg.exe" />
+    <None Remove="libsodium.dll" />
+    <None Remove="opus.dll" />
     <None Remove="run.bat" />
     <None Remove="run.sh" />
   </ItemGroup>
