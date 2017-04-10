@@ -112,7 +112,7 @@ namespace MagicConchBot.Services.Music
 
                             if (byteCount == 0)
                             {
-                                if (song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(250))
+                                if (song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(50))
                                 {
                                     Log.Info("Read 0 bytes but song is finished.");
                                     break;
@@ -138,6 +138,7 @@ namespace MagicConchBot.Services.Music
                             await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
                             song.CurrentTime += CalculateCurrentTime(byteCount);
                         }
+
                         await pcmStream.FlushAsync();
                     }
                 }
