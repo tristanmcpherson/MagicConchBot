@@ -71,7 +71,9 @@ namespace MagicConchBot
                 var config = Configuration.Load();
                 var serverId = config.OwnerGuildId;
                 Console.WriteLine("Skipping song.");
-                var channel = (IMessageChannel)_client.GetGuild(serverId).Channels.First(c => c.Name == config.BotControlChannel);
+                var channel = (IMessageChannel)_client.GetGuild(serverId)?.Channels.FirstOrDefault(c => c.Name == config.BotControlChannel);
+                if (channel == null)
+                    return;
                 if (MusicServiceProvider.GetService(serverId).Skip())
                     channel.SendMessageAsync("Skipping song at request of owner.");
                 else
