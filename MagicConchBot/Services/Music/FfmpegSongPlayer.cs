@@ -90,7 +90,6 @@ namespace MagicConchBot.Services.Music
 
                 var buffer = new byte[3840];
                 var retryCount = 0;
-                var bytesSent = 0;
 
                 using (var process = Process.Start(startInfo))
                 {
@@ -105,6 +104,7 @@ namespace MagicConchBot.Services.Music
                     {
                         AudioState = AudioState.Playing;
                         Log.Debug("Playing song.");
+                        song.CurrentTime = song.StartTime;
 
                         while (!song.TokenSource.IsCancellationRequested)
                         {
@@ -136,11 +136,7 @@ namespace MagicConchBot.Services.Music
                             buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
 
                             await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
-                            bytesSent += byteCount;
-                            song.CurrentTime = song.StartTime +
-                                               TimeSpan.FromSeconds(bytesSent /
-                                                                    (1000d * 3840 /
-                                                                     Milliseconds));
+                            song.CurrentTime += CalculateCurrentTime(byteCount);
                         }
                         await pcmStream.FlushAsync();
                     }
@@ -173,6 +169,13 @@ namespace MagicConchBot.Services.Music
             AudioState = AudioState.Paused;
             _song.StartTime = _song.CurrentTime;
             _song.TokenSource.Cancel();
+        }
+
+        private TimeSpan CalculateCurrentTime(int currentBytes)
+        {
+            return TimeSpan.FromSeconds(currentBytes /
+                                        (1000d * 3840 /
+                                         Milliseconds));
         }
     }
 }
