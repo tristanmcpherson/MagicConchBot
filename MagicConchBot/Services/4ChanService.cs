@@ -8,9 +8,12 @@ namespace MagicConchBot.Services
 {
     public class ChanService
     {
-        private static readonly Regex YgylRegex = new Regex(@"ygyl|you groove you lose|you groove", RegexOptions.IgnoreCase);
+        private static readonly Regex YgylRegex = new Regex(@"ygyl|you groove you lose|you groove",
+            RegexOptions.IgnoreCase);
 
-        private static readonly Regex YouTubeRegex = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=))(?<VideoId>[\w-]{10,12})(?:[\&\?]?t=)?(?<Time>[\d]+)?s?(?<TimeAlt>(\d+h)?(\d+m)?(\d+s)?)?");
+        private static readonly Regex YouTubeRegex =
+            new Regex(
+                @"(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=))(?<VideoId>[\w-]{10,12})(?:[\&\?]?t=)?(?<Time>[\d]+)?s?(?<TimeAlt>(\d+h)?(\d+m)?(\d+s)?)?");
 
         public async Task<List<string>> GetPostsWithVideosAsync(string boardName)
         {
@@ -23,10 +26,9 @@ namespace MagicConchBot.Services
                 foreach (var thread in page.Threads)
                 {
                     var t = thread.Posts.First();
-                    if (YgylRegex.IsMatch(t.Subject ?? string.Empty) || YgylRegex.IsMatch(t.Comment ?? string.Empty) || YgylRegex.IsMatch(t.Name ?? string.Empty))
-                    {
+                    if (YgylRegex.IsMatch(t.Subject ?? string.Empty) || YgylRegex.IsMatch(t.Comment ?? string.Empty) ||
+                        YgylRegex.IsMatch(t.Name ?? string.Empty))
                         foreach (var post in thread.Posts)
-                        {
                             if (post.HasImage && post.FileExtension == ".webm")
                             {
                                 var file = Constants.GetImageUrl(board.BoardName, post.FileName, post.FileExtension);
@@ -38,8 +40,6 @@ namespace MagicConchBot.Services
                                 var match = YouTubeRegex.Match(cleanedPost);
                                 videos.Add(match.Value);
                             }
-                        }
-                    }
                 }
             }
 

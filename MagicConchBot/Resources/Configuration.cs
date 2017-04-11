@@ -8,6 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using MagicConchBot.Common.Types;
 using Newtonsoft.Json;
@@ -15,24 +16,23 @@ using Newtonsoft.Json;
 namespace MagicConchBot.Resources
 {
     /// <summary>
-    /// The configuration file.
+    ///     The configuration file.
     /// </summary>
     public class Configuration
     {
         /// <summary> The location to this config file relative to the launch directory. </summary>
-        [JsonIgnore]
-        public const string JsonPath = "Configuration.json";
+        [JsonIgnore] public const string JsonPath = "Configuration.json";
 
         /// <summary> The location of your bot's DLL, ignored by the JSON parser. </summary>
-        [JsonIgnore]
-        public static readonly string Appdir = AppContext.BaseDirectory;
+        [JsonIgnore] public static readonly string Appdir = AppContext.BaseDirectory;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Configuration"/> class.
+        ///     Initializes a new instance of the <see cref="Configuration" /> class.
         /// </summary>
         public Configuration()
         {
-            Owners = new ulong[] { 0 };
+            Owners = new ulong[] {0};
+            Blacklist = new ulong[] {0};
             Token = string.Empty;
             GoogleApiKey = string.Empty;
             ApplicationName = string.Empty;
@@ -43,6 +43,7 @@ namespace MagicConchBot.Resources
             RequiredRole = string.Empty;
             OwnerGuildId = 0;
             BotControlChannel = string.Empty;
+            LocalMusicPath = string.Empty;
         }
 
         /// <summary> Gets or sets the bot's command prefix. Please don't pick `!`. </summary>
@@ -50,6 +51,8 @@ namespace MagicConchBot.Resources
 
         /// <summary> Gets or sets the ids of users who will have owner access to the bot. </summary>
         public ulong[] Owners { get; set; }
+
+        public ulong[] Blacklist { get; set; }
 
         /// <summary> Gets or sets the bot's login token. </summary>
         public string Token { get; set; }
@@ -74,23 +77,40 @@ namespace MagicConchBot.Resources
 
         /// <summary> Gets or sets the name of the role required to use bot music commands. </summary>
         public string RequiredRole { get; set; }
-
+        
+        /// <summary>
+        /// Gets or sets the id of the bot owner's guild.
+        /// </summary>
         public ulong OwnerGuildId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the channel name in which bot commands can be 
+        /// </summary>
         public string BotControlChannel { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Client Secret for the SoundCloud API.
+        /// </summary>
         public string SoundCloudClientSecret { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Client Id for the SoundCloud API.
+        /// </summary>
         public string SoundCloudClientId { get; set; }
 
         /// <summary>
-        /// Load the configuration from the specified file location. 
+        /// Gets or sets the local path for music to be played from.
+        /// </summary>
+        public string LocalMusicPath { get; set; }
+
+        /// <summary>
+        ///     Load the configuration from the specified file location.
         /// </summary>
         /// <param name="dir">
-        /// The optional path to save the JSON to.
+        ///     The optional path to save the JSON to.
         /// </param>
         /// <returns>
-        /// The <see cref="Configuration"/> instance loaded.
+        ///     The <see cref="Configuration" /> instance loaded.
         /// </returns>
         public static Configuration Load(string dir = JsonPath)
         {
@@ -99,19 +119,19 @@ namespace MagicConchBot.Resources
         }
 
         /// <summary>
-        /// Convert the configuration to a JSON string. 
+        ///     Convert the configuration to a JSON string.
         /// </summary>
         /// <returns>
-        /// The serialized <see cref="string"/> JSON of this instance.
+        ///     The serialized <see cref="string" /> JSON of this instance.
         /// </returns>
         public string ToJson()
             => JsonConvert.SerializeObject(this, Formatting.Indented);
 
         /// <summary>
-        /// Save the configuration to the specified file location. 
+        ///     Save the configuration to the specified file location.
         /// </summary>
         /// <param name="dir">
-        /// The optional path to save the JSON to.
+        ///     The optional path to save the JSON to.
         /// </param>
         public void Save(string dir = JsonPath)
         {

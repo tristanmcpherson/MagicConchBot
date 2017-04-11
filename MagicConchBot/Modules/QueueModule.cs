@@ -9,10 +9,12 @@ namespace MagicConchBot.Modules
 {
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]
-    [Name("Queue Commands"), Group("queue")]
+    [Name("Queue Commands")]
+    [Group("queue")]
     public class QueueModule : ModuleBase<MusicCommandContext>
     {
-        [Command, Summary("Lists all the songs in the queue.")]
+        [Command]
+        [Summary("Lists all the songs in the queue.")]
         public async Task ListQueueAsync()
         {
             var songs = Context.MusicService.SongList;
@@ -27,9 +29,7 @@ namespace MagicConchBot.Modules
             {
                 await ReplyAsync(string.Empty, false, songs.First().GetEmbed());
                 for (var i = 1; i < songs.Count; i++)
-                {
                     await ReplyAsync(string.Empty, false, songs[i].GetEmbed($"{i}: {songs[i].Name}"));
-                }
             }
             else
             {
@@ -49,7 +49,8 @@ namespace MagicConchBot.Modules
             }
         }
 
-        [Command("clear"), Summary("Clears all the songs from the queue")]
+        [Command("clear")]
+        [Summary("Clears all the songs from the queue")]
         public async Task ClearAsync()
         {
             Context.MusicService.ClearQueue();
@@ -61,16 +62,16 @@ namespace MagicConchBot.Modules
         {
             var song = Context.MusicService.RemoveSong(songNumber);
             if (song == null)
-            {
                 await ReplyAsync($"No song at position: {songNumber}");
-            }
             else
-            {
                 await ReplyAsync("Successfully removed song from queue:", false, song.GetEmbed($"{song.Name}"));
-            }
         }
 
-        [Command("mode"), Alias("changemode"), Summary("Change the queue mode to queue (removes songs after playing) or playlist (keeps on playing through the queue).")]
+        [Command("mode")]
+        [Alias("changemode")]
+        [Summary(
+            "Change the queue mode to queue (removes songs after playing) or playlist (keeps on playing through the queue)."
+        )]
         public async Task ChangeModeAsync([Summary("The mode to change to, either `playlist` or `queue`.")] string mode)
         {
             if (mode.ToLower() == "queue")

@@ -3,9 +3,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
 using MagicConchBot.Resources;
 using NLog;
 
@@ -38,36 +40,30 @@ namespace MagicConchBot.Services
 
         public async Task<string> GenerateMp3Async(Song song)
         {
-            if (!_urlToUniqueFile.TryGetValue(song.StreamUrl, out Guid guid))
+            if (!_urlToUniqueFile.TryGetValue(song.StreamUri, out Guid guid))
             {
                 guid = Guid.NewGuid();
-                _urlToUniqueFile.TryAdd(song.StreamUrl, guid);
+                _urlToUniqueFile.TryAdd(song.StreamUri, guid);
             }
 
             var outputFile = song.Name + "_" + guid + ".mp3";
-            var downloadFile = outputFile + ".raw";
+            var downloadFile = song.Name + "_" + guid + ".raw";
 
             var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
             var destinationPath = Path.Combine(_serverPath, outputFile);
 
             if (File.Exists(destinationPath))
-            {
                 return outputUrl;
-            }
 
             GeneratingMp3 = true;
 
-            using (var webClient = new HttpClient())
-            {
-                var bytes = await webClient.GetByteArrayAsync(song.StreamUrl);
-
-                File.WriteAllBytes(downloadFile, bytes);
-            }
+            var tokenSource = new CancellationTokenSource();
+            await WebHelper.ThrottledFileDownload(downloadFile, song.StreamUri, tokenSource.Token);
 
             var convert = Process.Start(new ProcessStartInfo
             {
                 FileName = "ffmpeg",
-                Arguments = $@"-i ""{downloadFile}"" -vn -ar 44100 -ac 2 -ab 320k -f mp3 ""{outputFile}""",
+                Arguments = $@"-i ""{downloadFile}"" -vn -ab 128k -ar 44100 -y ""{outputFile}""",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = false,
@@ -83,13 +79,7 @@ namespace MagicConchBot.Services
             convert.StandardOutput.ReadToEnd();
             convert.WaitForExit();
 
-            using (var source = File.OpenRead(outputFile))
-            {
-                using (var destination = File.Create(destinationPath))
-                {
-                    source.CopyTo(destination);
-                }
-            }
+            File.Move(outputFile, destinationPath);
 
             File.Delete(outputFile);
             File.Delete(downloadFile);

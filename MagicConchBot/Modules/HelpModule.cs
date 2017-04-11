@@ -6,7 +6,8 @@ using MagicConchBot.Resources;
 
 namespace MagicConchBot.Modules
 {
-    [Group("Help"), Name("Help Commands")]
+    [Group("Help")]
+    [Name("Help Commands")]
     public class HelpModule : ModuleBase
     {
         private readonly CommandService _service;
@@ -30,9 +31,7 @@ namespace MagicConchBot.Modules
             foreach (var module in _service.Modules)
             {
                 if (module.Commands.Any(n => n.Name == nameof(HelpAsync)))
-                {
                     continue;
-                }
 
                 string description = null;
                 string last = null;
@@ -42,23 +41,19 @@ namespace MagicConchBot.Modules
                     // if (result.IsSuccess)
                     var alias = cmd.Aliases.First();
                     if (last == alias)
-                    {
                         continue;
-                    }
 
                     last = alias;
                     description += $"{prefix}{alias}" + (cmd.Parameters.Count > 0 ? " ..." : string.Empty) + "\n";
                 }
 
                 if (!string.IsNullOrWhiteSpace(description))
-                {
                     builder.AddField(x =>
                     {
                         x.Name = module.Name;
                         x.Value = description;
                         x.IsInline = false;
                     });
-                }
             }
 
             await ReplyAsync(string.Empty, false, builder.Build());
@@ -74,7 +69,7 @@ namespace MagicConchBot.Modules
                 await ReplyAsync($"Sorry, I couldn't find a command like **{command}**.");
                 return;
             }
-            
+
             var builder = new EmbedBuilder
             {
                 Color = Constants.MaterialBlue,
@@ -88,7 +83,9 @@ namespace MagicConchBot.Modules
                 builder.AddField(x =>
                 {
                     x.Name = string.Join(", ", cmd.Aliases) + (cmd.Parameters.Count == 0 ? string.Empty : " ...");
-                    x.Value = (cmd.Parameters.Count == 0 ? string.Empty : $"**Parameters:** {string.Join(", ", cmd.Parameters.Select(p => p.Name + " - " + p.Summary))}\n") +
+                    x.Value = (cmd.Parameters.Count == 0
+                                  ? string.Empty
+                                  : $"**Parameters:** {string.Join(", ", cmd.Parameters.Select(p => p.Name + " - " + p.Summary))}\n") +
                               $"**Summary:** {cmd.Summary}";
                     x.IsInline = false;
                 });

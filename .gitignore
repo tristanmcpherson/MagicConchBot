@@ -259,3 +259,10 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/MagicConchBot/temp
+/MagicConchBot/nuget.exe
+/MagicConchBot/nuget.exe
+/MagicConchBot/ffmpeg.exe
+/MagicConchBot/libsodium.dll
+/MagicConchBot/opus.dll
+*.exe

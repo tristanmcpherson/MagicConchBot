@@ -8,17 +8,17 @@ namespace MagicConchBot.Common.Interfaces
 {
     public interface IMusicService
     {
-        int Volume { get; set; }
+        float Volume { get; set; }
 
-        List<Song> SongList { get;  }
+        List<Song> SongList { get; }
 
         Song LastSong { get; }
-
+        
         Song CurrentSong { get; }
 
         PlayMode PlayMode { get; set; }
 
-        MusicState State { get; set; }
+        AudioState AudioState { get; }
 
         Task PlayAsync(IUserMessage msg);
 
@@ -28,7 +28,7 @@ namespace MagicConchBot.Common.Interfaces
 
         bool Skip();
 
-        void AddSong(Song song);
+        void QueueSong(Song song);
 
         Song RemoveSong(int songNumber);
 
