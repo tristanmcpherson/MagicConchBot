@@ -262,3 +262,7 @@ __pycache__/
 /MagicConchBot/temp
 /MagicConchBot/nuget.exe
 /MagicConchBot/nuget.exe
+/MagicConchBot/ffmpeg.exe
+/MagicConchBot/libsodium.dll
+/MagicConchBot/opus.dll
+*.exe

@@ -26,7 +26,8 @@ namespace MagicConchBot.Modules
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 await ReplyAsync("Restarting bot. Please wait.");
-                Process.Start("./kill.sh && ./start.sh");
+                Process.Start("kill.sh");
+                Process.Start("run.sh");
             }
         }
     }
