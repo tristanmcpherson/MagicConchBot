@@ -172,7 +172,7 @@ namespace MagicConchBot.Services.Music
             _song.TokenSource.Cancel();
         }
 
-        private TimeSpan CalculateCurrentTime(int currentBytes)
+        private static TimeSpan CalculateCurrentTime(int currentBytes)
         {
             return TimeSpan.FromSeconds(currentBytes /
                                         (1000d * 3840 /
