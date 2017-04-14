@@ -40,7 +40,7 @@ namespace MagicConchBot
             try
             {
                 _cts = new CancellationTokenSource();
-                Task.Factory.StartNew(async () => await MainAsync(_cts.Token), _cts.Token);
+                Task.Factory.StartNew(async () => await MainAsync(_cts.Token), _cts.Token).Wait();
 
                 while (!_cts.Token.IsCancellationRequested)
                 {

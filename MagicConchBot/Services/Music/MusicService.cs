@@ -99,7 +99,7 @@ namespace MagicConchBot.Services.Music
 
                         try
                         {
-                            await _songPlayer.PlaySong(audioClient, CurrentSong);
+                            await Task.Run(async () => await _songPlayer.PlaySong(audioClient, CurrentSong));
                         }
                         catch (Exception ex)
                         {
