@@ -10,7 +10,7 @@ namespace MagicConchBot.Helpers
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        public static unsafe byte[] AdjustVolume(byte[] audioSamples, float volume)
+        public static unsafe byte[] ChangeVol(byte[] audioSamples, float volume)
         {
             if (Math.Abs(volume - 1f) < 0.0001f)
                 return audioSamples;

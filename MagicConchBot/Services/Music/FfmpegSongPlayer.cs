@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -63,52 +64,32 @@ namespace MagicConchBot.Services.Music
 
             try
             {
-                var uri = new Uri(song.StreamUri).IsFile;
-                var inFile = uri ? song.StreamUri : await _fileProvider.GetStreamingFile(song);
+                var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
+                var outputFile = Path.Combine(directory, $"{Guid.NewGuid()}.raw");
 
-                var waitCount = 0;
+                var ffmpegTask = new Task(async () => await StartFfmpeg(song.StreamUri, outputFile, song), TaskCreationOptions.LongRunning);
+                ffmpegTask.Start();
 
-                while (true)
-                {
-                    var info = new FileInfo(inFile);
-                    if (info.Exists && info.Length >= 4096)
-                        break;
-
-                    if (++waitCount == 20)
-                        throw new Exception("Streaming file took too long to download. Stopping.");
-                    
-                    await Task.Delay(100, song.Token);
-                }
-
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = "ffmpeg",
-                    Arguments = $"-re -i \"{inFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ac 2 -ar 48000 -loglevel quiet pipe:1",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true
-                };
+                await FileHelper.WaitForFile(outputFile, 3840, song.Token);
+                
+                Log.Debug($"Creating PCM stream for file {song.StreamUri}");
 
                 var buffer = new byte[3840];
                 var retryCount = 0;
+                var stopwatch = new Stopwatch();
 
-                using (var process = Process.Start(startInfo))
+                using (var inStream = new FileStream(outputFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    if (process == null)
-                    {
-                        throw new Exception("Failed to created ffmpeg process.");
-                    }
-
-                    Log.Debug($"Creating PCM stream for file {inFile}");
-
                     using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music))
                     {
                         AudioState = AudioState.Playing;
                         Log.Debug("Playing song.");
                         song.CurrentTime = song.StartTime;
 
+                        stopwatch.Start();
                         while (!song.TokenSource.IsCancellationRequested)
                         {
-                            var byteCount = await process.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, song.Token);
+                            var byteCount = await inStream.ReadAsync(buffer, 0, buffer.Length, song.Token);
 
                             if (byteCount == 0)
                             {
@@ -118,7 +99,7 @@ namespace MagicConchBot.Services.Music
                                     break;
                                 }
 
-                                await Task.Delay(100);
+                                await Task.Delay(100, song.Token).ConfigureAwait(false);
 
                                 if (++retryCount == 50)
                                 {
@@ -133,13 +114,10 @@ namespace MagicConchBot.Services.Music
 
                             song.Token.ThrowIfCancellationRequested();
 
-                            buffer = AudioHelper.AdjustVolume(buffer, _currentVolume);
-
+                            buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
                             await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
                             song.CurrentTime += CalculateCurrentTime(byteCount);
                         }
-
-                        await pcmStream.FlushAsync();
                     }
                 }
             }
@@ -158,6 +136,33 @@ namespace MagicConchBot.Services.Music
                     AudioState = AudioState.Stopped;
                 }
             }
+        }
+
+        private static async Task StartFfmpeg(string inputFile, string outputFile, Song song)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = $"-re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -acodec pcm_s16le -loglevel quiet \"{outputFile}\"",
+                RedirectStandardOutput = false,
+                RedirectStandardInput = true,
+                UseShellExecute = false
+            };
+
+            if (File.Exists(outputFile))
+            {
+                File.Delete(outputFile);
+            }
+            
+            var p = Process.Start(startInfo);
+
+            while (!song.Token.IsCancellationRequested)
+            {
+                await Task.Delay(100);
+                await p.StandardInput.WriteLineAsync('q');
+            }
+
+            Log.Debug("ffmpeg exited.");
         }
 
         public void Stop()
