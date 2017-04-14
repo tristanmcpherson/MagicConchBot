@@ -32,8 +32,35 @@ namespace MagicConchBot.Modules
                 .WithImports("System", "System.Diagnostics", "System.Text", "System.Collections.Generic",
                     "System.Linq", "System.Net", "MagicConchBot.Modules", "MagicConchBot.Services", "Newtonsoft.Json",
                     "Newtonsoft.Json.Linq")
-                .WithReferences("MagicConchBot", "System.Linq", "System.Net.NameResolution", "Newtonsoft.Json");
+                .WithReferences("MagicConchBot", "System.Linq", "Newtonsoft.Json");
         }
+
+        private static readonly string[] BlockedTokens =
+        {
+            "Process.",
+            "Process(",
+            "Thread.",
+            "Thread(",
+            "File.",
+            "Directory.",
+            "StreamReader(",
+            "StreamWriter(",
+            "Environment.",
+            "WebClient(",
+            "HttpClient(",
+            "WebRequest.",
+            "Activator.CreateInstance",
+            "Invoke(",
+            "unsafe",
+            "DllImport(",
+            "Assembly.Load",
+            ".DynamicInvoke",
+            ".CreateDelegate",
+            "Expression.Call",
+            ".Compile()",
+            ".Emit(",
+            "MethodRental."
+        };
 
         [Command("eval")]
         public async Task Eval([Remainder] string code)
@@ -41,6 +68,12 @@ namespace MagicConchBot.Modules
             tokenSource?.Cancel();
 
             tokenSource = new CancellationTokenSource();
+
+            if (BlockedTokens.Any(t => code.Contains(t)))
+            {
+                await ReplyAsync("Failed. You've used a blocked keyword.");
+                return;
+            }
 
             if (!code.Contains("return"))
                 code = "return " + code;
