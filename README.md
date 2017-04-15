@@ -1,3 +1,5 @@
+![](https://askmagicconch.com/image/magicalconch.png)
+
 Magic Conch Bot for Discord
 ===================
 
