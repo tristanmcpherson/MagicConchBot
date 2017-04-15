@@ -76,6 +76,7 @@ namespace MagicConchBot.Services.Music
                 var buffer = new byte[3840];
                 var retryCount = 0;
                 var stopwatch = new Stopwatch();
+                var timeBetweenFrames = 20;
 
                 using (var inStream = new FileStream(outputFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
@@ -112,8 +113,13 @@ namespace MagicConchBot.Services.Music
                             }
 
                             song.Token.ThrowIfCancellationRequested();
-
                             buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
+                            if (stopwatch.ElapsedMilliseconds < timeBetweenFrames)
+                            {
+                                await Task.Delay((int) ((timeBetweenFrames - (int)stopwatch.ElapsedMilliseconds) * 0.5));
+                            }
+                            stopwatch.Restart();
+
                             await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
                             song.CurrentTime += CalculateCurrentTime(byteCount);
                         }
