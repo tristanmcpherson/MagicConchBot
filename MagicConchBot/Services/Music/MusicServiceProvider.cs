@@ -18,8 +18,16 @@ namespace MagicConchBot.Services.Music
         public static void OnLoad()
         {
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
-            if (Directory.Exists(directory))
-                Directory.Delete(directory, true);
+
+            try
+            {
+                if (Directory.Exists(directory))
+                    Directory.Delete(directory, true);
+            }
+            catch
+            {
+                Log.Debug("Failed to delete temp folder.");
+            }
         }
 
         public static void AddServices(ulong guildId, IMusicService service, Mp3ConverterService mp3Service)
