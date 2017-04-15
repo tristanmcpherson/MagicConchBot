@@ -66,11 +66,12 @@ namespace MagicConchBot.Services.Music
             {
                 var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
                 var outputFile = Path.Combine(directory, $"{Guid.NewGuid()}.raw");
+                Directory.CreateDirectory(directory);
 
                 var ffmpegTask = new Task(async () => await StartFfmpeg(song.StreamUri, outputFile, song), TaskCreationOptions.LongRunning);
                 ffmpegTask.Start();
 
-                await FileHelper.WaitForFile(outputFile, 3840, song.Token);
+                await FileHelper.WaitForFile(outputFile, 3840, song.Token, -1);
                 
                 Log.Debug($"Creating PCM stream for file {song.StreamUri}");
 
@@ -140,28 +141,40 @@ namespace MagicConchBot.Services.Music
 
         private static async Task StartFfmpeg(string inputFile, string outputFile, Song song)
         {
-            var startInfo = new ProcessStartInfo
+            try
             {
-                FileName = "ffmpeg",
-                Arguments = $"-re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -acodec pcm_s16le -loglevel quiet \"{outputFile}\"",
-                RedirectStandardOutput = false,
-                RedirectStandardInput = true,
-                UseShellExecute = false
-            };
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    Arguments =
+                        $"-re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -acodec pcm_s16le -loglevel quiet \"{outputFile}\"",
+                    RedirectStandardOutput = false,
+                    RedirectStandardInput = true,
+                    UseShellExecute = false
+                };
 
-            if (File.Exists(outputFile))
-            {
-                File.Delete(outputFile);
+                if (File.Exists(outputFile))
+                {
+                    File.Delete(outputFile);
+                }
+
+                var p = Process.Start(startInfo);
+
+                while (!song.Token.IsCancellationRequested && !p.HasExited)
+                {
+                    await Task.Delay(100);
+                }
+
+                if (!p.HasExited)
+                {
+                    await p.StandardInput.WriteLineAsync('q');
+                }
+
+                p.WaitForExit();
             }
-            
-            var p = Process.Start(startInfo);
-
-            while (!song.Token.IsCancellationRequested)
+            catch (IOException)
             {
-                await Task.Delay(100);
-                await p.StandardInput.WriteLineAsync('q');
             }
-
             Log.Debug("ffmpeg exited.");
         }
 
