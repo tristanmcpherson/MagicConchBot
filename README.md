@@ -1,4 +1,4 @@
-![](https://askmagicconch.com/image/magicalconch.png)
+![](http://i.imgur.com/Uv8fWNY.png)
 
 Magic Conch Bot for Discord
 ===================
