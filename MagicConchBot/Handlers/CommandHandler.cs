@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -100,7 +99,7 @@ namespace MagicConchBot.Handlers
 
         private static Task HandleGuildAvailableAsync(SocketGuild guild)
         {
-            var fileProvider = new HttpStreamingFileProvider();
+            var fileProvider = new StreamingFileProvider();
             var songPlayer = new FfmpegSongPlayer(fileProvider);
             var urlResolver = new UrlStreamResolver();
             var fileResolver = new LocalStreamResolver();

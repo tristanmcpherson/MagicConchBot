@@ -59,7 +59,7 @@ namespace MagicConchBot.Services
 
         private static Song ParseVideo(Video video)
         {
-            var regex = new Regex(@"PT((?<H>\d+)H)?(?<M>\d+)M(?<S>\d+)S");
+            var regex = new Regex(@"PT((?<H>\d+)H)?((?<M>\d+)M)?((?<S>\d+)S)?");
 
             var match = regex.Match(video.ContentDetails.Duration);
 

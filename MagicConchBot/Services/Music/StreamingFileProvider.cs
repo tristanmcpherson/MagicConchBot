@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
@@ -11,13 +9,13 @@ using NLog;
 
 namespace MagicConchBot.Services.Music
 {
-    public class HttpStreamingFileProvider : IFileProvider
+    public class StreamingFileProvider : IFileProvider
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private readonly ConcurrentDictionary<string, Guid> _songIdDictionary;
 
-        public HttpStreamingFileProvider()
+        public StreamingFileProvider()
         {
             _songIdDictionary = new ConcurrentDictionary<string, Guid>();
         }
