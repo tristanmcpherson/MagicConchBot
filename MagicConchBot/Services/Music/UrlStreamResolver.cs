@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using NLog;
+using YoutubeExtractor;
 
 namespace MagicConchBot.Services.Music
 {
@@ -20,6 +21,14 @@ namespace MagicConchBot.Services.Music
             if (DirectPlayFormats.Contains(uri.Split('.').LastOrDefault()))
             {
                 streamUrl = uri;
+            }
+            else if (uri.Contains("youtube"))
+            {
+                var video = DownloadUrlResolver.GetDownloadUrls(uri)
+                    .OrderByDescending(info => info.AudioBitrate)
+                    .ThenBy(info => info.Resolution)
+                    .FirstOrDefault();
+                streamUrl = video?.DownloadUrl;
             }
             else
             {

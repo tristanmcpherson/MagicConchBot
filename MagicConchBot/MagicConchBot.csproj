@@ -56,6 +56,8 @@
     <PackageReference Include="FChan.Library" Version="1.0.0-CI00000" />
     <PackageReference Include="Google.Apis.YouTube.v3" Version="1.25.0.760" />
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
+    <PackageReference Include="libvideo" Version="1.0.0-CI00005" />
+    <PackageReference Include="libvideo.compat" Version="1.0.0-CI00005" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.0.0" />
     <PackageReference Include="NLog" Version="5.0.0-beta06" />
     <PackageReference Include="SoundCloud.API.Client.NetCore" Version="1.0.0-CI00007" />
