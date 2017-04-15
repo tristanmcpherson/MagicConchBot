@@ -17,6 +17,8 @@ namespace MagicConchBot.Services.Music
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
         
         private const int Milliseconds = 20;
+        private const int FrameSize = 3840;
+        private const int MaxRetryCount = 50;
 
         private const int MaxVolume = 1;
         private const int MinVolume = 0;
@@ -25,6 +27,8 @@ namespace MagicConchBot.Services.Music
         
         private readonly IFileProvider _fileProvider;
         private Song _song;
+
+        private bool _pauseRequested;
 
         public float Volume
         {
@@ -69,14 +73,13 @@ namespace MagicConchBot.Services.Music
                 var ffmpegTask = new Task(async () => await StartFfmpeg(song.StreamUri, outputFile, song), TaskCreationOptions.LongRunning);
                 ffmpegTask.Start();
 
-                await FileHelper.WaitForFile(outputFile, 3840, song.Token, -1);
+                await FileHelper.WaitForFile(outputFile, FrameSize, song.Token, -1);
                 
                 Log.Debug($"Creating PCM stream for file {song.StreamUri}");
 
-                var buffer = new byte[3840];
+                var buffer = new byte[FrameSize];
                 var retryCount = 0;
                 var stopwatch = new Stopwatch();
-                var timeBetweenFrames = 20;
 
                 using (var inStream = new FileStream(outputFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
@@ -101,7 +104,7 @@ namespace MagicConchBot.Services.Music
 
                                 await Task.Delay(100, song.Token).ConfigureAwait(false);
 
-                                if (++retryCount == 50)
+                                if (++retryCount == MaxRetryCount)
                                 {
                                     Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
                                     break;
@@ -114,9 +117,9 @@ namespace MagicConchBot.Services.Music
 
                             song.Token.ThrowIfCancellationRequested();
                             buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
-                            if (stopwatch.ElapsedMilliseconds < timeBetweenFrames)
+                            if (stopwatch.ElapsedMilliseconds < Milliseconds)
                             {
-                                await Task.Delay((int) ((timeBetweenFrames - (int)stopwatch.ElapsedMilliseconds) * 0.5));
+                                await Task.Delay((int) ((Milliseconds - (int)stopwatch.ElapsedMilliseconds) * 0.5));
                             }
                             stopwatch.Restart();
 
@@ -137,10 +140,8 @@ namespace MagicConchBot.Services.Music
             }
             finally
             {
-                if (AudioState != AudioState.Paused)
-                {
-                    AudioState = AudioState.Stopped;
-                }
+                AudioState = _pauseRequested ? AudioState.Paused : AudioState.Stopped;
+                _pauseRequested = false;
             }
         }
 
@@ -190,7 +191,7 @@ namespace MagicConchBot.Services.Music
 
         public void Pause()
         {
-            AudioState = AudioState.Paused;
+            _pauseRequested = true;
             _song.StartTime = _song.CurrentTime;
             _song.TokenSource.Cancel();
         }
