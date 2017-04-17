@@ -68,5 +68,10 @@ namespace MagicConchBot.Common.Types
 
             return builder.Build();
         }
+
+        public string GetInfo()
+        {
+            return $"{Name} - **[{LengthPretty}]**\n";
+        }
     }
 }

@@ -10,4 +10,4 @@ namespace MagicConchBot.Common.Interfaces
 
         Task<Song> GetSongInfoAsync(string url);
     }
-}
+} 
