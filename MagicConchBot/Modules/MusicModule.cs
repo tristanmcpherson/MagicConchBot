@@ -26,6 +26,8 @@ namespace MagicConchBot.Modules
         private static readonly Regex UrlRegex =
             new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
+        private readonly PlaylistService _playlistService;
+
         private readonly ChanService _chanService;
 
         private readonly GoogleApiService _googleApiService;
@@ -42,6 +44,7 @@ namespace MagicConchBot.Modules
             _googleApiService = map.Get<GoogleApiService>();
             _chanService = map.Get<ChanService>();
             _youtubeInfoService = map.Get<YouTubeInfoService>();
+            _playlistService = map.Get<PlaylistService>();
         }
 
         [Command("play")]
@@ -65,7 +68,7 @@ namespace MagicConchBot.Modules
             }
         }
 
-        [Command("play")]
+        [Command("play"), Alias("p")]
         [Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
         public async Task PlayAsync([Remainder] [Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
         {
@@ -86,8 +89,11 @@ namespace MagicConchBot.Modules
 
             if (!UrlRegex.IsMatch(query))
             {
-                if ((terms.FirstOrDefault() ?? "") == "yt")
+                var firstTerm = terms.FirstOrDefault() ?? "";
+                if (firstTerm == "yt")
+                {
                     query = query.Replace(terms.First() + " ", string.Empty);
+                }
 
                 url = await _googleApiService.GetFirstVideoByKeywordsAsync(query);
             }
@@ -116,33 +122,7 @@ namespace MagicConchBot.Modules
             }
             else
             {
-                foreach (var service in _musicInfoServices)
-                {
-                    var match = service.Regex.Match(url);
-                    if (!match.Success)
-                        continue;
-
-                    song = await service.GetSongInfoAsync(url);
-
-                    // url may contain time info but it is specified, overwrite
-                    if (startTime != TimeSpan.Zero)
-                        song.StartTime = startTime;
-
-                    // song info found, stop info service search
-                    break;
-                }
-
-                // Song info not found from search or url
-                if (song == null)
-                    song = new Song(url);
-
-                // valid url but song information not found by any song info service
-                Log.Info($"Queued song: {song.Name} - {song.Url} at {song.StartTime}.");
-
-                // add to queue
-                Context.MusicService.QueueSong(song);
-
-                await ReplyAsync("Queued song:", false, song.GetEmbed());
+                await QueueSong(url, startTime);
             }
 
             // if not playing, start playing and then the player service
@@ -150,6 +130,95 @@ namespace MagicConchBot.Modules
             {
                 Log.Info("No song currently playing, playing.");
                 await Context.MusicService.PlayAsync(Context.Message);
+            }
+        }
+
+        private async Task QueueSong(string url, TimeSpan startTime, bool embed = true)
+        {
+            Song song = null;
+            foreach (var service in _musicInfoServices)
+            {
+                var match = service.Regex.Match(url);
+                if (!match.Success)
+                    continue;
+
+                song = await service.GetSongInfoAsync(url);
+
+                // url may contain time info but it is specified, overwrite
+                if (startTime != TimeSpan.Zero)
+                    song.StartTime = startTime;
+
+                // song info found, stop info service search
+                break;
+            }
+
+            // Song info not found from search or url
+            if (song == null)
+                song = new Song(url);
+
+            // valid url but song information not found by any song info service
+            Log.Info($"Queued song: {song.Name} - {song.Url} at {song.StartTime}.");
+
+            // add to queue
+            Context.MusicService.QueueSong(song);
+
+            if (embed)
+            {
+                await ReplyAsync("Queued song:", false, song.GetEmbed());
+            }
+        }
+        
+        [Command("playlist"), Alias("pl")]
+        public async Task LoadPlaylist(string playlist)
+        {
+            var name = playlist ?? Playlist.DefaultName;
+            var pl = _playlistService.GetPlaylists(Context.Guild.Id).FirstOrDefault(p => p.Name == name);
+            if (pl == null)
+            {
+                pl = new Playlist();
+                if (name == Playlist.DefaultName)
+                {
+                    _playlistService.UpsertPlaylists(Context.Guild.Id, new List<Playlist> {pl});
+                }
+                else
+                {
+                    await ReplyAsync("No playlist by the given name.");
+                    return;
+                }
+            }
+
+            await ReplyAsync($"Found playlist with the name: {name}");
+            
+            foreach (var songUrl in pl.Songs)
+            {
+                await QueueSong(songUrl, TimeSpan.Zero, false);
+            }
+        }
+
+        [Command("save"), Alias("s")]
+        public async Task SaveToPlaylist(string playlist)
+        {
+            if (Context.MusicService.CurrentSong == null)
+            {
+                return;
+            }
+
+            var name = playlist ?? Playlist.DefaultName;
+            var playlists = _playlistService.GetPlaylists(Context.Guild.Id);
+            var pl = playlists.FirstOrDefault(p => p.Name == name);
+            if (pl == null)
+            {
+                pl = new Playlist();
+                pl.Songs.Add(Context.MusicService.CurrentSong?.Url);
+
+                if (name == Playlist.DefaultName)
+                {
+                    _playlistService.UpsertPlaylists(Context.Guild.Id, new List<Playlist> { pl });
+                }
+                else
+                {
+                    await ReplyAsync($"No playlist by the name: {playlist}");
+                }
             }
         }
 

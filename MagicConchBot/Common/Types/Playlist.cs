@@ -4,14 +4,16 @@ namespace MagicConchBot.Common.Types
 {
     public class Playlist
     {
-        public Playlist(string name = "Default")
+        public const string DefaultName = "Default";
+
+        public Playlist(string name = DefaultName)
         {
             Name = name;
             Songs = new List<string>();
         }
 
         public string Name { get; set; }
-
+        
         public List<string> Songs { get; set; }
     }
 }

@@ -28,6 +28,7 @@ namespace MagicConchBot.Handlers
             _map.Add(new SoundCloudInfoService());
             _map.Add(new ChanService());
             _map.Add(new StardewValleyService());
+            _map.Add(new PlaylistService());
         }
 
         public async Task InstallAsync()
