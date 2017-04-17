@@ -5,17 +5,17 @@ using NLog;
 
 namespace MagicConchBot.Services.Music
 {
-    public static class MusicServiceProvider
+    public class MusicServiceProvider
     {
-        private static readonly ConcurrentDictionary<ulong, IMusicService> MusicServices =
+        private readonly ConcurrentDictionary<ulong, IMusicService> _musicServices =
             new ConcurrentDictionary<ulong, IMusicService>();
 
-        private static readonly ConcurrentDictionary<ulong, Mp3ConverterService> Mp3Services =
+        private readonly ConcurrentDictionary<ulong, Mp3ConverterService> _mp3Services =
             new ConcurrentDictionary<ulong, Mp3ConverterService>();
 
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        public static void OnLoad()
+        public MusicServiceProvider()
         {
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
 
@@ -30,18 +30,18 @@ namespace MagicConchBot.Services.Music
             }
         }
 
-        public static void AddServices(ulong guildId, IMusicService service, Mp3ConverterService mp3Service)
+        public void AddServices(ulong guildId, IMusicService service, Mp3ConverterService mp3Service)
         {
-            if (!MusicServices.ContainsKey(guildId))
-                MusicServices.TryAdd(guildId, service);
+            if (!_musicServices.ContainsKey(guildId))
+                _musicServices.TryAdd(guildId, service);
 
-            if (!Mp3Services.ContainsKey(guildId))
-                Mp3Services.TryAdd(guildId, mp3Service);
+            if (!_mp3Services.ContainsKey(guildId))
+                _mp3Services.TryAdd(guildId, mp3Service);
         }
 
-        public static IMusicService GetService(ulong guildId)
+        public IMusicService GetService(ulong guildId)
         {
-            if (!MusicServices.TryGetValue(guildId, out IMusicService service))
+            if (!_musicServices.TryGetValue(guildId, out IMusicService service))
             {
                 Log.Error("Server music service was not created. Cancelling.");
             }
@@ -49,21 +49,21 @@ namespace MagicConchBot.Services.Music
             return service;
         }
 
-        public static Mp3ConverterService GetMp3Service(ulong guildId)
+        public Mp3ConverterService GetMp3Service(ulong guildId)
         {
-            if (!Mp3Services.TryGetValue(guildId, out Mp3ConverterService service))
+            if (!_mp3Services.TryGetValue(guildId, out Mp3ConverterService service))
             {
                 Log.Error("Server mp3 service was not created, creating.");
                 service = new Mp3ConverterService();
-                Mp3Services.TryAdd(guildId, service);
+                _mp3Services.TryAdd(guildId, service);
             }
 
             return service;
         }
 
-        public static void StopAll()
+        public void StopAll()
         {
-            foreach (var musicService in MusicServices)
+            foreach (var musicService in _musicServices)
                 if (musicService.Value.Stop())
                     Log.Info($"Successfully stopped music for GuildId: {musicService.Key}");
         }

@@ -7,10 +7,13 @@ namespace MagicConchBot.Modules
 {
     public class MusicCommandContext : CommandContext
     {
-        public MusicCommandContext(IDiscordClient client, IUserMessage msg) : base(client, msg)
+        private readonly MusicServiceProvider _provider;
+
+        public MusicCommandContext(IDiscordClient client, IUserMessage msg, MusicServiceProvider provider) : base(client, msg)
         {
+            _provider = provider;
         }
 
-        public IMusicService MusicService => MusicServiceProvider.GetService(Guild.Id);
+        public IMusicService MusicService => _provider.GetService(Guild.Id);
     }
 }
