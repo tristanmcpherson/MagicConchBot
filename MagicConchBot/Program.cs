@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -31,7 +32,7 @@ namespace MagicConchBot
         {
             ConfigureLogs();
 
-            Log.Info($"Version: {Assembly.GetEntryAssembly().GetName().Version}");
+            Log.Info($"Version: {Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion}");
             EnsureConfigExists();
             MusicServiceProvider.OnLoad();
 
