@@ -23,6 +23,7 @@ namespace MagicConchBot.Handlers
         public void ConfigureServices(IDependencyMap depMap)
         {
             _map = depMap;
+            _map.Add(new MusicServiceProvider());
             _map.Add(new GoogleApiService());
             _map.Add(new YouTubeInfoService(_map));
             _map.Add(new SoundCloudInfoService());
@@ -66,7 +67,7 @@ namespace MagicConchBot.Handlers
                 return;
 
             // Create a Command Context
-            var context = new MusicCommandContext(_client, message);
+            var context = new MusicCommandContext(_client, message, _map.Get<MusicServiceProvider>());
 
             // Execute the Command, store the result
             var result = await _commands.ExecuteAsync(context, argPos, _map, MultiMatchHandling.Best);
@@ -92,13 +93,13 @@ namespace MagicConchBot.Handlers
             }
         }
 
-        private static async Task HandleJoinedGuildAsync(SocketGuild arg)
+        private async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
             await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
             await HandleGuildAvailableAsync(arg);
         }
 
-        private static Task HandleGuildAvailableAsync(SocketGuild guild)
+        private Task HandleGuildAvailableAsync(SocketGuild guild)
         {
             var fileProvider = new StreamingFileProvider();
             var songPlayer = new FfmpegSongPlayer(fileProvider);
@@ -107,7 +108,7 @@ namespace MagicConchBot.Handlers
 
             var musicService = new MusicService(new List<ISongResolver> { fileResolver, urlResolver }, songPlayer);
 
-            MusicServiceProvider.AddServices(guild.Id, musicService, new Mp3ConverterService());
+            _map.Get<MusicServiceProvider>().AddServices(guild.Id, musicService, new Mp3ConverterService());
             return Task.CompletedTask;
         }
     }
