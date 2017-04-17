@@ -27,6 +27,7 @@ namespace MagicConchBot.Modules
             new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
         private readonly PlaylistService _playlistService;
+        private readonly MusicServiceProvider _musicServiceProvider;
 
         private readonly ChanService _chanService;
 
@@ -41,6 +42,7 @@ namespace MagicConchBot.Modules
                 map.Get<YouTubeInfoService>(),
                 map.Get<SoundCloudInfoService>()
             };
+            _musicServiceProvider = map.Get<MusicServiceProvider>();
             _googleApiService = map.Get<GoogleApiService>();
             _chanService = map.Get<ChanService>();
             _youtubeInfoService = map.Get<YouTubeInfoService>();
@@ -76,7 +78,6 @@ namespace MagicConchBot.Modules
             var startTime = TimeSpan.Zero;
 
             string url;
-            Song song = null;
 
             if (terms.Length > 1)
             {
@@ -296,7 +297,7 @@ namespace MagicConchBot.Modules
 
             await ReplyAsync("Generating mp3 file... please wait.");
 
-            var mp3Service = MusicServiceProvider.GetMp3Service(Context.Guild.Id);
+            var mp3Service = _musicServiceProvider.GetMp3Service(Context.Guild.Id);
 
             if (!mp3Service.Recipients.Contains(Context.User))
                 mp3Service.Recipients.Add(Context.User);

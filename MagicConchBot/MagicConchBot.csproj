@@ -11,18 +11,19 @@
     <AssemblyVersionSettings>None.None.None.IncrementOnDemand</AssemblyVersionSettings>
     <PostBuildEvent></PostBuildEvent>
     <FileVersion>1.0.0.0</FileVersion>
-
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <WarningLevel>4</WarningLevel>
     <LangVersion>7</LangVersion>
+	<VersionSuffix>dev</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <WarningLevel>4</WarningLevel>
+	<VersionSuffix>dev</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

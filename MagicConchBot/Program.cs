@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,15 +30,23 @@ namespace MagicConchBot
         private static CommandHandler _handler;
         private static CancellationTokenSource _cts;
 
+        private const string GitHubRef =
+            "https://api.github.com/repos/tristanmcpherson/MagicConchBot/git/refs/heads/dev";
+
+        private static string Version => Assembly.GetEntryAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            .InformationalVersion;
+
         public static void Main()
         {
             ConfigureLogs();
 
-            Log.Info($"Version: {typeof(Program).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion}");
             EnsureConfigExists();
-            MusicServiceProvider.OnLoad();
 
             Console.WriteLine("Starting Magic Conch Bot. Press 'q' at any time to quit.");
+
+            Log.Info($"Version: {Version}");
+            CheckUpToDate().Wait();
 
             try
             {
@@ -45,7 +55,16 @@ namespace MagicConchBot
 
                 while (!_cts.Token.IsCancellationRequested)
                 {
-                    HandleKeypress();
+                    if (Console.KeyAvailable)
+                    {
+                        var key = Console.ReadKey(true).Key;
+                        if (key == ConsoleKey.Q)
+                        {
+                            _cts.Cancel();
+                        }
+                        continue;
+                    }
+
                     Thread.Sleep(100);
                 }
             }
@@ -54,31 +73,6 @@ namespace MagicConchBot
                 Log.Info("Bot sucessfully exited.");
                 Console.WriteLine("Press enter to continue . . .");
                 Console.ReadLine();
-            }
-        }
-
-        private static void HandleKeypress()
-        {
-            if (!Console.KeyAvailable)
-                return;
-
-            var key = Console.ReadKey(true).Key;
-            if (key == ConsoleKey.Q)
-            {
-                _cts.Cancel();
-            }
-            else if (key == ConsoleKey.S)
-            {
-                var config = Configuration.Load();
-                var serverId = config.OwnerGuildId;
-                Console.WriteLine("Skipping song.");
-                var channel = (IMessageChannel)_client.GetGuild(serverId)?.Channels.FirstOrDefault(c => c.Name == config.BotControlChannel);
-                if (channel == null)
-                    return;
-                if (MusicServiceProvider.GetService(serverId).Skip())
-                    channel.SendMessageAsync("Skipping song at request of owner.");
-                else
-                    Console.WriteLine("No song to skip.");
             }
         }
 
@@ -118,8 +112,34 @@ namespace MagicConchBot
             }
             finally
             {
-                MusicServiceProvider.StopAll();
+                map.Get<MusicServiceProvider>().StopAll();
                 await _client.StopAsync();
+            }
+        }
+
+
+        private static async Task CheckUpToDate()
+        {
+            var gitHash = Version.Split('.').LastOrDefault() ?? "";
+            if (gitHash.EndsWith("dev"))
+            {
+                Log.Info("Bot is using a debug version.");
+                return;
+            }
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("tristanmcpherson")));
+                var head = await httpClient.GetStringAsync(GitHubRef);
+                if (head.StartsWith(gitHash))
+                {
+                    Log.Info("Bot is up to date! :)");
+                }
+                else
+                {
+                    Log.Warn("Bot is not up to date, please update!");
+                }
             }
         }
 
