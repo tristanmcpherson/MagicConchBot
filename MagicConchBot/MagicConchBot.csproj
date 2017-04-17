@@ -3,15 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp1.1</TargetFramework>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <Version>1.1.0.*</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <PrimaryVersionType>AssemblyVersionAttribute</PrimaryVersionType>
     <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
     <UpdateAssemblyFileVersion>False</UpdateAssemblyFileVersion>
     <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
     <AssemblyVersionSettings>None.None.None.IncrementOnDemand</AssemblyVersionSettings>
     <PostBuildEvent></PostBuildEvent>
-    <FileVersion>1.1.0.0</FileVersion>
+    <FileVersion>1.0.0.0</FileVersion>
 
   </PropertyGroup>
 
