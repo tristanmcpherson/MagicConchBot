@@ -32,7 +32,7 @@ namespace MagicConchBot
         {
             ConfigureLogs();
 
-            Log.Info($"Version: {Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion}");
+            Log.Info($"Version: {typeof(Program).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion}");
             EnsureConfigExists();
             MusicServiceProvider.OnLoad();
 
