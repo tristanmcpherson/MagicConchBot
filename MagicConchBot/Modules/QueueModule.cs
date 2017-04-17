@@ -42,7 +42,7 @@ namespace MagicConchBot.Modules
                         sb.Clear();
                     }
 
-                    sb.Append($"`{i + 1}` {songs[i].Name} - **[{songs[i].LengthPretty}]**\n");
+                    sb.Append($"`{i + 1}` : {songs[i].GetInfo()}");
                 }
 
                 await ReplyAsync(sb.ToString());
