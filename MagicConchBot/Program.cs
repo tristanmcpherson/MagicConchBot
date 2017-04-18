@@ -13,6 +13,7 @@ using Discord.WebSocket;
 using MagicConchBot.Handlers;
 using MagicConchBot.Resources;
 using MagicConchBot.Services.Music;
+using Newtonsoft.Json.Linq;
 using NLog;
 using NLog.Conditions;
 using NLog.Config;
@@ -26,7 +27,7 @@ namespace MagicConchBot
         // Debug: https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private static DiscordSocketClient _client;
+        private static DiscordShardedClient _client;
         private static CommandHandler _handler;
         private static CancellationTokenSource _cts;
 
@@ -85,7 +86,7 @@ namespace MagicConchBot
                 _handler = new CommandHandler();
                 _handler.ConfigureServices(map);
 
-                _client = new DiscordSocketClient(new DiscordSocketConfig
+                _client = new DiscordShardedClient(new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Info
                 });
@@ -132,7 +133,7 @@ namespace MagicConchBot
                 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
                 httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("tristanmcpherson")));
                 var head = await httpClient.GetStringAsync(GitHubRef);
-                if (head.StartsWith(gitHash))
+                if (JObject.Parse(head)["object"]["sha"].ToString().StartsWith(gitHash))
                 {
                     Log.Info("Bot is up to date! :)");
                 }
