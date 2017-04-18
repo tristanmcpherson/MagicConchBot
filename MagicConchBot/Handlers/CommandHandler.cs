@@ -15,7 +15,7 @@ namespace MagicConchBot.Handlers
     public class CommandHandler
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        private DiscordSocketClient _client;
+        private DiscordShardedClient _client;
 
         private CmdSrv _commands;
         private IDependencyMap _map;
@@ -35,7 +35,7 @@ namespace MagicConchBot.Handlers
         public async Task InstallAsync()
         {
             // Create Command Service, inject it into Dependency Map
-            _client = _map.Get<DiscordSocketClient>();
+            _client = _map.Get<DiscordShardedClient>();
             _commands = new CmdSrv();
 
             //_map.Add(_commands);
