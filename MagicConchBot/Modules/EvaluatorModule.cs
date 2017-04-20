@@ -13,15 +13,15 @@ namespace MagicConchBot.Modules
 {
     public class Globals
     {
-        public MusicCommandContext Context;
+        public ConchCommandContext Context;
 
-        public Globals(MusicCommandContext context)
+        public Globals(ConchCommandContext context)
         {
             Context = context;
         }
     }
 
-    public class EvaluatorModule : ModuleBase<MusicCommandContext>
+    public class EvaluatorModule : ModuleBase<ConchCommandContext>
     {
         private static readonly ScriptOptions ScriptOptions;
         private static CancellationTokenSource tokenSource;

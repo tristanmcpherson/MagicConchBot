@@ -11,7 +11,7 @@ namespace MagicConchBot.Modules
     [RequireBotControlRole]
     [Name("Queue Commands")]
     [Group("queue")]
-    public class QueueModule : ModuleBase<MusicCommandContext>
+    public class QueueModule : ModuleBase<ConchCommandContext>
     {
         [Command]
         [Summary("Lists all the songs in the queue.")]

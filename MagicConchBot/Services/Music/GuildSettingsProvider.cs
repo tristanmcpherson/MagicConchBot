@@ -4,11 +4,11 @@ using MagicConchBot.Common.Types;
 
 namespace MagicConchBot.Services.Music
 {
-    public class GuildSettingsService
+    public class GuildSettingsProvider
     {
         private readonly LiteDatabase _db;
 
-        public GuildSettingsService()
+        public GuildSettingsProvider()
         {
             _db = new LiteDatabase(@"Settings.db");
         }
