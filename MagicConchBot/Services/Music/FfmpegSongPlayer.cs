@@ -75,7 +75,7 @@ namespace MagicConchBot.Services.Music
 
                 await FileHelper.WaitForFile(outputFile, FrameSize, song.Token, -1);
                 
-                Log.Debug($"Creating PCM stream for file {song.StreamUri}");
+                Log.Debug($"Creating PCM stream for file {song.StreamUri}.");
 
                 var buffer = new byte[FrameSize];
                 var retryCount = 0;

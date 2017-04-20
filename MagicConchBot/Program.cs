@@ -61,6 +61,14 @@ namespace MagicConchBot
                         {
                             _cts.Cancel();
                         }
+                        else if (key == ConsoleKey.G)
+                        {
+                            Log.Info("Listing guilds: ");
+                            foreach (var guild in _client.Guilds)
+                            {
+                                Log.Info(guild.Name);
+                            }
+                        }
                         continue;
                     }
 
