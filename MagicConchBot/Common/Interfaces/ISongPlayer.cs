@@ -8,7 +8,7 @@ namespace MagicConchBot.Common.Interfaces
     public interface ISongPlayer
     {
         float Volume { get; set; }
-        AudioState AudioState { get; }
+        PlayerState PlayerState { get; }
         Task PlaySong(IAudioClient client, Song song);
         void Stop();
         void Pause();

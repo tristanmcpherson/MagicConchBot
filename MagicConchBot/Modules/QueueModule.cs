@@ -1,9 +1,9 @@
 ﻿using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
+using MagicConchBot.Helpers;
 
 namespace MagicConchBot.Modules
 {
@@ -25,7 +25,7 @@ namespace MagicConchBot.Modules
                 return;
             }
 
-            if (songs.Count < 10)
+            if (songs.Count < 5)
             {
                 await ReplyAsync(string.Empty, false, songs.First().GetEmbed());
                 for (var i = 1; i < songs.Count; i++)
@@ -33,19 +33,7 @@ namespace MagicConchBot.Modules
             }
             else
             {
-                var sb = new StringBuilder();
-                for (var i = 0; i < songs.Count; i++)
-                {
-                    if (sb.Length > 1500)
-                    {
-                        await ReplyAsync(sb.ToString());
-                        sb.Clear();
-                    }
-
-                    sb.Append($"`{i + 1}` : {songs[i].GetInfo()}");
-                }
-
-                await ReplyAsync(sb.ToString());
+                await SongHelper.DisplaySongsClean(songs.ToArray(), Context.Channel);
             }
         }
 
