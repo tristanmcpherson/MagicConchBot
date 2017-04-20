@@ -20,16 +20,24 @@ namespace MagicConchBot.Handlers
         private CmdSrv _commands;
         private IDependencyMap _map;
 
+        // I hate the way this code looks
         public void ConfigureServices(IDependencyMap depMap)
         {
+            var googleApiInfoService = new GoogleApiInfoService();
+
             _map = depMap;
+            _map.Add(new SongResolutionService(new List<ISongInfoService>
+            {
+                googleApiInfoService,
+                new SoundCloudInfoService(),
+            }));
+
+            _map.Add(googleApiInfoService);
             _map.Add(new MusicServiceProvider());
-            _map.Add(new GoogleApiService());
-            _map.Add(new YouTubeInfoService(_map));
             _map.Add(new SoundCloudInfoService());
             _map.Add(new ChanService());
             _map.Add(new StardewValleyService());
-            _map.Add(new PlaylistService());
+            _map.Add(new GuildSettingsService());
         }
 
         public async Task InstallAsync()
@@ -48,7 +56,7 @@ namespace MagicConchBot.Handlers
             _client.MessageReceived += HandleMessageReceivedAsync;
         }
 
-        public async Task HandleCommandAsync(SocketMessage parameterMessage)
+        private async Task HandleCommandAsync(SocketMessage parameterMessage)
         {
             // Don't handle the command if it is a system message
             var message = parameterMessage as SocketUserMessage;

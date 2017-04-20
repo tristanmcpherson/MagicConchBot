@@ -266,3 +266,5 @@ __pycache__/
 /MagicConchBot/libsodium.dll
 /MagicConchBot/opus.dll
 *.exe
+/MagicConchBot/Settings-journal.db
+/MagicConchBot/Settings.db

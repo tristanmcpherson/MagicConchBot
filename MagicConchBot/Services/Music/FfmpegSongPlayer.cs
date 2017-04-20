@@ -46,7 +46,7 @@ namespace MagicConchBot.Services.Music
             }
         }
 
-        public AudioState AudioState { get; private set; } = AudioState.Stopped;
+        public PlayerState PlayerState { get; private set; } = PlayerState.Stopped;
 
         public FfmpegSongPlayer(IFileProvider fileProvider)
         {
@@ -62,7 +62,7 @@ namespace MagicConchBot.Services.Music
 
             _song = song;
 
-            AudioState = AudioState.Loading;
+            PlayerState = PlayerState.Loading;
 
             try
             {
@@ -85,7 +85,7 @@ namespace MagicConchBot.Services.Music
                 {
                     using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music))
                     {
-                        AudioState = AudioState.Playing;
+                        PlayerState = PlayerState.Playing;
                         Log.Debug("Playing song.");
                         song.CurrentTime = song.StartTime;
 
@@ -142,7 +142,7 @@ namespace MagicConchBot.Services.Music
             }
             finally
             {
-                AudioState = _pauseRequested ? AudioState.Paused : AudioState.Stopped;
+                PlayerState = _pauseRequested ? PlayerState.Paused : PlayerState.Stopped;
                 _pauseRequested = false;
             }
         }

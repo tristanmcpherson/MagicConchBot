@@ -6,16 +6,17 @@ using System.Threading.Tasks;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
+using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Resources;
 
 namespace MagicConchBot.Services
 {
-    public class GoogleApiService
+    public class GoogleApiInfoService : ISongInfoService
     {
         private readonly YouTubeService _youtubeService;
 
-        public GoogleApiService()
+        public GoogleApiInfoService()
         {
             var config = Configuration.Load();
             _youtubeService = new YouTubeService(new BaseClientService.Initializer
@@ -105,6 +106,24 @@ namespace MagicConchBot.Services
             } while (playlist.PageInfo.TotalResults > count);
 
             return songs;
+        }
+
+        public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/playlist))(?<VideoId>[\w-]{10,12})?([&\?]list=)?(?<PlaylistId>[\w-]{22,34})?(?:[\&\?]?t=)?(?<Time>[\d]+)?s?(?<TimeAlt>(\d+h)?(\d+m)?(\d+s)?)?", RegexOptions.IgnoreCase);
+        public async Task<Song> GetSongInfoAsync(string url)
+        {
+            var match = Regex.Match(url);
+
+            if (!match.Success)
+                return null;
+
+            var videoId = match.Groups["VideoId"].Value;
+            var song = await GetVideoInfoByIdAsync(videoId);
+            if (match.Groups["Time"].Value != string.Empty)
+                song.StartTime = TimeSpan.FromSeconds(Convert.ToInt32(match.Groups["Time"].Value));
+            else if (match.Groups["TimeAlt"].Value != string.Empty)
+                song.StartTime = TimeSpan.Parse(match.Groups["TimeAlt"].Value);
+
+            return song;
         }
     }
 }
