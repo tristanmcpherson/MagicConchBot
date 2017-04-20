@@ -52,9 +52,9 @@ namespace MagicConchBot.Modules
             {
                 f.WithName("Stats")
                     .WithValue($"**Heap Size:**\n{GetHeapSize()} MB\n\n" +
-                               $"**Guilds:**\n{((DiscordSocketClient) Context.Client).Guilds.Count}\n\n" +
-                               $"**Channels:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
-                               $"**Users:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Users.Count)}");
+                               $"**Guilds:**\n{((DiscordShardedClient) Context.Client).Guilds.Count}\n\n" +
+                               $"**Channels:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
+                               $"**Users:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Users.Count)}");
             });
 
             await ReplyAsync(string.Empty, false, embed.Build());
