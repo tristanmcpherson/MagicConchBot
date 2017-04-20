@@ -8,7 +8,7 @@ using SoundCloud.API.Client.Objects.TrackPieces;
 
 namespace MagicConchBot.Services
 {
-    public class SoundCloudInfoService : IMusicInfoService
+    public class SoundCloudInfoService : ISongInfoService
     {
         public SoundCloudInfoService()
         {

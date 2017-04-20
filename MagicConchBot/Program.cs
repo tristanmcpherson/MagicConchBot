@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -41,10 +40,9 @@ namespace MagicConchBot
         public static void Main()
         {
             ConfigureLogs();
-
             EnsureConfigExists();
 
-            Console.WriteLine("Starting Magic Conch Bot. Press 'q' at any time to quit.");
+            Log.Info("Starting Magic Conch Bot. Press 'q' at any time to quit.");
 
             Log.Info($"Version: {Version}");
             CheckUpToDate().Wait();
@@ -109,7 +107,7 @@ namespace MagicConchBot
             }
             catch (Exception ex)
             {
-                await WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, string.Empty, ex));
+                await WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, ex.ToString(), ex));
             }
             finally
             {
@@ -172,9 +170,10 @@ namespace MagicConchBot
             consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Warn, ConsoleOutputColor.Blue));
 
             // Step 3. Set target properties 
-            consoleTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
+            const string layout = @"${date:format=HH\:mm\:ss} | ${pad:padding=-5:fixedlength=true:inner:${level:uppercase=true}} ${message} ${exception}";
+            consoleTarget.Layout = layout;
+            fileTarget.Layout = layout;
             fileTarget.FileName = "log.txt";
-            fileTarget.Layout = @"[${date:format=HH\:mm\:ss}][${level:uppercase=true}] ${message} ${exception}";
 
             // Step 4. Define rules
             var rule1 = new LoggingRule("*", LogLevel.Debug, consoleTarget);

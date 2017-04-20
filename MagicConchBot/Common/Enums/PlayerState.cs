@@ -1,6 +1,6 @@
 namespace MagicConchBot.Common.Enums
 {
-    public enum AudioState
+    public enum PlayerState
     {
         Stopped = 0,
         Loading,

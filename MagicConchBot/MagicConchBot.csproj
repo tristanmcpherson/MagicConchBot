@@ -50,6 +50,8 @@
     <None Remove="opus.dll" />
     <None Remove="run.bat" />
     <None Remove="run.sh" />
+    <None Remove="Settings-journal.db" />
+    <None Remove="Settings.db" />
   </ItemGroup>
 
   <ItemGroup>

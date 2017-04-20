@@ -33,7 +33,7 @@ namespace MagicConchBot.Services.Music
             LastSong = null;
         }
 
-        public AudioState AudioState => _songPlayer.AudioState;
+        public PlayerState PlayerState => _songPlayer.PlayerState;
 
         public float Volume
         {
@@ -109,7 +109,7 @@ namespace MagicConchBot.Services.Music
                         {
                             Log.Info($"Song ended at {CurrentSong.CurrentTimePretty} / {CurrentSong.LengthPretty}");
 
-                            if (_songPlayer.AudioState != AudioState.Paused)
+                            if (_songPlayer.PlayerState != PlayerState.Paused)
                             {
                                 if (PlayMode == PlayMode.Queue)
                                 {
@@ -144,7 +144,7 @@ namespace MagicConchBot.Services.Music
 
                     message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true));
 
-                    while (_songPlayer.AudioState == AudioState.Playing || _songPlayer.AudioState == AudioState.Loading)
+                    while (_songPlayer.PlayerState == PlayerState.Playing || _songPlayer.PlayerState == PlayerState.Loading)
                     {
                         // Song changed. Stop updating song info.
                         if (CurrentSong.Url != song.Url)
@@ -175,7 +175,7 @@ namespace MagicConchBot.Services.Music
 
         public bool Stop()
         {
-            if (_songPlayer.AudioState == AudioState.Stopped || _tokenSource == null)
+            if (_songPlayer.PlayerState == PlayerState.Stopped || _tokenSource == null)
             {
                 return false;
             }
@@ -189,7 +189,7 @@ namespace MagicConchBot.Services.Music
 
         public bool Pause()
         {
-            if (_songPlayer.AudioState != AudioState.Playing && _songPlayer.AudioState != AudioState.Loading || _tokenSource == null)
+            if (_songPlayer.PlayerState != PlayerState.Playing && _songPlayer.PlayerState != PlayerState.Loading || _tokenSource == null)
                 return false;
 
             _tokenSource.Cancel();
@@ -200,7 +200,7 @@ namespace MagicConchBot.Services.Music
 
         public bool Skip()
         {
-            if (_songPlayer.AudioState != AudioState.Playing && _songPlayer.AudioState != AudioState.Loading || _tokenSource == null)
+            if (_songPlayer.PlayerState != PlayerState.Playing && _songPlayer.PlayerState != PlayerState.Loading || _tokenSource == null)
                 return false;
             
             _songPlayer.Stop();

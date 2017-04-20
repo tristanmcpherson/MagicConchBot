@@ -18,7 +18,7 @@ namespace MagicConchBot.Common.Interfaces
 
         PlayMode PlayMode { get; set; }
 
-        AudioState AudioState { get; }
+        PlayerState PlayerState { get; }
 
         Task PlayAsync(IUserMessage msg);
 

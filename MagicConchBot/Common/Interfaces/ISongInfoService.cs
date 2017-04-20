@@ -4,7 +4,7 @@ using MagicConchBot.Common.Types;
 
 namespace MagicConchBot.Common.Interfaces
 {
-    public interface IMusicInfoService
+    public interface ISongInfoService
     {
         Regex Regex { get; }
 
