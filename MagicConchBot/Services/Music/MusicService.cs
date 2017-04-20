@@ -62,6 +62,7 @@ namespace MagicConchBot.Services.Music
             {
                 try
                 {
+                    
                     audioClient = await AudioHelper.JoinChannelAsync(msg).ConfigureAwait(false);
 
                     if (audioClient == null)
@@ -99,6 +100,7 @@ namespace MagicConchBot.Services.Music
 
                         try
                         {
+                            Log.Info($"Playing song {CurrentSong.Name} on channel {msg.Channel.Name}");
                             await Task.Run(async () => await _songPlayer.PlaySong(audioClient, CurrentSong));
                         }
                         catch (Exception ex)
