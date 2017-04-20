@@ -17,7 +17,7 @@ namespace MagicConchBot.Modules
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]
     [Name("Music Commands")]
-    public class MusicModule : ModuleBase<MusicCommandContext>
+    public class MusicModule : ModuleBase<ConchCommandContext>
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
