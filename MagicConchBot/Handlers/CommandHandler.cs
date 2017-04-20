@@ -37,7 +37,7 @@ namespace MagicConchBot.Handlers
             _map.Add(new SoundCloudInfoService());
             _map.Add(new ChanService());
             _map.Add(new StardewValleyService());
-            _map.Add(new GuildSettingsService());
+            _map.Add(new GuildSettingsProvider());
         }
 
         public async Task InstallAsync()
@@ -75,7 +75,7 @@ namespace MagicConchBot.Handlers
                 return;
 
             // Create a Command Context
-            var context = new MusicCommandContext(_client, message, _map.Get<MusicServiceProvider>());
+            var context = new ConchCommandContext(_client, message, _map);
 
             // Execute the Command, store the result
             var result = await _commands.ExecuteAsync(context, argPos, _map, MultiMatchHandling.Best);

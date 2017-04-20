@@ -6,30 +6,26 @@ using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
 using MagicConchBot.Services;
-using MagicConchBot.Services.Music;
 
 namespace MagicConchBot.Modules
 {
-    public class PlaylistModule : ModuleBase<MusicCommandContext>
+    [Group("playlist"), Alias("pl")]
+    public class PlaylistModule : ModuleBase<ConchCommandContext>
     {
-        private readonly GuildSettingsService _guildSettingsService;
         private readonly SongResolutionService _songResolution;
 
-        public PlaylistModule(GuildSettingsService guildSettingsService, SongResolutionService songResolution)
+        public PlaylistModule(SongResolutionService songResolution)
         {
-            _guildSettingsService = guildSettingsService;
             _songResolution = songResolution;
         }
 
-        [Command("load"), Alias("l", "playlist load", "playlist l")]
-        public async Task LoadPlaylist(string playlist = null)
+        [Command, Alias("l", "play", "load")]
+        public async Task LoadPlaylist(string playlist = Playlist.DefaultName)
         {
-            var name = playlist ?? Playlist.DefaultName;
-            var settings = _guildSettingsService.GetSettings(Context.Guild.Id);
-            var pl = settings.Playlists.FirstOrDefault(p => p.Name == name);
+            var pl = Context.Settings.Playlists.FirstOrDefault(p => p.Name == playlist);
             if (pl == null)
             {
-                await ReplyAsync($"No songs found in playlist: {name}");
+                await ReplyAsync($"No songs found in playlist: {playlist}");
                 return;
             }
 
@@ -61,26 +57,67 @@ namespace MagicConchBot.Modules
         }
 
         [Command("save"), Alias("s")]
-        public async Task SaveToPlaylist(string playlist = null)
+        public async Task SaveToPlaylist(string playlist = Playlist.DefaultName)
         {
             if (Context.MusicService.CurrentSong == null)
             {
                 return;
             }
-
-            var name = playlist ?? Playlist.DefaultName;
-            var settings = _guildSettingsService.GetSettings(Context.Guild.Id);
-            var pl = settings.Playlists.FirstOrDefault(p => p.Name == name);
+            
+            var pl = Context.Settings.Playlists.FirstOrDefault(p => p.Name == playlist);
             if (pl == null)
             {
                 pl = new Playlist();
-                settings.Playlists.Add(pl);
+                Context.Settings.Playlists.Add(pl);
             }
 
             pl.Songs.Add(Context.MusicService.CurrentSong?.Url);
-            _guildSettingsService.UpdateSettings(Context.Guild.Id, settings);
+            Context.SaveSettings();
 
-            await ReplyAsync($"Added {Context.MusicService.CurrentSong.Name} to playlist {name}");
+            await ReplyAsync($"Added {Context.MusicService.CurrentSong.Name} to playlist {playlist}");
+        }
+
+        // TODO: Comment all code, general cleanup
+        /* TODO: Add some form of checking in order to make sure the
+           TODO: specified string is a valid url, possibly a search term that is resolved */
+        [Command("add")]
+        public async Task AddToPlaylist(string song, string playlist = Playlist.DefaultName)
+        {
+            var pl = Context.Settings.Playlists.FirstOrDefault(p => p.Name == playlist);
+            if (pl == null)
+            {
+                pl = new Playlist();
+                Context.Settings.Playlists.Add(pl);
+            }
+            pl.Songs.Add(song);
+            Context.SaveSettings();
+
+            await ReplyAsync($"Added {song} to playlist {playlist}");
+        }
+
+        [Command, Alias("show", "list")]
+        public async Task ShowPlaylist(string playlist = Playlist.DefaultName)
+        {
+            var pl = Context.Settings.Playlists.FirstOrDefault(p => p.Name == playlist);
+
+            if (pl == null)
+            {
+                await ReplyAsync($"No songs found in playlist: {playlist}");
+                return;
+            }
+
+            await ReplyAsync("Resolving songs from playlist. This may take awhile.");
+
+            var tasks = new Task<Song>[pl.Songs.Count];
+
+            for (var i = 0; i < pl.Songs.Count; i++)
+            {
+                tasks[i] = _songResolution.ResolveSong(pl.Songs[i], TimeSpan.Zero);
+            }
+
+            var songs = await Task.WhenAll(tasks);
+
+            await SongHelper.DisplaySongsClean(songs, Context.Channel);
         }
     }
 }
