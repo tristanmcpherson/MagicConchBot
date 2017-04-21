@@ -25,7 +25,6 @@ namespace MagicConchBot.Services.Music
 
         private float _currentVolume = 0.5f;
         
-        private readonly IFileProvider _fileProvider;
         private Song _song;
 
         private bool _pauseRequested;
@@ -47,11 +46,6 @@ namespace MagicConchBot.Services.Music
         }
 
         public PlayerState PlayerState { get; private set; } = PlayerState.Stopped;
-
-        public FfmpegSongPlayer(IFileProvider fileProvider)
-        {
-            _fileProvider = fileProvider;
-        }
 
         public async Task PlaySong(IAudioClient audio, Song song)
         {

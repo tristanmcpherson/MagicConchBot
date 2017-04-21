@@ -67,7 +67,7 @@ namespace MagicConchBot.Modules
             var pl = Context.Settings.Playlists.FirstOrDefault(p => p.Name == playlist);
             if (pl == null)
             {
-                pl = new Playlist();
+                pl = new Playlist(playlist);
                 Context.Settings.Playlists.Add(pl);
             }
 
@@ -86,7 +86,7 @@ namespace MagicConchBot.Modules
             var pl = Context.Settings.Playlists.FirstOrDefault(p => p.Name == playlist);
             if (pl == null)
             {
-                pl = new Playlist();
+                pl = new Playlist(playlist);
                 Context.Settings.Playlists.Add(pl);
             }
             pl.Songs.Add(song);
