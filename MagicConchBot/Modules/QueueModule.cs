@@ -27,7 +27,7 @@ namespace MagicConchBot.Modules
 
             if (songs.Count < 5)
             {
-                await ReplyAsync(string.Empty, false, songs.First().GetEmbed());
+                await ReplyAsync(string.Empty, false, songs.First().GetEmbed($"[Current]: {songs.First().Name}"));
                 for (var i = 1; i < songs.Count; i++)
                     await ReplyAsync(string.Empty, false, songs[i].GetEmbed($"{i}: {songs[i].Name}"));
             }
