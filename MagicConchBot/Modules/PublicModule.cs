@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using MagicConchBot.Helpers;
 using MagicConchBot.Resources;
 
 namespace MagicConchBot.Modules
@@ -37,11 +38,13 @@ namespace MagicConchBot.Modules
             var embed = new EmbedBuilder {Color = Constants.MaterialBlue};
 
             var osUptime = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? await GetLinuxUptime() : "";
+            var upToDate = AppHelper.Version.Contains("dev") || await WebHelper.UpToDateWithGitHub();
 
             embed.AddField(f =>
             {
                 f.WithName("Info")
                     .WithValue($"**Author:**\n{application.Owner.Username} (ID {application.Owner.Id})\n\n" +
+                               $"**Version:**\n{AppHelper.Version} - " + (upToDate ? "Up to date! :)" : "Update needed") + "\n\n" +
                                $"**Library:**\nDiscord.Net ({DiscordConfig.Version})\n\n" +
                                $"**Runtime:**\n{RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n\n" +
                                $"**Uptime:**\n{GetUptime()}\n\n" +
