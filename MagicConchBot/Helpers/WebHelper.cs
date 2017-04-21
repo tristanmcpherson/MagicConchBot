@@ -1,8 +1,11 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using NLog;
 
 namespace MagicConchBot.Helpers
@@ -10,6 +13,24 @@ namespace MagicConchBot.Helpers
     public static class WebHelper
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+        private const string GitHubRef =
+            "https://api.github.com/repos/tristanmcpherson/MagicConchBot/git/refs/heads/dev";
+
+        public static async Task<bool> UpToDateWithGitHub()
+        {
+            var gitHash = AppHelper.Version.Split('.').LastOrDefault() ?? "";
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+                httpClient.DefaultRequestHeaders.UserAgent.Add(
+                    new ProductInfoHeaderValue(new ProductHeaderValue("tristanmcpherson")));
+                var head = await httpClient.GetStringAsync(GitHubRef);
+                return JObject.Parse(head)["object"]["sha"].ToString().StartsWith(gitHash);
+            }
+        }
 
         public static async Task ThrottledFileDownload(string outputPath, string url, CancellationToken token,
             int bytesPerSecond = 1048576)
