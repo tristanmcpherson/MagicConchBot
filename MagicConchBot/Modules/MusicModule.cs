@@ -60,7 +60,7 @@ namespace MagicConchBot.Modules
             }
         }
 
-        [Command("play"), Alias("p")]
+        [Command("play", RunMode = RunMode.Async), Alias("p")]
         [Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
         public async Task PlayAsync([Remainder] [Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
         {
@@ -190,7 +190,7 @@ namespace MagicConchBot.Modules
                 "Successfully changed mode to playlist mode. Songs will not be removed from queue after they are done playing.");
         }
 
-        [Command("mp3")]
+        [Command("mp3", RunMode = RunMode.Async)]
         [Summary("Generates a link to the mp3 of the current song playing or the last song played.")]
         public async Task GenerateMp3Async()
         {
@@ -219,7 +219,7 @@ namespace MagicConchBot.Modules
             }
         }
 
-        [Command("ygyl")]
+        [Command("ygyl", RunMode = RunMode.Async)]
         public async Task YouGrooveYouLoseAsync(string board = "wsg")
         {
             var songUrls = await _chanService.GetPostsWithVideosAsync(board);

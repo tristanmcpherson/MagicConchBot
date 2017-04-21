@@ -109,12 +109,15 @@ namespace MagicConchBot.Handlers
 
         private Task HandleGuildAvailableAsync(SocketGuild guild)
         {
-            var fileProvider = new StreamingFileProvider();
-            var songPlayer = new FfmpegSongPlayer(fileProvider);
-            var urlResolver = new UrlStreamResolver();
-            var fileResolver = new LocalStreamResolver();
+            var songPlayer = new FfmpegSongPlayer();
 
-            var musicService = new MusicService(new List<ISongResolver> { fileResolver, urlResolver }, songPlayer);
+            var songResolvers = new List<ISongResolver>
+            {
+                new UrlStreamResolver(),
+                new LocalStreamResolver()
+            };
+
+            var musicService = new MusicService(songResolvers, songPlayer);
 
             _map.Get<MusicServiceProvider>().AddServices(guild.Id, musicService, new Mp3ConverterService());
             return Task.CompletedTask;
