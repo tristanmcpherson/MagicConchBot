@@ -9,54 +9,9 @@ using MagicConchBot.Services;
 
 namespace MagicConchBot.Modules
 {
-    [Group("playlist"), Alias("pl")]
+
     public class PlaylistModule : ModuleBase<ConchCommandContext>
     {
-        private readonly SongResolutionService _songResolution;
-
-        public PlaylistModule(SongResolutionService songResolution)
-        {
-            _songResolution = songResolution;
-        }
-
-
-        [Command, Alias("l", "play", "load")]
-        public async Task LoadPlaylist(string name = Playlist.DefaultName)
-        {
-            var playlist = Context.Settings.GetPlaylistOrCreate(name);
-            if (playlist.Songs.Count == 0)
-            {
-                await ReplyAsync($"No songs found in playlist: {name}");
-                return;
-            }
-
-            await ReplyAsync("Queueing songs from playlist. This may take awhile.");
-
-            var tasks = new Task<Song>[playlist.Songs.Count];
-
-            for (var i = 0; i < playlist.Songs.Count; i++)
-            {
-                tasks[i] = _songResolution.ResolveSong(playlist.Songs[i], TimeSpan.Zero);
-            }
-
-            var songs = await Task.WhenAll(tasks);
-
-            await SongHelper.DisplaySongsClean(songs, Context.Channel);
-
-            foreach (var song in songs)
-            {
-                Context.MusicService.QueueSong(song);
-            }
-
-            await ReplyAsync($"Queued {playlist.Songs.Count} songs.");
-
-            if (Context.MusicService.PlayerState == PlayerState.Stopped ||
-                Context.MusicService.PlayerState == PlayerState.Paused)
-            {
-                await Context.MusicService.PlayAsync(Context.Message);
-            } 
-        }
-
         [Command("save"), Alias("s")]
         public async Task SaveToPlaylist(string name = Playlist.DefaultName)
         {
@@ -73,59 +28,108 @@ namespace MagicConchBot.Modules
             await ReplyAsync($"Added {Context.MusicService.CurrentSong.Name} to playlist {playlist.Name}");
         }
 
-        public async Task SaveQueueToPlaylist(string name = Playlist.DefaultName)
+        [Group("playlist"), Alias("pl")]
+        public class PlaylistSubModule : ModuleBase<ConchCommandContext>
         {
-            if (Context.MusicService.SongList.Count == 0)
+            private readonly SongResolutionService _songResolution;
+
+            public PlaylistSubModule(SongResolutionService songResolution)
             {
-                return;
+                _songResolution = songResolution;
             }
 
-            var playlist = Context.Settings.GetPlaylistOrCreate(name);
 
-            foreach (var song in Context.MusicService.SongList)
+            [Command, Alias("l", "play", "load")]
+            public async Task LoadPlaylist(string name = Playlist.DefaultName)
             {
-                playlist.Songs.Add(song.Url);
+                var playlist = Context.Settings.GetPlaylistOrCreate(name);
+                if (playlist.Songs.Count == 0)
+                {
+                    await ReplyAsync($"No songs found in playlist: {name}");
+                    return;
+                }
+
+                await ReplyAsync("Queueing songs from playlist. This may take awhile.");
+
+                var tasks = new Task<Song>[playlist.Songs.Count];
+
+                for (var i = 0; i < playlist.Songs.Count; i++)
+                {
+                    tasks[i] = _songResolution.ResolveSong(playlist.Songs[i], TimeSpan.Zero);
+                }
+
+                var songs = await Task.WhenAll(tasks);
+
+                await SongHelper.DisplaySongsClean(songs, Context.Channel);
+
+                foreach (var song in songs)
+                {
+                    Context.MusicService.QueueSong(song);
+                }
+
+                await ReplyAsync($"Queued {playlist.Songs.Count} songs.");
+
+                if (Context.MusicService.PlayerState == PlayerState.Stopped ||
+                    Context.MusicService.PlayerState == PlayerState.Paused)
+                {
+                    await Context.MusicService.PlayAsync(Context.Message);
+                }
             }
 
-            await ReplyAsync($"Saved {playlist.Songs.Count} songs to playlist {playlist.Name}");
-        }
-
-        // TODO: Comment all code, general cleanup
-        /* TODO: Add some form of checking in order to make sure the
-           TODO: specified string is a valid url, possibly a search term that is resolved */
-        [Command("add")]
-        public async Task AddToPlaylist(string song, string name = Playlist.DefaultName)
-        {
-            var playlist = Context.Settings.GetPlaylistOrCreate(name);
-            playlist.Songs.Add(song);
-            Context.SaveSettings();
-
-            await ReplyAsync($"Added {song} to playlist {playlist.Name}");
-        }
-
-        [Command, Alias("show", "list")]
-        public async Task ShowPlaylist(string name = Playlist.DefaultName)
-        {
-            var playlist = Context.Settings.GetPlaylistOrCreate(name);
-
-            if (playlist.Songs.Count == 0)
+            public async Task SaveQueueToPlaylist(string name = Playlist.DefaultName)
             {
-                await ReplyAsync($"No songs found in playlist: {playlist.Name}");
-                return;
+                if (Context.MusicService.SongList.Count == 0)
+                {
+                    return;
+                }
+
+                var playlist = Context.Settings.GetPlaylistOrCreate(name);
+
+                foreach (var song in Context.MusicService.SongList)
+                {
+                    playlist.Songs.Add(song.Url);
+                }
+
+                await ReplyAsync($"Saved {playlist.Songs.Count} songs to playlist {playlist.Name}");
             }
 
-            await ReplyAsync("Resolving songs from playlist. This may take awhile.");
-
-            var tasks = new Task<Song>[playlist.Songs.Count];
-
-            for (var i = 0; i < playlist.Songs.Count; i++)
+            // TODO: Comment all code, general cleanup
+            /* TODO: Add some form of checking in order to make sure the
+               TODO: specified string is a valid url, possibly a search term that is resolved */
+            [Command("add")]
+            public async Task AddToPlaylist(string song, string name = Playlist.DefaultName)
             {
-                tasks[i] = _songResolution.ResolveSong(playlist.Songs[i], TimeSpan.Zero);
+                var playlist = Context.Settings.GetPlaylistOrCreate(name);
+                playlist.Songs.Add(song);
+                Context.SaveSettings();
+
+                await ReplyAsync($"Added {song} to playlist {playlist.Name}");
             }
 
-            var songs = await Task.WhenAll(tasks);
+            [Command, Alias("show", "list")]
+            public async Task ShowPlaylist(string name = Playlist.DefaultName)
+            {
+                var playlist = Context.Settings.GetPlaylistOrCreate(name);
 
-            await SongHelper.DisplaySongsClean(songs, Context.Channel);
+                if (playlist.Songs.Count == 0)
+                {
+                    await ReplyAsync($"No songs found in playlist: {playlist.Name}");
+                    return;
+                }
+
+                await ReplyAsync("Resolving songs from playlist. This may take awhile.");
+
+                var tasks = new Task<Song>[playlist.Songs.Count];
+
+                for (var i = 0; i < playlist.Songs.Count; i++)
+                {
+                    tasks[i] = _songResolution.ResolveSong(playlist.Songs[i], TimeSpan.Zero);
+                }
+
+                var songs = await Task.WhenAll(tasks);
+
+                await SongHelper.DisplaySongsClean(songs, Context.Channel);
+            }
         }
     }
 }

@@ -149,7 +149,7 @@ namespace MagicConchBot.Services.Music
                 {
                     FileName = "ffmpeg",
                     Arguments =
-                        $"-re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -acodec pcm_s16le -loglevel quiet \"{outputFile}\"",
+                        $"-re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -ar 48000 -loglevel quiet \"{outputFile}\"",
                     RedirectStandardOutput = false,
                     RedirectStandardInput = true,
                     UseShellExecute = false
