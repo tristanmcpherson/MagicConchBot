@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -18,6 +19,7 @@ namespace MagicConchBot.Modules
             _service = service;
         }
 
+        [NoHelp]
         [Command]
         public async Task HelpAsync()
         {
@@ -37,8 +39,11 @@ namespace MagicConchBot.Modules
                 string last = null;
                 foreach (var cmd in module.Commands)
                 {
+                    
                     // var result = await cmd.CheckPreconditionsAsync(Context);
                     // if (result.IsSuccess)
+                    //if (cmd.Name)
+
                     var alias = cmd.Aliases.First();
                     if (last == alias)
                         continue;
@@ -59,6 +64,7 @@ namespace MagicConchBot.Modules
             await ReplyAsync(string.Empty, false, builder.Build());
         }
 
+        [NoHelp]
         [Command]
         public async Task HelpAsync([Summary("The command")] string command)
         {
@@ -93,5 +99,9 @@ namespace MagicConchBot.Modules
 
             await ReplyAsync(string.Empty, false, builder.Build());
         }
+    }
+
+    public class NoHelpAttribute : Attribute
+    {
     }
 }

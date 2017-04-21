@@ -51,10 +51,11 @@ namespace MagicConchBot.Modules
             embed.AddField(f =>
             {
                 f.WithName("Stats")
-                    .WithValue($"**Heap Size:**\n{GetHeapSize()} MB\n\n" +
-                               $"**Guilds:**\n{((DiscordShardedClient) Context.Client).Guilds.Count}\n\n" +
-                               $"**Channels:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
-                               $"**Users:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Users.Count)}");
+                        .WithValue($"**Heap Size:**\n{GetHeapSize()} MB\n\n" +
+                                   $"**Guilds:**\n{((DiscordShardedClient) Context.Client).Guilds.Count}\n\n" +
+                                   $"**Channels:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
+                                   $"**Users:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Users.Count)}\n\n" +
+                                   $"**Shards:**\n{((DiscordShardedClient) Context.Client).Shards.Count}");
             });
 
             await ReplyAsync(string.Empty, false, embed.Build());

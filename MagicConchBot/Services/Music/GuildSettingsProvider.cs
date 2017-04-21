@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using LiteDB;
+﻿using LiteDB;
 using MagicConchBot.Common.Types;
 
 namespace MagicConchBot.Services.Music
