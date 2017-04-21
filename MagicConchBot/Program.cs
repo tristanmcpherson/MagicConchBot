@@ -1,8 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,9 +7,9 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MagicConchBot.Handlers;
+using MagicConchBot.Helpers;
 using MagicConchBot.Resources;
 using MagicConchBot.Services.Music;
-using Newtonsoft.Json.Linq;
 using NLog;
 using NLog.Conditions;
 using NLog.Config;
@@ -29,9 +26,6 @@ namespace MagicConchBot
         private static DiscordShardedClient _client;
         private static CommandHandler _handler;
         private static CancellationTokenSource _cts;
-
-        private const string GitHubRef =
-            "https://api.github.com/repos/tristanmcpherson/MagicConchBot/git/refs/heads/dev";
 
         private static string Version => Assembly.GetEntryAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
@@ -83,6 +77,23 @@ namespace MagicConchBot
             }
         }
 
+        private static async Task CheckUpToDate()
+        {
+            if (AppHelper.Version.Contains("dev"))
+            {
+                Log.Info("Bot is using a debug version.");
+                return;
+            }
+            if (await WebHelper.UpToDateWithGitHub())
+            {
+                Log.Info("Bot is up to date! :)");
+            }
+            else
+            {
+                Log.Warn("Bot is not up to date, please update!");
+            }
+        }
+
         private static async Task MainAsync(CancellationToken cancellationToken)
         {
             var map = new DependencyMap();
@@ -125,30 +136,6 @@ namespace MagicConchBot
         }
 
 
-        private static async Task CheckUpToDate()
-        {
-            var gitHash = Version.Split('.').LastOrDefault() ?? "";
-            if (gitHash.EndsWith("dev"))
-            {
-                Log.Info("Bot is using a debug version.");
-                return;
-            }
-
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
-                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("tristanmcpherson")));
-                var head = await httpClient.GetStringAsync(GitHubRef);
-                if (JObject.Parse(head)["object"]["sha"].ToString().StartsWith(gitHash))
-                {
-                    Log.Info("Bot is up to date! :)");
-                }
-                else
-                {
-                    Log.Warn("Bot is not up to date, please update!");
-                }
-            }
-        }
 
         private static void ConfigureLogs()
         {
