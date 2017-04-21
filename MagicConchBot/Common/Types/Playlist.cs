@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace MagicConchBot.Common.Types
 {
@@ -30,6 +31,33 @@ namespace MagicConchBot.Common.Types
         public GuildSettings()
         {
             Playlists = new List<Playlist>();
+        }
+
+        public Playlist GetPlaylistOrCreate(string name = Playlist.DefaultName)
+        {
+            if (Playlists == null)
+            {
+                Playlists = new List<Playlist>();
+            }
+
+            var playlist = Playlists.FirstOrDefault(p => p.Name == name);
+            if (playlist == null)
+            {
+                playlist = new Playlist(name);
+                Playlists.Add(playlist);
+            }
+
+            return playlist;
+        }
+
+        public Playlist GetPlaylistOrNull(string name = Playlist.DefaultName)
+        {
+            if (Playlists == null)
+            {
+                Playlists = new List<Playlist>();
+            }
+
+            return Playlists.FirstOrDefault(p => p.Name == name);
         }
     }
 }
