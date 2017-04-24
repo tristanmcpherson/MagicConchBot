@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -8,6 +10,8 @@ using MagicConchBot.Modules;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
 using MagicConchBot.Services.Music;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using NLog;
 
 namespace MagicConchBot.Handlers
@@ -18,14 +22,18 @@ namespace MagicConchBot.Handlers
         private DiscordShardedClient _client;
 
         private CmdSrv _commands;
-        private IDependencyMap _map;
+        private readonly IDependencyMap _map;
+
+        public CommandHandler(IDependencyMap depMap)
+        {
+            _map = depMap;
+        }
 
         // I hate the way this code looks
-        public void ConfigureServices(IDependencyMap depMap)
+        public void ConfigureServices()
         {
             var googleApiInfoService = new GoogleApiInfoService();
 
-            _map = depMap;
             _map.Add(new SongResolutionService(new List<ISongInfoService>
             {
                 googleApiInfoService,
