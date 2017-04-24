@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
@@ -13,6 +14,9 @@ namespace MagicConchBot.Helpers
     public static class WebHelper
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+        public static readonly Regex UrlRegex =
+            new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
         private const string GitHubRef =
             "https://api.github.com/repos/tristanmcpherson/MagicConchBot/git/refs/heads/dev";
