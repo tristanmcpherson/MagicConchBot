@@ -60,7 +60,7 @@ namespace MagicConchBot
                             Log.Info("Listing guilds: ");
                             foreach (var guild in _client.Guilds)
                             {
-                                Log.Info(guild.Name);
+                                Log.Info($"{guild.Name} - '{guild.Owner.Username}:{guild.Owner.Id}'");
                             }
                         }
                         continue;
@@ -100,8 +100,8 @@ namespace MagicConchBot
 
             try
             {
-                _handler = new CommandHandler();
-                _handler.ConfigureServices(map);
+                _handler = new CommandHandler(map);
+                _handler.ConfigureServices();
 
                 _client = new DiscordShardedClient(new DiscordSocketConfig
                 {
@@ -218,7 +218,6 @@ namespace MagicConchBot
                 config.Save(); // Save the new configuration object to file.
 
                 Console.WriteLine("The configuration file has been created at 'Configuration.json', please enter your information and restart.");
-                Console.Write("Token: ");
 
                 config.Token = Console.ReadLine(); // Read the bot token from console.
             }

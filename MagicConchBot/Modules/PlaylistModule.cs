@@ -75,6 +75,7 @@ namespace MagicConchBot.Modules
                 }
             }
 
+            [Command("save queue")]
             public async Task SaveQueueToPlaylist(string name = Playlist.DefaultName)
             {
                 if (Context.MusicService.SongList.Count == 0)
@@ -98,6 +99,12 @@ namespace MagicConchBot.Modules
             [Command("add")]
             public async Task AddToPlaylist(string song, string name = Playlist.DefaultName)
             {
+                if (!WebHelper.UrlRegex.IsMatch(song))
+                {
+                    await ReplyAsync($"The url {song} is invalid. Please enter a valid url to save to this playlist.");
+                    return;
+                }
+
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
                 playlist.Songs.Add(song);
                 Context.SaveSettings();

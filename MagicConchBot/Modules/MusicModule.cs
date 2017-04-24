@@ -8,6 +8,7 @@ using Discord.Commands;
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
 using MagicConchBot.Services;
 using MagicConchBot.Services.Music;
 using NLog;
@@ -20,9 +21,6 @@ namespace MagicConchBot.Modules
     public class MusicModule : ModuleBase<ConchCommandContext>
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-
-        private static readonly Regex UrlRegex =
-            new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
         private readonly MusicServiceProvider _musicServiceProvider;
         private readonly SongResolutionService _songResolutionService;
@@ -78,7 +76,7 @@ namespace MagicConchBot.Modules
                 
             }
 
-            if (!UrlRegex.IsMatch(query))
+            if (!WebHelper.UrlRegex.IsMatch(query))
             {
                 var firstTerm = terms.FirstOrDefault() ?? "";
                 if (firstTerm == "yt")
