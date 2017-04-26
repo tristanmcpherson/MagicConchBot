@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Discord.Commands;
-using Google;
 using MagicConchBot.Attributes;
 
 namespace MagicConchBot.Modules
@@ -17,7 +16,8 @@ namespace MagicConchBot.Modules
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 await ReplyAsync("Rebooting bot host machine. Please wait approximately 1 minute, then ping using !info");
-                Process.Start("reboot");
+
+                Process.Start("sudo reboot");
             }
         }
 
@@ -28,8 +28,7 @@ namespace MagicConchBot.Modules
             {
                 await ReplyAsync("Restarting bot. Please wait.");
 
-                Process.Start("/bin/bash", "-c \"sleep 5 && ./run.sh\"");
-                Program.Stop();
+                Process.Start("./restart.sh");
             }
         }
     }
