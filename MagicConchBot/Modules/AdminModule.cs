@@ -17,7 +17,7 @@ namespace MagicConchBot.Modules
             {
                 await ReplyAsync("Rebooting bot host machine. Please wait approximately 1 minute, then ping using !info");
 
-                Process.Start("sudo reboot");
+                Process.Start("./scripts/reboot.sh");
             }
         }
 
@@ -28,7 +28,7 @@ namespace MagicConchBot.Modules
             {
                 await ReplyAsync("Restarting bot. Please wait.");
 
-                Process.Start("./restart.sh");
+                Process.Start("./scripts/restart.sh");
             }
         }
     }
