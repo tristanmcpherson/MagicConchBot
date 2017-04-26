@@ -34,12 +34,12 @@ namespace MagicConchBot.Modules
             {
                 if (module.Commands.Any(n => n.Name == nameof(HelpAsync)))
                     continue;
+                
 
                 string description = null;
                 string last = null;
                 foreach (var cmd in module.Commands)
                 {
-                    
                     // var result = await cmd.CheckPreconditionsAsync(Context);
                     // if (result.IsSuccess)
                     //if (cmd.Name)

@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Google;
 using MagicConchBot.Attributes;
 
 namespace MagicConchBot.Modules
@@ -26,8 +27,9 @@ namespace MagicConchBot.Modules
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 await ReplyAsync("Restarting bot. Please wait.");
-                Process.Start("kill.sh");
-                Process.Start("run.sh");
+
+                Process.Start("/bin/bash", "-c \"sleep 5 && ./run.sh\"");
+                Program.Stop();
             }
         }
     }

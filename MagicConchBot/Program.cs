@@ -20,7 +20,7 @@ namespace MagicConchBot
     public class Program
     {
         // Release: https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
-        // Debug: https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
+        // Debug:   https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private static DiscordShardedClient _client;
@@ -53,7 +53,7 @@ namespace MagicConchBot
                         var key = Console.ReadKey(true).Key;
                         if (key == ConsoleKey.Q)
                         {
-                            _cts.Cancel();
+                            Stop();
                         }
                         else if (key == ConsoleKey.G)
                         {
@@ -75,6 +75,11 @@ namespace MagicConchBot
                 Console.WriteLine("Press enter to continue . . .");
                 Console.ReadLine();
             }
+        }
+
+        public static void Stop()
+        {
+            _cts.Cancel();
         }
 
         private static async Task CheckUpToDate()
