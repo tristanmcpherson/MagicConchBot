@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -10,8 +8,6 @@ using MagicConchBot.Modules;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
 using MagicConchBot.Services.Music;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using NLog;
 
 namespace MagicConchBot.Handlers

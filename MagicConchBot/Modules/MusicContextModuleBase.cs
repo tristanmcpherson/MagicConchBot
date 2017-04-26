@@ -2,7 +2,6 @@
 using Discord.Commands;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
-using MagicConchBot.Services;
 using MagicConchBot.Services.Music;
 
 namespace MagicConchBot.Modules
