@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -104,7 +105,7 @@ namespace MagicConchBot.Modules
                     await ReplyAsync($"The url {song} is invalid. Please enter a valid url to save to this playlist.");
                     return;
                 }
-
+                 
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
                 playlist.Songs.Add(song);
                 Context.SaveSettings();
@@ -141,12 +142,18 @@ namespace MagicConchBot.Modules
             public async Task ListAllPlaylists()
             {
                 var playlists = Context.Settings.Playlists;
+                if (playlists.Count == 0)
+                {
+                    await ReplyAsync("No playlists found.");
+                    return;
+                }
+
                 var reply = new StringBuilder();
-                reply.Append("Playlists:");
+                reply.Append("Playlists:\n");
 
                 foreach (var p in playlists)
                 {
-                    reply.Append(p.Name + Environment.NewLine);
+                    reply.Append($"{p.Name} + {string.Join(",", p.Songs.Take(3).Where(s => s != null))}, ...\n");
                 }
                 
                 await ReplyAsync(reply.ToString());
