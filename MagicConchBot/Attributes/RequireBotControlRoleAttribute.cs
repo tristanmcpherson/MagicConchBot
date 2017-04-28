@@ -18,8 +18,8 @@ namespace MagicConchBot.Attributes
             // If this command was executed by that user, return a success
             var config = Configuration.Load();
             var requiredRole = context.Guild.Roles.FirstOrDefault(r => r.Name == config.RequiredRole);
-            var isOwner = config.Owners.Contains(context.User.Id);
             var isBlacklist = config.Blacklist.Contains(context.User.Id);
+            var isOwner = config.Owners.Contains(context.User.Id);
 
             if (isOwner)
                 return PreconditionResult.FromSuccess();

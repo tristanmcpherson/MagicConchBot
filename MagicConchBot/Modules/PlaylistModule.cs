@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
 using MagicConchBot.Common.Enums;
@@ -36,9 +37,8 @@ namespace MagicConchBot.Modules
             {
                 _songResolution = songResolution;
             }
-
-
-            [Command, Alias("l", "play", "load")]
+            
+            [Command("play"), Alias("load")]
             public async Task LoadPlaylist(string name = Playlist.DefaultName)
             {
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
@@ -112,7 +112,7 @@ namespace MagicConchBot.Modules
                 await ReplyAsync($"Added {song} to playlist {playlist.Name}");
             }
 
-            [Command, Alias("show", "list")]
+            [Command, Alias("show")]
             public async Task ShowPlaylist(string name = Playlist.DefaultName)
             {
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
@@ -135,6 +135,35 @@ namespace MagicConchBot.Modules
                 var songs = await Task.WhenAll(tasks);
 
                 await SongHelper.DisplaySongsClean(songs, Context.Channel);
+            }
+
+            [Command("showall"), Alias("list")]
+            public async Task ListAllPlaylists()
+            {
+                var playlists = Context.Settings.Playlists;
+                var reply = new StringBuilder();
+                reply.Append("Playlists:");
+
+                foreach (var p in playlists)
+                {
+                    reply.Append(p.Name + Environment.NewLine);
+                }
+                
+                await ReplyAsync(reply.ToString());
+            }
+
+            [Command("delete"), Alias("delet")]
+            public async Task DeletePlaylist(string name)
+            {
+                var playlist = Context.Settings.GetPlaylistOrNull(name);
+                if (playlist == null)
+                {
+                    return;
+                }
+
+                Context.Settings.Playlists.Remove(playlist);
+                Context.SaveSettings();
+                await ReplyAsync($"Deleted playlist by the name of: {playlist.Name}");
             }
         }
     }

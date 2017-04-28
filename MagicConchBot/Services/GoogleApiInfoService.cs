@@ -43,10 +43,7 @@ namespace MagicConchBot.Services
             var search = _youtubeService.Videos.List("snippet,contentDetails");
             search.Id = id;
             var video = (await search.ExecuteAsync()).Items.FirstOrDefault();
-            if (video == null)
-                return null;
-
-            return ParseVideo(video);
+            return video == null ? null : ParseVideo(video);
         }
 
         public async Task<List<Song>> GetVideoInfoByIdAsync(List<string> ids)
