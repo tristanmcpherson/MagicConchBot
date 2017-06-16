@@ -86,6 +86,7 @@ namespace MagicConchBot
         {
             if (AppHelper.Version.Contains("dev"))
             {
+                DebugTools.Debug = true;
                 Log.Info("Bot is using a debug version.");
                 return;
             }
@@ -101,11 +102,9 @@ namespace MagicConchBot
 
         private static async Task MainAsync(CancellationToken cancellationToken)
         {
-            var map = new DependencyMap();
-
             try
             {
-                _handler = new CommandHandler(map);
+                _handler = new CommandHandler();
                 _handler.ConfigureServices();
 
                 _client = new DiscordShardedClient(new DiscordSocketConfig
@@ -116,7 +115,7 @@ namespace MagicConchBot
                 _client.Log += WriteToLog;
 
                 // Login and connect to Discord.
-                map.Add(_client);
+                _handler.AddClient(_client);
 
                 await _handler.InstallAsync().ConfigureAwait(false);
 
@@ -135,7 +134,7 @@ namespace MagicConchBot
             }
             finally
             {
-                map.Get<MusicServiceProvider>().StopAll();
+                _handler.ServiceProvider.Get<MusicServiceProvider>().StopAll();
                 await _client.StopAsync();
             }
         }

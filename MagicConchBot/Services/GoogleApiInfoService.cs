@@ -46,7 +46,7 @@ namespace MagicConchBot.Services
             return video == null ? null : ParseVideo(video);
         }
 
-        public async Task<List<Song>> GetVideoInfoByIdAsync(List<string> ids)
+        public async Task<List<Song>> GetVideoInfoByIdAsync(IEnumerable<string> ids)
         {
             var search = _youtubeService.Videos.List("snippet,contentDetails");
             search.Id = string.Join(",", ids.Where(id => id != ""));
@@ -65,9 +65,9 @@ namespace MagicConchBot.Services
             var m = match.Groups["M"].Value;
             var s = match.Groups["S"].Value;
 
-            var totalDuration = new TimeSpan(h == string.Empty ? 0 : Convert.ToInt32(h),
-                m == string.Empty ? 0 : Convert.ToInt32(m),
-                s == string.Empty ? 0 : Convert.ToInt32(s));
+            int Convert(string a) => a == string.Empty ? 0 : System.Convert.ToInt32(a);
+
+            var totalDuration = new TimeSpan(Convert(h), Convert(m), Convert(s));
 
             return new Song(video.Snippet.Title, totalDuration, $"https://www.youtube.com/watch?v={video.Id}",
                 video.Snippet.Thumbnails.Default__.Url);
@@ -93,7 +93,7 @@ namespace MagicConchBot.Services
                 if (playlist.Items.Count == 0)
                     break;
 
-                var videoIds = playlist.Items.Select(i => i.ContentDetails?.VideoId ?? "").ToList();
+                var videoIds = playlist.Items.Select(i => i.ContentDetails?.VideoId ?? "");
 
                 songs.AddRange(await GetVideoInfoByIdAsync(videoIds));
 

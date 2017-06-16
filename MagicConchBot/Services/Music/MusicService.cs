@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
+using Discord.Commands;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
@@ -49,7 +50,7 @@ namespace MagicConchBot.Services.Music
 
         public Song CurrentSong { get; private set; }
 
-        public async Task PlayAsync(IUserMessage msg)
+        public async Task PlayAsync(ICommandContext context)
         {
             if (_tokenSource == null || _tokenSource.Token.IsCancellationRequested)
             {
@@ -62,12 +63,11 @@ namespace MagicConchBot.Services.Music
             {
                 try
                 {
-                    
-                    audioClient = await AudioHelper.JoinChannelAsync(msg).ConfigureAwait(false);
+                    audioClient = await AudioHelper.JoinChannelAsync(context).ConfigureAwait(false);
 
                     if (audioClient == null)
                     {
-                        await msg.Channel.SendMessageAsync("Failed to join voice channel.");
+                        await context.Channel.SendMessageAsync("Failed to join voice channel.");
                         return;
                     }
 
@@ -96,11 +96,11 @@ namespace MagicConchBot.Services.Music
                         }
 
                         CurrentSong.StreamUri = streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
-                        await StatusUpdaterAsync(msg.Channel).ConfigureAwait(false);
+                        await StatusUpdaterAsync(context.Channel).ConfigureAwait(false);
 
                         try
                         {
-                            Log.Info($"Playing song {CurrentSong.Name} on channel {msg.Channel.Name}");
+                            Log.Info($"Playing song {CurrentSong.Name} on channel {context.Channel.Name}");
                             await Task.Run(async () => await _songPlayer.PlaySong(audioClient, CurrentSong));
                         }
                         catch (Exception ex)

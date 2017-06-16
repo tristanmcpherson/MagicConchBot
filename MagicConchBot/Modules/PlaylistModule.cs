@@ -10,7 +10,6 @@ using MagicConchBot.Services;
 
 namespace MagicConchBot.Modules
 {
-
     public class PlaylistModule : ModuleBase<ConchCommandContext>
     {
         [Command("save"), Alias("s")]
@@ -72,7 +71,7 @@ namespace MagicConchBot.Modules
                 if (Context.MusicService.PlayerState == PlayerState.Stopped ||
                     Context.MusicService.PlayerState == PlayerState.Paused)
                 {
-                    await Context.MusicService.PlayAsync(Context.Message);
+                    await Context.MusicService.PlayAsync(Context);
                 }
             }
 

@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
+using Discord.Commands;
+using MagicConchBot.Resources;
 using NLog;
 
 namespace MagicConchBot.Helpers
@@ -39,11 +43,17 @@ namespace MagicConchBot.Helpers
             }
         }
 
-        public static async Task<IAudioClient> JoinChannelAsync(IMessage msg)
+        public static async Task<IAudioClient> JoinChannelAsync(ICommandContext msg)
         {
             try
             {
-                var channel = (msg.Author as IGuildUser)?.VoiceChannel;
+                var channel = (msg.Message.Author as IGuildUser)?.VoiceChannel;
+                if (DebugTools.Debug)
+                {
+                    var connectAsync = (await msg.Guild.GetVoiceChannelsAsync()).FirstOrDefault()?.ConnectAsync();
+                    if (connectAsync != null)
+                        return await connectAsync;
+                }
                 return channel == null ? null : await channel.ConnectAsync();
             }
             catch (Exception ex)
