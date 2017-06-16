@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -10,7 +11,7 @@ namespace MagicConchBot.Attributes
     {
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public override async Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command,
-            IDependencyMap map)
+            IServiceProvider map)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             // return PreconditionResult.FromSuccess();

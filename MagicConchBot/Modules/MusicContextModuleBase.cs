@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.Commands;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
@@ -11,7 +12,7 @@ namespace MagicConchBot.Modules
         private readonly MusicServiceProvider _provider;
         private readonly GuildSettingsProvider _settingsProvider;
 
-        public ConchCommandContext(IDiscordClient client, IUserMessage msg, IDependencyMap map) : base(client, msg)
+        public ConchCommandContext(IDiscordClient client, IUserMessage msg, IServiceProvider map) : base(client, msg)
         {
             _provider = map.Get<MusicServiceProvider>();
             _settingsProvider = map.Get<GuildSettingsProvider>();
