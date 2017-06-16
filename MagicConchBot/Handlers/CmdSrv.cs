@@ -1,21 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MagicConchBot.Handlers
 {
     public class CmdSrv : CommandService
     {
-        public new Task<IResult> ExecuteAsync(ICommandContext context, int argPos, IDependencyMap dependencyMap = null,
+        public new Task<IResult> ExecuteAsync(ICommandContext context, int argPos, IServiceProvider dependencyMap = null,
             MultiMatchHandling multiMatchHandling = MultiMatchHandling.Exception)
             => ExecuteAsync(context, context.Message.Content.Substring(argPos), dependencyMap, multiMatchHandling);
 
         public new async Task<IResult> ExecuteAsync(ICommandContext context, string input,
-            IDependencyMap dependencyMap = null, MultiMatchHandling multiMatchHandling = MultiMatchHandling.Exception)
+            IServiceProvider dependencyMap = null, MultiMatchHandling multiMatchHandling = MultiMatchHandling.Exception)
         {
-            dependencyMap = dependencyMap ?? DependencyMap.Empty;
+            dependencyMap = dependencyMap ?? new ServiceCollection().BuildServiceProvider();
 
             var searchResult = Search(context, input);
             if (!searchResult.IsSuccess)

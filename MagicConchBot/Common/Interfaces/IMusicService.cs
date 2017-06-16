@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
 
@@ -20,7 +21,7 @@ namespace MagicConchBot.Common.Interfaces
 
         PlayerState PlayerState { get; }
 
-        Task PlayAsync(IUserMessage msg);
+        Task PlayAsync(ICommandContext msg);
 
         bool Stop();
 

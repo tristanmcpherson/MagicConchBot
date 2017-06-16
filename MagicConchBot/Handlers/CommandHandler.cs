@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -8,6 +9,7 @@ using MagicConchBot.Modules;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
 using MagicConchBot.Services.Music;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 
 namespace MagicConchBot.Handlers
@@ -18,36 +20,37 @@ namespace MagicConchBot.Handlers
         private DiscordShardedClient _client;
 
         private CmdSrv _commands;
-        private readonly IDependencyMap _map;
 
-        public CommandHandler(IDependencyMap depMap)
-        {
-            _map = depMap;
-        }
+        private ServiceCollection _services;
+        public IServiceProvider ServiceProvider { get; set; }
 
         // I hate the way this code looks
         public void ConfigureServices()
         {
             var googleApiInfoService = new GoogleApiInfoService();
+            _services = new ServiceCollection();
 
-            _map.Add(new SongResolutionService(new List<ISongInfoService>
+            _services.AddSingleton(new SongResolutionService(new List<ISongInfoService>
             {
                 googleApiInfoService,
                 new SoundCloudInfoService(),
             }));
 
-            _map.Add(googleApiInfoService);
-            _map.Add(new MusicServiceProvider());
-            _map.Add(new SoundCloudInfoService());
-            _map.Add(new ChanService());
-            _map.Add(new StardewValleyService());
-            _map.Add(new GuildSettingsProvider());
+            _services.AddSingleton(googleApiInfoService);
+            _services.AddSingleton(new MusicServiceProvider());
+            _services.AddSingleton(new SoundCloudInfoService());
+            _services.AddSingleton(new ChanService());
+            _services.AddSingleton(new StardewValleyService());
+            _services.AddSingleton(new GuildSettingsProvider());
+
+            ServiceProvider = _services.BuildServiceProvider();
         }
+
 
         public async Task InstallAsync()
         {
-            // Create Command Service, inject it into Dependency Map
-            _client = _map.Get<DiscordShardedClient>();
+            // Create Command Service, inject it into Dependency ServiceProvider
+            _client = ServiceProvider.GetService<DiscordShardedClient>();
             _commands = new CmdSrv();
 
             //_map.Add(_commands);
@@ -79,10 +82,10 @@ namespace MagicConchBot.Handlers
                 return;
 
             // Create a Command Context
-            var context = new ConchCommandContext(_client, message, _map);
+            var context = new ConchCommandContext(_client, message, ServiceProvider);
 
             // Execute the Command, store the result
-            var result = await _commands.ExecuteAsync(context, argPos, _map, MultiMatchHandling.Best);
+            var result = await _commands.ExecuteAsync(context, argPos, ServiceProvider, MultiMatchHandling.Best);
 
             // If the command failed, notify the user
             if (!result.IsSuccess)
@@ -123,8 +126,13 @@ namespace MagicConchBot.Handlers
 
             var musicService = new MusicService(songResolvers, songPlayer);
 
-            _map.Get<MusicServiceProvider>().AddServices(guild.Id, musicService, new Mp3ConverterService());
+            ServiceProvider.Get<MusicServiceProvider>().AddServices(guild.Id, musicService, new Mp3ConverterService());
             return Task.CompletedTask;
+        }
+
+        public void AddClient(DiscordShardedClient client)
+        {
+            _services.AddSingleton(client);
         }
     }
 }

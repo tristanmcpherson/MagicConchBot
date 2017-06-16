@@ -28,15 +28,15 @@ namespace MagicConchBot.Modules
 
         private readonly GoogleApiInfoService _googleApiInfoService;
 
-        public MusicModule(IDependencyMap map)
+        public MusicModule(IServiceProvider serviceProvider)
         {
-            _songResolutionService = map.Get<SongResolutionService>();
-            _musicServiceProvider = map.Get<MusicServiceProvider>();
-            _googleApiInfoService = map.Get<GoogleApiInfoService>();
-            _chanService = map.Get<ChanService>();
+            _songResolutionService = serviceProvider.Get<SongResolutionService>();
+            _musicServiceProvider = serviceProvider.Get<MusicServiceProvider>();
+            _googleApiInfoService = serviceProvider.Get<GoogleApiInfoService>();
+            _chanService = serviceProvider.Get<ChanService>();
         }
 
-        [Command("play")]
+        [Command("play"), Alias("resume")]
         [Summary(
             "Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube."
         )]
@@ -48,7 +48,7 @@ namespace MagicConchBot.Modules
             }
             else if (Context.MusicService.SongList.Count > 0)
             {
-                await Context.MusicService.PlayAsync(Context.Message);
+                await Context.MusicService.PlayAsync(Context);
                 await ReplyAsync("Resuming queue.");
             }
             else
@@ -122,7 +122,7 @@ namespace MagicConchBot.Modules
             if (Context.MusicService.PlayerState == PlayerState.Stopped || Context.MusicService.PlayerState == PlayerState.Paused)
             {
                 Log.Info("No song currently playing, playing.");
-                await Context.MusicService.PlayAsync(Context.Message);
+                await Context.MusicService.PlayAsync(Context);
             }
         }
 
@@ -230,7 +230,7 @@ namespace MagicConchBot.Modules
             }
 
             if (Context.MusicService.CurrentSong == null)
-                await Context.MusicService.PlayAsync(Context.Message);
+                await Context.MusicService.PlayAsync(Context);
         }
     }
 }
