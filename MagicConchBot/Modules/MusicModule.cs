@@ -210,7 +210,7 @@ namespace MagicConchBot.Modules
                 var url = await mp3Service.GenerateMp3Async(currentSong);
                 while (mp3Service.Recipients.TryTake(out IUser user))
                 {
-                    var dm = await user.CreateDMChannelAsync();
+                    var dm = await user.GetOrCreateDMChannelAsync();
                     await dm.SendMessageAsync($"Requested url at: {url}");
                 }
             }
