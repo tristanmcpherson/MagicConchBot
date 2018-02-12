@@ -17,15 +17,15 @@ namespace MagicConchBot.Handlers
     public class CommandHandler
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        private DiscordShardedClient _client;
+        private DiscordSocketClient _client;
 
-        private CmdSrv _commands;
+        private CommandService _commands;
 
         private ServiceCollection _services;
         public IServiceProvider ServiceProvider { get; set; }
 
         // I hate the way this code looks
-        public void ConfigureServices()
+        public void ConfigureServices(DiscordSocketClient client)
         {
             var googleApiInfoService = new GoogleApiInfoService();
             _services = new ServiceCollection();
@@ -42,16 +42,16 @@ namespace MagicConchBot.Handlers
             _services.AddSingleton(new ChanService());
             _services.AddSingleton(new StardewValleyService());
             _services.AddSingleton(new GuildSettingsProvider());
+            _services.AddSingleton(client);
 
             ServiceProvider = _services.BuildServiceProvider();
         }
 
-
         public async Task InstallAsync()
         {
             // Create Command Service, inject it into Dependency ServiceProvider
-            _client = ServiceProvider.GetService<DiscordShardedClient>();
-            _commands = new CmdSrv();
+            _client = ServiceProvider.GetService<DiscordSocketClient>();
+            _commands = new CommandService();
 
             //_map.Add(_commands);
 
@@ -66,8 +66,7 @@ namespace MagicConchBot.Handlers
         private async Task HandleCommandAsync(SocketMessage parameterMessage)
         {
             // Don't handle the command if it is a system message
-            var message = parameterMessage as SocketUserMessage;
-            if (message == null)
+            if (!(parameterMessage is SocketUserMessage message))
                 return;
 
             // Mark where the prefix ends and the command begins
@@ -128,11 +127,6 @@ namespace MagicConchBot.Handlers
 
             ServiceProvider.Get<MusicServiceProvider>().AddServices(guild.Id, musicService, new Mp3ConverterService());
             return Task.CompletedTask;
-        }
-
-        public void AddClient(DiscordShardedClient client)
-        {
-            _services.AddSingleton(client);
         }
     }
 }
