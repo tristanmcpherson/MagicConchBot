@@ -23,7 +23,7 @@ namespace MagicConchBot
         // Debug:   https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private static DiscordShardedClient _client;
+        private static DiscordSocketClient _client;
         private static CommandHandler _handler;
         private static CancellationTokenSource _cts;
 
@@ -104,18 +104,15 @@ namespace MagicConchBot
         {
             try
             {
-                _handler = new CommandHandler();
-                _handler.ConfigureServices();
-
-                _client = new DiscordShardedClient(new DiscordSocketConfig
+                _client = new DiscordSocketClient(new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Info
                 });
 
                 _client.Log += WriteToLog;
 
-                // Login and connect to Discord.
-                _handler.AddClient(_client);
+                _handler = new CommandHandler();
+                _handler.ConfigureServices(_client);
 
                 await _handler.InstallAsync().ConfigureAwait(false);
 
@@ -138,8 +135,6 @@ namespace MagicConchBot
                 await _client.StopAsync();
             }
         }
-
-
 
         private static void ConfigureLogs()
         {
