@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -10,82 +11,85 @@ using MagicConchBot.Helpers;
 using MagicConchBot.Resources;
 using NLog;
 
-namespace MagicConchBot.Services
-{
-    public class Mp3ConverterService
-    {
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+namespace MagicConchBot.Services {
+	public class Mp3ConverterService {
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private static string _serverPath;
-        private static string _serverUrl;
+		private static string _serverPath;
+		private static string _serverUrl;
 
-        private readonly ConcurrentDictionary<string, Guid> _urlToUniqueFile;
+		private readonly ConcurrentDictionary<string, Guid> _urlToUniqueFile;
 
-        public Mp3ConverterService()
-        {
-            var config = Configuration.Load();
+		public Mp3ConverterService() {
+			var config = Configuration.Load();
 
-            _urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
-            _serverPath = config.ServerMusicPath;
-            _serverUrl = config.ServerMusicUrlBase;
+			_urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
+			_serverPath = config.ServerMusicPath;
+			_serverUrl = config.ServerMusicUrlBase;
 
-            Recipients = new ConcurrentBag<IUser>();
-            GeneratingMp3 = false;
-        }
+			Recipients = new ConcurrentDictionary<IUser, bool>();
+			GeneratingMp3 = new ConcurrentDictionary<string, bool>();
+			Mp3Links = new ConcurrentDictionary<string, string>();
+		}
 
-        public bool GeneratingMp3 { get; private set; }
+		public ConcurrentDictionary<string, string> Mp3Links { get; private set; }
+		public ConcurrentDictionary<string, bool> GeneratingMp3 { get; private set; }
 
-        public ConcurrentBag<IUser> Recipients { get; }
+		public ConcurrentDictionary<IUser, bool> Recipients { get; }
 
-        public async Task<string> GenerateMp3Async(Song song)
-        {
-            if (!_urlToUniqueFile.TryGetValue(song.StreamUri, out Guid guid))
-            {
-                guid = Guid.NewGuid();
-                _urlToUniqueFile.TryAdd(song.StreamUri, guid);
-            }
+		public async Task GetMp3(Song song, IUser user) {
+			Recipients.TryAdd(user, true);
+			await GenerateMp3Async(song);
+		}
 
-            var outputFile = song.Name + "_" + guid + ".mp3";
-            var downloadFile = song.Name + "_" + guid + ".raw";
+		public async Task GenerateMp3Async(Song song) {
+			if (GeneratingMp3.ContainsKey(song.Url)) {
+				return;
+			}
 
-            var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
-            var destinationPath = Path.Combine(_serverPath, outputFile);
+			GeneratingMp3.TryAdd(song.Url, true);
 
-            if (File.Exists(destinationPath))
-                return outputUrl;
+			if (!_urlToUniqueFile.TryGetValue(song.StreamUri, out Guid guid)) {
+				guid = Guid.NewGuid();
+				_urlToUniqueFile.TryAdd(song.StreamUri, guid);
+			}
 
-            GeneratingMp3 = true;
+			var outputFile = song.Name + "_" + guid + ".mp3";
+			var downloadFile = song.Name + "_" + guid + ".raw";
 
-            var tokenSource = new CancellationTokenSource();
-            await WebHelper.ThrottledFileDownload(downloadFile, song.StreamUri, tokenSource.Token);
+			var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
+			var destinationPath = Path.Combine(_serverPath, outputFile);
 
-            var convert = Process.Start(new ProcessStartInfo
-            {
-                FileName = "ffmpeg",
-                Arguments = $@"-i ""{downloadFile}"" -vn -ab 128k -ar 44100 -y ""{outputFile}""",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = false,
-                CreateNoWindow = true
-            });
+			var tokenSource = new CancellationTokenSource();
+			await WebHelper.ThrottledFileDownload(downloadFile, song.StreamUri, tokenSource.Token);
 
-            if (convert == null)
-            {
-                Log.Error("Couldn't start ffmpeg process.");
-                return null;
-            }
+			var convert = Process.Start(new ProcessStartInfo {
+				FileName = "ffmpeg",
+				Arguments = $@"-i ""{downloadFile}"" -vn -ab 128k -ar 44100 -y ""{outputFile}""",
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+				RedirectStandardError = false,
+				CreateNoWindow = true
+			});
 
-            convert.StandardOutput.ReadToEnd();
-            convert.WaitForExit();
+			if (convert == null) {
+				Log.Error("Couldn't start ffmpeg process.");
+				return;
+			}
 
-            File.Move(outputFile, destinationPath);
+			convert.StandardOutput.ReadToEnd();
+			convert.WaitForExit();
 
-            File.Delete(outputFile);
-            File.Delete(downloadFile);
+			File.Move(outputFile, destinationPath);
 
-            GeneratingMp3 = false;
+			await Task.WhenAll(Recipients.Select(async user =>
+				await user.Key.SendMessageAsync($"Here's your mp3!: {outputUrl}")));
 
-            return outputUrl;
-        }
-    }
+
+			File.Delete(outputFile);
+			File.Delete(downloadFile);
+
+			GeneratingMp3.TryRemove(song.Url, out var _);
+		}
+	}
 }

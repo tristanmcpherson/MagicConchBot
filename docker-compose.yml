@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  magicconchbot:
+    image: ${DOCKER_REGISTRY}shredder8910/magicconchbot
+    build:
+      context: .
+      dockerfile: MagicConchBot/Dockerfile
