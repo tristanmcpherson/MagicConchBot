@@ -1,8 +1,6 @@
 FROM microsoft/dotnet:2.0-runtime AS base
 WORKDIR /app
 
-COPY ./Configuration.json /app/Configuration.json
-
 RUN apt-get clean && apt-get update && apt-get install -y \
 	libopus-dev \
 	libsodium-dev \
