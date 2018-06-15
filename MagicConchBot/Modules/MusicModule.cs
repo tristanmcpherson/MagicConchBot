@@ -201,19 +201,7 @@ namespace MagicConchBot.Modules
             await ReplyAsync("Generating mp3 file... please wait.");
 
             var mp3Service = _musicServiceProvider.GetMp3Service(Context.Guild.Id);
-
-            if (!mp3Service.Recipients.Contains(Context.User))
-                mp3Service.Recipients.Add(Context.User);
-
-            if (!mp3Service.GeneratingMp3)
-            {
-                var url = await mp3Service.GenerateMp3Async(currentSong);
-                while (mp3Service.Recipients.TryTake(out IUser user))
-                {
-                    var dm = await user.GetOrCreateDMChannelAsync();
-                    await dm.SendMessageAsync($"Requested url at: {url}");
-                }
-            }
+			await mp3Service.GetMp3(currentSong, Context.User);
         }
 
         [Command("ygyl", RunMode = RunMode.Async)]

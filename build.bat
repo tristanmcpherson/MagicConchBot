@@ -1,0 +1,1 @@
+docker-compose build && docker tag magicconchbot shredder8910/magicconchbot && docker push shredder8910/magicconchbot

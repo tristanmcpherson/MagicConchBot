@@ -3,8 +3,6 @@ using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Resources;
-using SoundCloud.API.Client;
-using SoundCloud.API.Client.Objects.TrackPieces;
 
 namespace MagicConchBot.Services
 {
@@ -13,9 +11,9 @@ namespace MagicConchBot.Services
         public SoundCloudInfoService()
         {
             var config = Configuration.Load();
-            var connector = new SoundCloudConnector();
+            //var connector = new SoundCloudConnector();
 
-            Client = connector.UnauthorizedConnect(config.SoundCloudClientId, config.SoundCloudClientSecret);
+           // Client = connector.UnauthorizedConnect(config.SoundCloudClientId, config.SoundCloudClientSecret);
         }
 
         public IUnauthorizedSoundCloudClient Client { get; set; }
@@ -26,7 +24,7 @@ namespace MagicConchBot.Services
         public async Task<Song> GetSongInfoAsync(string url)
         {
             var track = await Client.Resolve.GetTrack(url);
-            var artwork = track.Artwork.Url(SCArtworkFormat.T500X500);
+            var artwork = track.Artwork.Url;
 
             return new Song(track.Title, track.Duration, url, artwork);
         }

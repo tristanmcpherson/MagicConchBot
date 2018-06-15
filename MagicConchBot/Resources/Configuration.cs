@@ -59,8 +59,8 @@ namespace MagicConchBot.Resources
         /// <summary> Gets or sets the API key for searching YouTube. </summary>
         public string GoogleApiKey { get; set; }
 
-        /// <summary> Gets or sets the name of this application for the Google API. </summary>
-        public string ApplicationName { get; set; }
+		/// <summary> Gets or sets the name of this application for the Google API. </summary>
+		public string ApplicationName { get; set; } = "MagicConchBot";
 
         /// <summary> Gets or sets the destination path to copy music to. </summary>
         public string ServerMusicPath { get; set; }
@@ -74,8 +74,8 @@ namespace MagicConchBot.Resources
         /// <summary> Gets or sets the error message shown if the user requests a command in the wrong channel. </summary>
         public string WrongChannelError { get; set; }
 
-        /// <summary> Gets or sets the name of the role required to use bot music commands. </summary>
-        public string RequiredRole { get; set; }
+		/// <summary> Gets or sets the name of the role required to use bot music commands. </summary>
+		public string RequiredRole { get; set; } = "ConchControl";
         
         /// <summary>
         /// Gets or sets the id of the bot owner's guild.
@@ -114,7 +114,13 @@ namespace MagicConchBot.Resources
         public static Configuration Load(string dir = JsonPath)
         {
             var file = Path.Combine(Appdir, dir);
-            return JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(file));
+            var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(file));
+
+			config.GoogleApiKey = Environment.GetEnvironmentVariable(Constants.GoogleApiKeyVariable);
+			config.Token = Environment.GetEnvironmentVariable(Constants.DiscordTokenVariable);
+			config.Owners = new ulong[] { ulong.Parse(Environment.GetEnvironmentVariable(Constants.OwnerVariable)) };
+
+			return config;
         }
 
         /// <summary>

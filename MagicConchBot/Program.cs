@@ -48,7 +48,7 @@ namespace MagicConchBot
 
                 while (!_cts.Token.IsCancellationRequested)
                 {
-                    if (Console.KeyAvailable)
+                    if (!Console.IsInputRedirected && Console.KeyAvailable)
                     {
                         var key = Console.ReadKey(true).Key;
                         if (key == ConsoleKey.Q)
@@ -106,6 +106,7 @@ namespace MagicConchBot
             {
                 _client = new DiscordSocketClient(new DiscordSocketConfig
                 {
+					WebSocketProvider = Discord.Net.Providers.WS4Net.WS4NetProvider.Instance,
                     LogLevel = LogSeverity.Info
                 });
 
