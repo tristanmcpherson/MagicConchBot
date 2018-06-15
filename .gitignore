@@ -268,3 +268,4 @@ __pycache__/
 *.exe
 /MagicConchBot/Settings-journal.db
 /MagicConchBot/Settings.db
+/Configuration.json
