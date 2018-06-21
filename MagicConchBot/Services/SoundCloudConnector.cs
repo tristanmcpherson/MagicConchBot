@@ -1,6 +1,6 @@
 ﻿using System.Net.Http;
 
-namespace MagicConchBot.Services {
+namespace MagicConchBotApp.Services {
 	internal class SoundCloudConnector {
 		private HttpClient httpClient;
 		private const string BaseUrl = "https://api.soundcloud.com";

@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MagicConchBot", "MagicConch
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{3B91E137-FA36-427C-A49A-02949A97903D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MagicConchBot.App", "MagicConchBot.App\MagicConchBot.App.csproj", "{D18BE3AF-77AD-4233-9261-0CAF9743BA03}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{3B91E137-FA36-427C-A49A-02949A97903D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3B91E137-FA36-427C-A49A-02949A97903D}.Release|x64.ActiveCfg = Release|Any CPU
 		{3B91E137-FA36-427C-A49A-02949A97903D}.Release|x64.Build.0 = Release|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Debug|x64.Build.0 = Debug|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Release|x64.ActiveCfg = Release|Any CPU
+		{D18BE3AF-77AD-4233-9261-0CAF9743BA03}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

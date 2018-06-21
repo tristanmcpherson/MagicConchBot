@@ -2,10 +2,10 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Types;
+using MagicConchBotApp.Common.Enums;
+using MagicConchBotApp.Common.Types;
 
-namespace MagicConchBot.Common.Interfaces
+namespace MagicConchBotApp.Common.Interfaces
 {
     public interface IMusicService
     {

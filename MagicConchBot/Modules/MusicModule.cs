@@ -4,15 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBot.Attributes;
-using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Helpers;
-using MagicConchBot.Services;
-using MagicConchBot.Services.Music;
+using MagicConchBotApp.Attributes;
+using MagicConchBotApp.Common.Enums;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Helpers;
+using MagicConchBotApp.Services;
+using MagicConchBotApp.Services.Music;
 using NLog;
 
-namespace MagicConchBot.Modules
+namespace MagicConchBotApp.Modules
 {
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]

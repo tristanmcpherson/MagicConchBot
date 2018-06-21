@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace MagicConchBot.Helpers
+namespace MagicConchBotApp.Helpers
 {
     public static class Extensions
     {

@@ -1,11 +1,11 @@
 ﻿using System;
 using Discord;
 using Discord.Commands;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Services.Music;
+using MagicConchBotApp.Common.Interfaces;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Services.Music;
 
-namespace MagicConchBot.Modules
+namespace MagicConchBotApp.Modules
 {
     public class ConchCommandContext : CommandContext
     {

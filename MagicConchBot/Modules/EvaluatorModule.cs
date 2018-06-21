@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBot.Helpers;
+using MagicConchBotApp.Helpers;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
-namespace MagicConchBot.Modules
+namespace MagicConchBotApp.Modules
 {
     public class Globals
     {

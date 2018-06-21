@@ -1,7 +1,7 @@
 ﻿using LiteDB;
-using MagicConchBot.Common.Types;
+using MagicConchBotApp.Common.Types;
 
-namespace MagicConchBot.Services.Music
+namespace MagicConchBotApp.Services.Music
 {
     public class GuildSettingsProvider
     {

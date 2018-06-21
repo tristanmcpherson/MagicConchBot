@@ -1,4 +1,4 @@
-namespace MagicConchBot.Common.Enums
+namespace MagicConchBotApp.Common.Enums
 {
     public enum PlayerState
     {

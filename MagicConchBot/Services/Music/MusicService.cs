@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using Discord.Commands;
-using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Helpers;
+using MagicConchBotApp.Common.Enums;
+using MagicConchBotApp.Common.Interfaces;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Helpers;
 using NLog;
 
-namespace MagicConchBot.Services.Music
+namespace MagicConchBotApp.Services.Music
 {
     public class MusicService : IMusicService
     {

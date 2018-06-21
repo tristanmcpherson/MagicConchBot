@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Resources;
+using MagicConchBotApp.Common.Interfaces;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Resources;
 
-namespace MagicConchBot.Services
+namespace MagicConchBotApp.Services
 {
     public class GoogleApiInfoService : ISongInfoService
     {
