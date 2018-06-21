@@ -1,0 +1,21 @@
+version: 1
+task_definition:
+  ecs_network_mode: awsvpc
+  task_execution_role: ecsTaskExecutionRole
+  task_size:
+    cpu_limit: 512
+    mem_limit: 2GB
+  services:
+    magicconchbot:
+      essential: true
+    magicconchbotapp:
+      essential: true
+run_params:
+  network_configuration:
+    awsvpc_configuration:
+      subnets:
+        - subnet-24fd2243
+        - subnet-1a7d9024
+      security_groups:
+        - sg-0e0ed845
+      assign_public_ip: ENABLED

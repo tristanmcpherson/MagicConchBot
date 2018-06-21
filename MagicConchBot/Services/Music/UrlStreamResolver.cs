@@ -2,11 +2,11 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using MagicConchBot.Common.Interfaces;
+using MagicConchBotApp.Common.Interfaces;
 using NLog;
 using YoutubeExtractor;
 
-namespace MagicConchBot.Services.Music
+namespace MagicConchBotApp.Services.Music
 {
     public class UrlStreamResolver : ISongResolver
     {

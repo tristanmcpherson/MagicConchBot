@@ -2,10 +2,10 @@
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Services;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Services;
 
-namespace MagicConchBot.Helpers
+namespace MagicConchBotApp.Helpers
 {
     public static class SongHelper
     {

@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using Discord;
-using MagicConchBot.Resources;
+using MagicConchBotApp.Resources;
 
-namespace MagicConchBot.Common.Types
+namespace MagicConchBotApp.Common.Types
 {
     public class Song
     {

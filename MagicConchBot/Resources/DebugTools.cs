@@ -1,4 +1,4 @@
-﻿namespace MagicConchBot.Resources
+﻿namespace MagicConchBotApp.Resources
 {
     public class DebugTools
     {

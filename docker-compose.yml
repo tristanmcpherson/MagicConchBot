@@ -1,8 +1,15 @@
-version: '3.4'
-
+version: '3.0'
 services:
   magicconchbot:
-    image: ${DOCKER_REGISTRY}shredder8910/magicconchbot
+    image: shredder8910/magicconchbot:latest
     build:
       context: .
       dockerfile: MagicConchBot/Dockerfile
+    env_file:
+      - magicconchbot.env
+  magicconchbotapp:
+    image: shredder8910/magicconchbotapp:latest
+    build:
+      context: .
+      dockerfile: MagicConchBot.App/Dockerfile
+

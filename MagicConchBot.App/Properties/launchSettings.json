@@ -1,0 +1,27 @@
+{
+	"iisSettings": {
+		"windowsAuthentication": false,
+		"anonymousAuthentication": true,
+		"iisExpress": {
+			"applicationUrl": "http://localhost:53536/",
+			"sslPort": 0
+		}
+	},
+	"profiles": {
+		"IIS Express": {
+			"commandName": "IISExpress",
+			"launchBrowser": true,
+			"environmentVariables": {
+				"ASPNETCORE_ENVIRONMENT": "Development"
+			}
+		},
+					"MagicConchBot.App": {
+						"commandName": "Project",
+						"launchBrowser": true,
+						"environmentVariables": {
+							"ASPNETCORE_ENVIRONMENT": "Development"
+						},
+						"applicationUrl": "http://192.168.1.131:80/"
+					}
+	}
+}
