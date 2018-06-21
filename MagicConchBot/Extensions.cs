@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MagicConchBot
+namespace MagicConchBotApp
 {
     public static class Extensions
     {

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NLog;
 
-namespace MagicConchBot.Helpers
+namespace MagicConchBotApp.Helpers
 {
     public static class WebHelper
     {
@@ -45,6 +45,9 @@ namespace MagicConchBot.Helpers
             var totalBytes = 0;
             var buffer = new byte[4096];
             var retryCount = 0;
+			if (File.Exists(outputPath)) {
+				File.Delete(outputPath);
+			}
             using (var outFile = new FileStream(outputPath, FileMode.CreateNew, FileAccess.ReadWrite,
                 FileShare.ReadWrite))
             {

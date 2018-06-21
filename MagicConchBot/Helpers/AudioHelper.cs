@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using Discord.Commands;
-using MagicConchBot.Resources;
+using MagicConchBotApp.Resources;
 using NLog;
 
-namespace MagicConchBot.Helpers
+namespace MagicConchBotApp.Helpers
 {
     public static class AudioHelper
     {

@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBot.Resources;
+using MagicConchBotApp.Resources;
 
-namespace MagicConchBot.Attributes
+namespace MagicConchBotApp.Attributes
 {
     public class RequireBotControlRoleAttribute : PreconditionAttribute
     {

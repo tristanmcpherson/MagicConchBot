@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord.Commands;
 
-namespace MagicConchBot.Modules
+namespace MagicConchBotApp.Modules
 {
     public class FunModule : ModuleBase
     {

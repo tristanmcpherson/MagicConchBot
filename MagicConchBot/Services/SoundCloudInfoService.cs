@@ -1,10 +1,10 @@
 ﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Resources;
+using MagicConchBotApp.Common.Interfaces;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Resources;
 
-namespace MagicConchBot.Services
+namespace MagicConchBotApp.Services
 {
     public class SoundCloudInfoService : ISongInfoService
     {

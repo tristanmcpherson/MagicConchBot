@@ -4,15 +4,15 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Modules;
-using MagicConchBot.Resources;
-using MagicConchBot.Services;
-using MagicConchBot.Services.Music;
+using MagicConchBotApp.Common.Interfaces;
+using MagicConchBotApp.Modules;
+using MagicConchBotApp.Resources;
+using MagicConchBotApp.Services;
+using MagicConchBotApp.Services.Music;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 
-namespace MagicConchBot.Handlers
+namespace MagicConchBotApp.Handlers
 {
     public class CommandHandler
     {

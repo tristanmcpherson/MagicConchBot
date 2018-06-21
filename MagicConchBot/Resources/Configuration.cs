@@ -9,10 +9,10 @@
 
 using System;
 using System.IO;
-using MagicConchBot.Common.Types;
+using MagicConchBotApp.Common.Types;
 using Newtonsoft.Json;
 
-namespace MagicConchBot.Resources
+namespace MagicConchBotApp.Resources
 {
     /// <summary>
     ///     The configuration file.
@@ -62,11 +62,11 @@ namespace MagicConchBot.Resources
 		/// <summary> Gets or sets the name of this application for the Google API. </summary>
 		public string ApplicationName { get; set; } = "MagicConchBot";
 
-        /// <summary> Gets or sets the destination path to copy music to. </summary>
-        public string ServerMusicPath { get; set; }
+		/// <summary> Gets or sets the destination path to copy music to. </summary>
+		public string ServerMusicPath { get; set; } = "";
 
-        /// <summary> Gets or sets the base of the url ex. https://website.com/music/. </summary>
-        public string ServerMusicUrlBase { get; set; }
+		/// <summary> Gets or sets the base of the url ex. https://website.com/music/. </summary>
+		public string ServerMusicUrlBase { get; set; } = "http://magicconchbot.com/";
 
         /// <summary> Gets or sets the default playlist. </summary>
         public Playlist DefaultPlaylist { get; set; }
@@ -116,9 +116,19 @@ namespace MagicConchBot.Resources
             var file = Path.Combine(Appdir, dir);
             var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(file));
 
-			config.GoogleApiKey = Environment.GetEnvironmentVariable(Constants.GoogleApiKeyVariable);
-			config.Token = Environment.GetEnvironmentVariable(Constants.DiscordTokenVariable);
-			config.Owners = new ulong[] { ulong.Parse(Environment.GetEnvironmentVariable(Constants.OwnerVariable)) };
+			var token = Environment.GetEnvironmentVariable(Constants.DiscordTokenVariable);
+			var apiKey = Environment.GetEnvironmentVariable(Constants.GoogleApiKeyVariable);
+			var owner = Environment.GetEnvironmentVariable(Constants.OwnerVariable);
+
+			if (token != null) {
+				config.Token = token;
+			}
+			if (apiKey != null) {
+				config.GoogleApiKey = apiKey;
+			}
+			if (owner != null) {
+				config.Owners = new ulong[] { ulong.Parse(owner) };
+			}
 
 			return config;
         }

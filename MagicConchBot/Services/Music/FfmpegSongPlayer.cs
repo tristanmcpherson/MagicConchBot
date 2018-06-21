@@ -4,13 +4,13 @@ using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
-using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Helpers;
+using MagicConchBotApp.Common.Enums;
+using MagicConchBotApp.Common.Interfaces;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Helpers;
 using NLog;
 
-namespace MagicConchBot.Services.Music {
+namespace MagicConchBotApp.Services.Music {
 	public class FfmpegSongPlayer : ISongPlayer {
 		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -121,7 +121,7 @@ namespace MagicConchBot.Services.Music {
 
 		private static async Task StartFfmpeg(string inputFile, string outputFile, Song song) {
 			try {
-				var arguments = $"-v 9 -loglevel trace -report -re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -acodec pcm_s16le -ar 48000 \"{outputFile}\"";
+				var arguments = $"-v 9 -re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -acodec pcm_s16le -ar 48000 \"{outputFile}\"";
 
 				var startInfo = new ProcessStartInfo {
 					FileName = "ffmpeg",

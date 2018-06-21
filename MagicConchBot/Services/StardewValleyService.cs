@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using HtmlAgilityPack;
 //using Wiki.Net;
 
-namespace MagicConchBot.Services
+namespace MagicConchBotApp.Services
 {
     public class StardewValleyService
     {

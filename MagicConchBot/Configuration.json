@@ -1,0 +1,25 @@
+{
+  "Prefix": "!",
+  "Owners": [
+    149639766382608384
+  ],
+  "Blacklist": [
+    0
+  ],
+  "Token": "MjY3MDAwNDg0NDIwNzgwMDQ1.Dd0_mA.r9pkE7WMUwS1UNU0LVfzdw_FSfU",
+  "GoogleApiKey": "AIzaSyBx-hOJ2LyMwqOZlHC66h33C-vY5Nl-_j0",
+  "ApplicationName": "MagicConchBot",
+  "ServerMusicPath": "",
+  "ServerMusicUrlBase": "",
+  "DefaultPlaylist": {
+    "Name": "Default",
+    "Songs": []
+  },
+  "WrongChannelError": "",
+  "RequiredRole": "ConchControl",
+  "OwnerGuildId": 0,
+  "BotControlChannel": "",
+  "SoundCloudClientSecret": null,
+  "SoundCloudClientId": null,
+  "LocalMusicPath": ""
+}

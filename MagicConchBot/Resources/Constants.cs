@@ -1,6 +1,6 @@
 ﻿using Discord;
 
-namespace MagicConchBot.Resources
+namespace MagicConchBotApp.Resources
 {
     public static class Constants
     {
@@ -11,5 +11,6 @@ namespace MagicConchBot.Resources
 		public const string DiscordTokenVariable = "DISCORD_TOKEN";
 		public const string OwnerVariable = "DISCORD_BOT_OWNER";
 		public const string GoogleApiKeyVariable = "GOOGLE_API_KEY";
-    }
+
+	}
 }

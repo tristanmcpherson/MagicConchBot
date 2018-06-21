@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using MagicConchBot.Handlers;
-using MagicConchBot.Helpers;
-using MagicConchBot.Resources;
-using MagicConchBot.Services.Music;
+using MagicConchBotApp.Handlers;
+using MagicConchBotApp.Helpers;
+using MagicConchBotApp.Resources;
+using MagicConchBotApp.Services.Music;
 using NLog;
 using NLog.Conditions;
 using NLog.Config;
 using NLog.Targets;
 
-namespace MagicConchBot
+namespace MagicConchBotApp
 {
     public class Program
     {

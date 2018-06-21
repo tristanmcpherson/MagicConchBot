@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace MagicConchBot.Services {
+namespace MagicConchBotApp.Services {
 	public class SoundCloudResolveClient {
 		public Task<Track> GetTrack(string url) {
 			return Task.FromResult<Track>(null);

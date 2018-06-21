@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MagicConchBot.Common.Interfaces;
-using MagicConchBot.Common.Types;
+using MagicConchBotApp.Common.Interfaces;
+using MagicConchBotApp.Common.Types;
 
-namespace MagicConchBot.Services
+namespace MagicConchBotApp.Services
 {
     public class SongResolutionService
     {

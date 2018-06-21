@@ -3,12 +3,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
-using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Types;
-using MagicConchBot.Helpers;
-using MagicConchBot.Services;
+using MagicConchBotApp.Common.Enums;
+using MagicConchBotApp.Common.Types;
+using MagicConchBotApp.Helpers;
+using MagicConchBotApp.Services;
 
-namespace MagicConchBot.Modules
+namespace MagicConchBotApp.Modules
 {
     public class PlaylistModule : ModuleBase<ConchCommandContext>
     {
