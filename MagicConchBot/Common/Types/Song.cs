@@ -58,7 +58,7 @@ namespace MagicConchBot.Common.Types
             var progressChar = '─';
             var currentHead = ":white_circle:";
             var progressLength = 41;
-            var progressIndex = (int)((CurrentTime.TotalSeconds / (Length.TotalSeconds == 0 ? CurrentTime.TotalSeconds: Length.TotalSeconds)) * progressLength);
+            var progressIndex = (int)((CurrentTime.TotalSeconds / (Math.Abs(Length.TotalSeconds) < 1 ? CurrentTime.TotalSeconds: Length.TotalSeconds)) * progressLength);
             var progressString = $"{new string(progressChar, progressIndex)}{currentHead}{new string(progressChar, progressLength - progressIndex)}";
 
             // volume ───○
