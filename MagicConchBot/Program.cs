@@ -23,7 +23,7 @@ namespace MagicConchBot
         // Debug:   https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
 
         private static CancellationTokenSource _cts;
-        private static DiscordSocketClient _client;
+        private static BaseSocketClient _client;
 
         private static Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -133,7 +133,14 @@ namespace MagicConchBot
                 finally
                 {
                     //services.GetService<GuildServiceProvider>().StopAll();
-                    await _client.StopAsync();
+                    try
+                    {
+                        await _client.StopAsync();
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
                 }
             }
         }
