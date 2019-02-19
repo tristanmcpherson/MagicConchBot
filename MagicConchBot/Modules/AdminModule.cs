@@ -31,26 +31,27 @@ namespace MagicConchBot.Modules {
 		}
 	}
 
+    /// TODO: Save these to config file
 	[RequireBotOwner]
 	[Group("admin blacklist")]
 	public class Blacklist : ModuleBase {
 		[Command("add")]
 		public Task AddToBlacklist(IUser user) {
-			var config = Configuration.Load();
-			var blacklist = new List<ulong>(config.Blacklist) {
-					user.Id
-				};
+           
+			//var config = Configuration.Load();
+			//var blacklist = new List<ulong>(config.Blacklist) {
+			//		user.Id
+			//	};
 
-			config.Blacklist = blacklist.ToArray();
-			config.Save();
+			//config.Blacklist = blacklist.ToArray();
+			//config.Save();
 			return Task.CompletedTask;
 		}
 
 		[Command("remove")]
 		public Task RemoveFromBlacklist(IUser user) {
-			var config = Configuration.Load();
-			config.Blacklist = config.Blacklist.Where(u => u != user.Id).ToArray();
-			config.Save();
+			//config.Blacklist = config.Blacklist.Where(u => u != user.Id).ToArray();
+			//config.Save();
 			return Task.CompletedTask;
 		}
 	}

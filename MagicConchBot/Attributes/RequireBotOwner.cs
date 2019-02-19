@@ -10,7 +10,7 @@ namespace MagicConchBot.Attributes
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider map)
         {
-			return Task.FromResult(Configuration.Load().Owners.Contains(context.User.Id) ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("This feature is only usable by admins. "));
+			return Task.FromResult(Configuration.Owners.Contains(context.User.Id) ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("This feature is only usable by admins. "));
         }
 	}
 }

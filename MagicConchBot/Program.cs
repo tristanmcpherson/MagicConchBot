@@ -34,7 +34,6 @@ namespace MagicConchBot
         public static void Main()
         {
             Logging.ConfigureLogs();
-            EnsureConfigExists();
 
             Log.Info("Starting Magic Conch Bot. Press 'q' at any time to quit.");
 
@@ -109,19 +108,15 @@ namespace MagicConchBot
 
                 try
                 {
-
                     _client.Log += a => { Log.WriteToLog(a); return Task.CompletedTask; };
-
-
 
                     await services.GetService<CommandHandler>().InstallAsync().ConfigureAwait(false);
 
                     // Configuration.Load().Token
-                    await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token).ConfigureAwait(false);
+                    await _client.LoginAsync(TokenType.Bot, Configuration.Token).ConfigureAwait(false);
                     await _client.StartAsync().ConfigureAwait(false);
 
                     await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
-
                 }
                 catch (TaskCanceledException)
                 {
@@ -133,14 +128,7 @@ namespace MagicConchBot
                 finally
                 {
                     //services.GetService<GuildServiceProvider>().StopAll();
-                    try
-                    {
-                        await _client.StopAsync();
-                    }
-                    catch (Exception ex)
-                    {
-
-                    }
+                    await _client.StopAsync();
                 }
             }
         }
@@ -171,29 +159,6 @@ namespace MagicConchBot
                 .AddSingleton<StardewValleyService>()
                 .AddSingleton<GuildSettingsProvider>()
                 .BuildServiceProvider();
-        }
-
-
-
-        /// <summary>
-        /// Revamp to use environment variables instead of config file for dockerization
-        /// </summary>
-        private static void EnsureConfigExists()
-        {
-            var loc = Path.Combine(AppContext.BaseDirectory, "Configuration.json");
-
-            // Check if the configuration file exists.
-            if (!File.Exists(loc))
-            {
-                var config = new Configuration(); // Create a new configuration object.
-                config.Save(); // Save the new configuration object to file.
-
-                Console.WriteLine("The configuration file has been created at 'Configuration.json', please enter your information and restart.");
-
-                config.Token = Console.ReadLine(); // Read the bot token from console.
-            }
-
-            Console.WriteLine("Configuration Loaded...");
         }
     }
 }

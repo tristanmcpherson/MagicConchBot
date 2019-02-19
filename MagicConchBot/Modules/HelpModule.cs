@@ -23,7 +23,7 @@ namespace MagicConchBot.Modules
         [Command]
         public async Task HelpAsync()
         {
-            var prefix = Configuration.Load().Prefix;
+            var prefix = Configuration.Prefix;
             var builder = new EmbedBuilder
             {
                 Color = Constants.MaterialBlue,

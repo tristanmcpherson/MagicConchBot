@@ -27,10 +27,8 @@ namespace MagicConchBot.Services {
 
         public Mp3ConverterService()
         {
-            var config = Configuration.Load();
-
             _urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
-            _serverUrl = config.ServerMusicUrlBase;
+            _serverUrl = Configuration.ServerMusicUrlBase;
 
             Recipients = new ConcurrentDictionary<IUser, bool>();
             GeneratingMp3 = new ConcurrentDictionary<string, bool>();

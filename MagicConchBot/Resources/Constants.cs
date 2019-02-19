@@ -10,7 +10,9 @@ namespace MagicConchBot.Resources
 
 		public const string DiscordTokenVariable = "DISCORD_TOKEN";
 		public const string OwnerVariable = "DISCORD_BOT_OWNER";
+        public const string BlacklistVariable = "BLACKLIST";
 		public const string GoogleApiKeyVariable = "GOOGLE_API_KEY";
-
+        public const string SoundCloudClientSecretVariable = "SOUNDCLOUD_CLIENTSECRET";
+        public const string SoundCloudClientIdVariable = "SOUNDCLOUD_CLIENTID";
 	}
 }

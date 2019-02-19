@@ -14,11 +14,10 @@ namespace MagicConchBot.Services.Music
             if (File.Exists(uri))
                 return new FileInfo(uri).FullName;
 
-            var config = Configuration.Load();
-            if (string.IsNullOrEmpty(config.LocalMusicPath))
+            if (string.IsNullOrEmpty(Configuration.LocalMusicPath))
                 return null;
-            Directory.CreateDirectory(config.LocalMusicPath);
-            var file = Path.Combine(config.LocalMusicPath, uri);
+            Directory.CreateDirectory(Configuration.LocalMusicPath);
+            var file = Path.Combine(Configuration.LocalMusicPath, uri);
             return File.Exists(file) ? file : null;
         }
     }

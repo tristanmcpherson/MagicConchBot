@@ -13,7 +13,7 @@ namespace MagicConchBot.Attributes
             IServiceProvider map)
         {
 
-            if (Configuration.Load().Owners.Contains(context.User.Id))
+            if (Configuration.Owners.Contains(context.User.Id))
                 return Task.FromResult(PreconditionResult.FromSuccess());
 
             var channel = (context.User as IGuildUser)?.VoiceChannel;
