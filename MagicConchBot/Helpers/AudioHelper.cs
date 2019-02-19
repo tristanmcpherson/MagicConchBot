@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using Discord.Commands;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Resources;
 using NLog;
 
-namespace MagicConchBotApp.Helpers
+namespace MagicConchBot.Helpers
 {
     public static class AudioHelper
     {
@@ -54,7 +54,21 @@ namespace MagicConchBotApp.Helpers
                     if (connectAsync != null)
                         return await connectAsync;
                 }
-                return channel == null ? null : await channel.ConnectAsync();
+
+                if (channel != null)
+                {
+                    try
+                    {
+                        var client = await channel.ConnectAsync();
+                        return client;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+
+                return null;
             }
             catch (Exception ex)
             {

@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace MagicConchBotApp.Helpers
+namespace MagicConchBot.Helpers
 {
     public static class AppHelper
     {

@@ -1,19 +1,20 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using MagicConchBotApp.Common.Interfaces;
-using MagicConchBotApp.Common.Types;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Services
+namespace MagicConchBot.Services
 {
     public class SoundCloudInfoService : ISongInfoService
     {
         public SoundCloudInfoService()
         {
             var config = Configuration.Load();
-            //var connector = new SoundCloudConnector();
+            var connector = new SoundCloudConnector(config.SoundCloudClientId, config.SoundCloudClientSecret);
 
-           // Client = connector.UnauthorizedConnect(config.SoundCloudClientId, config.SoundCloudClientSecret);
+            Client = connector.UnauthorizedConnect();
         }
 
         public IUnauthorizedSoundCloudClient Client { get; set; }
@@ -24,9 +25,11 @@ namespace MagicConchBotApp.Services
         public async Task<Song> GetSongInfoAsync(string url)
         {
             var track = await Client.Resolve.GetTrack(url);
-            var artwork = track.Artwork.Url;
-
-            return new Song(track.Title, track.Duration, url, artwork);
+            return new Song(
+                track.Title, 
+                new TimeSpan(0,0,0,0,track.Duration), 
+                url,
+                track.ArtworkUrl);
         }
     }
 }

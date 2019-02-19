@@ -85,11 +85,11 @@ namespace MagicConchBot.App.Controllers {
 							return Ok(guid);
 						}
 					}
-				}
+				}   
 			} catch (Exception ex) {
 				// Get better logging
 				Console.WriteLine(ex.ToString());
-				return StatusCode(500, "Failed to upload file .");
+				return StatusCode(500, "Failed to upload file. " + ex);
 			}
 		}
 	}

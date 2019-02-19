@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace MagicConchBotApp.Common.Types
+namespace MagicConchBot.Common.Types
 {
     public class PomfFile
     {

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NLog;
 
-namespace MagicConchBotApp.Helpers
+namespace MagicConchBot.Helpers
 {
     public static class WebHelper
     {

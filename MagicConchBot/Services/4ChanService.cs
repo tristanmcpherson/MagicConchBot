@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace MagicConchBotApp.Services
+namespace MagicConchBot.Services
 {
     public class ChanService
     {

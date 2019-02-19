@@ -1,6 +1,6 @@
 ﻿using Discord;
 
-namespace MagicConchBotApp.Resources
+namespace MagicConchBot.Resources
 {
     public static class Constants
     {

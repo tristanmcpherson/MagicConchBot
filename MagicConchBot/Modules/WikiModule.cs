@@ -2,10 +2,10 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBotApp.Helpers;
-using MagicConchBotApp.Services;
+using MagicConchBot.Services;
+using MagicConchBot.Helpers;
 
-namespace MagicConchBotApp.Modules
+namespace MagicConchBot.Modules
 {
     public class WikiModule : ModuleBase
     {
