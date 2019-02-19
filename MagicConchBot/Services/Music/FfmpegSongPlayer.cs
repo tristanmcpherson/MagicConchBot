@@ -15,7 +15,7 @@ namespace MagicConchBot.Services.Music {
 		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
 		private const int Milliseconds = 20;
-		private const int FrameSize = 1920;
+		private const int FrameSize = 3840;
 		private const int MaxRetryCount = 50;
 
 		private const int MaxVolume = 1;
@@ -181,7 +181,7 @@ namespace MagicConchBot.Services.Music {
 
 		private static TimeSpan CalculateCurrentTime(int currentBytes) {
 			return TimeSpan.FromSeconds(currentBytes /
-										(1000d * 3840 /
+										(1000d * FrameSize /
 										 Milliseconds));
 		}
 	}

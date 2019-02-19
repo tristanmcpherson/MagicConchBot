@@ -19,7 +19,7 @@ namespace MagicConchBot.Helpers
             new Regex(@"(\b(https?):\/\/)[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
         private const string GitHubRef =
-            "https://api.github.com/repos/tristanmcpherson/MagicConchBot/git/refs/heads/dev";
+            "https://api.github.com/repos/tristanmcpherson/MagicConchBot/git/refs/heads/master";
 
         public static async Task<bool> UpToDateWithGitHub()
         {
