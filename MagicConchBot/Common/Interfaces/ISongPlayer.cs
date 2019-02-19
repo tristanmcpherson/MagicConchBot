@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Discord.Audio;
-using MagicConchBotApp.Common.Enums;
-using MagicConchBotApp.Common.Types;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Types;
 
-namespace MagicConchBotApp.Common.Interfaces
+namespace MagicConchBot.Common.Interfaces
 {
     public interface ISongPlayer
     {

@@ -2,10 +2,10 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBotApp.Common.Enums;
-using MagicConchBotApp.Common.Types;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Types;
 
-namespace MagicConchBotApp.Common.Interfaces
+namespace MagicConchBot.Common.Interfaces
 {
     public interface IMusicService
     {
@@ -21,7 +21,7 @@ namespace MagicConchBotApp.Common.Interfaces
 
         PlayerState PlayerState { get; }
 
-        Task PlayAsync(ICommandContext msg);
+        Task Play(ICommandContext msg);
 
         bool Stop();
 

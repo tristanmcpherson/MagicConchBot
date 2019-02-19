@@ -1,4 +1,4 @@
-﻿namespace MagicConchBotApp.Services
+﻿namespace MagicConchBot.Services
 {
     public class WebmHostingService
     {

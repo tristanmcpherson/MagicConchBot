@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Modules
+namespace MagicConchBot.Modules
 {
     [Group("Help")]
     [Name("Help Commands")]

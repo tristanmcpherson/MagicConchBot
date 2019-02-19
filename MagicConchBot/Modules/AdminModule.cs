@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBotApp.Attributes;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Attributes;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Modules {
+namespace MagicConchBot.Modules {
 	[RequireBotOwner]
 	[Group("admin")]
 	public class AdminModule : ModuleBase {
@@ -32,8 +32,8 @@ namespace MagicConchBotApp.Modules {
 	}
 
 	[RequireBotOwner]
-	[Group("blacklist")]
-	public class Blacklist {
+	[Group("admin blacklist")]
+	public class Blacklist : ModuleBase {
 		[Command("add")]
 		public Task AddToBlacklist(IUser user) {
 			var config = Configuration.Load();

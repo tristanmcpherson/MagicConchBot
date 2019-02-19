@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Attributes
+namespace MagicConchBot.Attributes
 {
     public class RequireUserInVoiceChannelAttribute : PreconditionAttribute
     {
