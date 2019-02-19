@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Attributes
+namespace MagicConchBot.Attributes
 {
     public class RequireBotOwnerAttribute : PreconditionAttribute
     {

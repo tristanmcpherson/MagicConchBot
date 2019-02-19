@@ -4,18 +4,18 @@ using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
-using MagicConchBotApp.Common.Enums;
-using MagicConchBotApp.Common.Interfaces;
-using MagicConchBotApp.Common.Types;
-using MagicConchBotApp.Helpers;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
 using NLog;
 
-namespace MagicConchBotApp.Services.Music {
+namespace MagicConchBot.Services.Music {
 	public class FfmpegSongPlayer : ISongPlayer {
 		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
 		private const int Milliseconds = 20;
-		private const int FrameSize = 3840;
+		private const int FrameSize = 1920;
 		private const int MaxRetryCount = 50;
 
 		private const int MaxVolume = 1;
@@ -54,21 +54,22 @@ namespace MagicConchBotApp.Services.Music {
 
 			try {
 				var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
-				var outputFile = Path.Combine(directory, $"{Guid.NewGuid()}.raw");
+				//var outputFile = Path.Combine(directory, $"{Guid.NewGuid()}.raw");
 				Directory.CreateDirectory(directory);
 
-				var ffmpegTask = new Task(async () => await StartFfmpeg(song.StreamUri, outputFile, song), TaskCreationOptions.LongRunning);
-				ffmpegTask.Start();
+                //var ffmpegTask = new Task(async () => , TaskCreationOptions.LongRunning);
+			    //ffmpegTask.Start();
+			    var inStream = StartFfmpeg(song.StreamUri, song);
 
-				await FileHelper.WaitForFile(outputFile, FrameSize, song.Token, -1);
+                //await FileHelper.WaitForFile(outputFile, FrameSize, song.Token, -1);
 
-				Log.Debug($"Creating PCM stream for file {song.StreamUri}.");
+                Log.Debug($"Creating PCM stream for file {song.StreamUri}.");
 
 				var buffer = new byte[FrameSize];
 				var retryCount = 0;
 				var stopwatch = new Stopwatch();
 
-				using (var inStream = new FileStream(outputFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+				//using (var inStream = new FileStream(outputFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
 					using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music)) {
 						PlayerState = PlayerState.Playing;
 						Log.Debug("Playing song.");
@@ -79,7 +80,7 @@ namespace MagicConchBotApp.Services.Music {
 							var byteCount = await inStream.ReadAsync(buffer, 0, buffer.Length, song.Token);
 
 							if (byteCount == 0) {
-								if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(500)) {
+								if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(1000)) {
 									Log.Info("Read 0 bytes but song is finished.");
 									break;
 								}
@@ -97,7 +98,7 @@ namespace MagicConchBotApp.Services.Music {
 							song.Token.ThrowIfCancellationRequested();
 							buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
 							if (stopwatch.ElapsedMilliseconds < Milliseconds) {
-								await Task.Delay((int)((Milliseconds - (int)stopwatch.ElapsedMilliseconds) * 0.5));
+								//await Task.Delay((int)((Milliseconds - (int)stopwatch.ElapsedMilliseconds) * 0.5));
 							}
 							stopwatch.Restart();
 
@@ -106,9 +107,9 @@ namespace MagicConchBotApp.Services.Music {
 						}
 						await pcmStream.FlushAsync();
 					}
-				}
+				//}
 
-				ffmpegTask.Wait(song.Token);
+				//ffmpegTask.Wait(song.Token);
 			} catch (OperationCanceledException ex) {
 				Log.Info("Song cancelled: " + ex.Message);
 			} catch (Exception ex) {
@@ -119,41 +120,56 @@ namespace MagicConchBotApp.Services.Music {
 			}
 		}
 
-		private static async Task StartFfmpeg(string inputFile, string outputFile, Song song) {
-			try {
-				var arguments = $"-v 9 -re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -acodec pcm_s16le -ar 48000 \"{outputFile}\"";
+        private static Stream StartFfmpeg(string inputFile, Song song) {
+            try {
+                //var oldArguments =
+                //    $"-v 9 -re -i \"{inputFile}\" -ss {song.StartTime.TotalSeconds} -f s16le -acodec pcm_s16le -ar 48000 \"{outputFile}\"";
+                // -ac 2 -f s16le -ar 48000
+                var seek = song.StartTime.TotalSeconds > 0 ? $"-ss {song.StartTime.TotalSeconds}" : "";
+                var arguments = $"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{inputFile}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1 -loglevel error";
 
-				var startInfo = new ProcessStartInfo {
-					FileName = "ffmpeg",
-					Arguments = arguments,
-					RedirectStandardOutput = false,
-					RedirectStandardInput = true,
-					UseShellExecute = false
-				};
+                var startInfo = new ProcessStartInfo {
+                    FileName = "ffmpeg",
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = false,
+                    CreateNoWindow = true,
+                    //RedirectStandardInput = true,
+                    UseShellExecute = false
+                };
 
-				if (File.Exists(outputFile)) {
-					File.Delete(outputFile);
-				}
+                //if (File.Exists(outputFile)) {
+                //    File.Delete(outputFile);
+                //}
 
-				var p = Process.Start(startInfo);
+                var p = Process.Start(startInfo);
 
-				while (!song.Token.IsCancellationRequested && !p.HasExited) {
-					await Task.Delay(100);
-				}
+                //while (!song.Token.IsCancellationRequested && !p.HasExited) {
+                //	await Task.Delay(100);
+                //}
 
-				if (!p.HasExited) {
-					await p.StandardInput.WriteLineAsync('q');
-				}
+                //if (!p.HasExited) {
+                //	await p.StandardInput.WriteLineAsync('q');
+                //}
 
-				p.WaitForExit();
-			} catch (Exception ex) {
-				Log.Warn(ex, "FFMPEG IO EXCEPTION");
-			}
+                //p.WaitForExit();
 
-			Log.Debug("ffmpeg exited.");
-		}
+                if (p == null) {
+                    throw new Exception("Could not start FFMPEG");
+                }
 
-		public void Stop() {
+                return p.StandardOutput.BaseStream;
+
+            } catch (Exception ex) {
+                Log.Warn(ex, "FFMPEG IO EXCEPTION");
+            }
+
+            Log.Debug("ffmpeg exited.");
+
+            return null;
+        }
+
+        public void Stop() {
 			_song.TokenSource.Cancel();
 		}
 

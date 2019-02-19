@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Threading;
 using Discord;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Common.Types
+namespace MagicConchBot.Common.Types
 {
     public class Song
     {
@@ -53,14 +53,39 @@ namespace MagicConchBotApp.Common.Types
                 ? CurrentTime.ToString(@"hh\:mm\:ss")
                 : CurrentTime.ToString(@"mm\:ss");
 
-        public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false)
+        public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false, double volume = 1)
         {
+            var progressChar = '─';
+            var currentHead = ":white_circle:";
+            var progressLength = 41;
+            var progressIndex = (int)((CurrentTime.TotalSeconds / (Length.TotalSeconds == 0 ? CurrentTime.TotalSeconds: Length.TotalSeconds)) * progressLength);
+            var progressString = $"{new string(progressChar, progressIndex)}{currentHead}{new string(progressChar, progressLength - progressIndex)}";
+
+            // volume ───○
+            var volumeChar = '─';
+            var volumeHead = '○';
+            var volumeLength = 4;
+            var volumeIndex = (int)(volume * volumeLength);
+            var volumeString = $"{new string(volumeChar, volumeIndex)}{volumeHead}{new string(volumeChar, volumeLength - volumeIndex)}";
+
+            var four = "⠀⠀　⠀⠀　⠀⠀　⠀⠀　";
+            var playThings = "◄◄⠀▐▐ ⠀►►⠀⠀　";
+
+            var testString = $@"
+{progressString}
+:loud_sound: {volumeString}　{CurrentTimePretty.PadLeft(4, '⠀')} / {LengthPretty.PadRight(20, '⠀')}⠀⠀　⠀⠀　⠀　⠀⠀⠀　
+
+";
+
+            var timeString = $"{CurrentTimePretty} / {LengthPretty}";
+            timeString = testString;
+
             var builder = new EmbedBuilder {Color = Constants.MaterialBlue};
             builder.AddField(x =>
             {
                 x.WithName(title == string.Empty ? Name == string.Empty ? "Default" : Name : title)
                     .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" +
-                               (showDuration ? $"{CurrentTimePretty} / {LengthPretty}" : $"{LengthPretty}"));
+                               (showDuration ? timeString : $"{LengthPretty}"));
             });
 
             if (ThumbnailUrl != string.Empty && embedThumbnail)

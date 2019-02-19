@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MagicConchBotApp.Helpers
+namespace MagicConchBot.Helpers
 {
     public static class FileHelper
     {

@@ -12,4 +12,3 @@ services:
     build:
       context: .
       dockerfile: MagicConchBot.App/Dockerfile
-

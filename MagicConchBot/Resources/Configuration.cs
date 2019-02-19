@@ -9,10 +9,10 @@
 
 using System;
 using System.IO;
-using MagicConchBotApp.Common.Types;
+using MagicConchBot.Common.Types;
 using Newtonsoft.Json;
 
-namespace MagicConchBotApp.Resources
+namespace MagicConchBot.Resources
 {
     /// <summary>
     ///     The configuration file.

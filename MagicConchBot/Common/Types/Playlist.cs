@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace MagicConchBotApp.Common.Types
+namespace MagicConchBot.Common.Types
 {
     public class Playlist
     {
