@@ -6,8 +6,8 @@
   "Blacklist": [
     0
   ],
-  "Token": "MjY3MDAwNDg0NDIwNzgwMDQ1.Dd0_mA.r9pkE7WMUwS1UNU0LVfzdw_FSfU",
-  "GoogleApiKey": "AIzaSyBx-hOJ2LyMwqOZlHC66h33C-vY5Nl-_j0",
+  "Token": "Mjk1MDIwMTY3NzMyMzk2MDMy.D0zP_g.81zc4OCD-tEloE0cQ0r3dUx9lFY",
+  "GoogleApiKey": "AIzaSyDzSQCAkqa_bDi6-jccxnC03qIVtN75mCo",
   "ApplicationName": "MagicConchBot",
   "ServerMusicPath": "",
   "ServerMusicUrlBase": "",
@@ -19,7 +19,7 @@
   "RequiredRole": "ConchControl",
   "OwnerGuildId": 0,
   "BotControlChannel": "",
-  "SoundCloudClientSecret": null,
-  "SoundCloudClientId": null,
+  "SoundCloudClientSecret": "SesqgZ3B1KMiWEBKLfJ82o1G8iU0my5Y",
+  "SoundCloudClientId": "S1qCBZdFEVTemuSZYvUxs7iQODE0OdLI",
   "LocalMusicPath": ""
 }

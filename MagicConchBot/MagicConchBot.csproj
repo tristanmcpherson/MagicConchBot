@@ -11,6 +11,7 @@
     <AssemblyVersionSettings>None.None.None.IncrementOnDemand</AssemblyVersionSettings>
     <PostBuildEvent></PostBuildEvent>
     <FileVersion>1.0.0.0</FileVersion>
+    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,6 +19,13 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>7</LangVersion>
 	<VersionSuffix>dev</VersionSuffix>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>7</LangVersion>
+    <VersionSuffix>dev</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -32,6 +40,14 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -60,26 +76,50 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AspNetCore.RouteAnalyzer" Version="0.5.1" />
-    <PackageReference Include="Discord.Net" Version="2.0.0-beta" />
-    <PackageReference Include="Discord.Net.Providers.WS4Net" Version="2.0.0-beta" />
-    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.34.0.1226" />
+    <PackageReference Include="AspNetCore.RouteAnalyzer" Version="0.5.3" />
+    <PackageReference Include="Discord.Net" Version="2.0.2-dev-01059" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.38.0.1488" />
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
     <PackageReference Include="LiteDB" Version="4.1.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.8.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.0.0-beta3-final" />
     <PackageReference Include="NLog" Version="5.0.0-beta11" />
     <PackageReference Include="System.Diagnostics.FileVersionInfo" Version="4.3.0" />
-    <PackageReference Include="VideoLibrary" Version="2.0.0" />
-    <PackageReference Include="VideoLibrary.Compat" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="libvideo">
+      <HintPath>..\..\..\..\Downloads\libvideo-master\libvideo-master\src\libvideo\bin\Debug\netstandard1.1\libvideo.dll</HintPath>
+    </Reference>
+    <Reference Include="libvideo.compat">
+      <HintPath>..\..\..\..\Downloads\libvideo-master\libvideo-master\src\libvideo.compat\bin\Debug\netstandard1.1\libvideo.compat.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Configuration.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dependencies\x32\libsodium.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Dependencies\x32\opus.dll">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Dependencies\x64\libsodium.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dependencies\x64\opus.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ffplay.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ffprobe.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="NuGet.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

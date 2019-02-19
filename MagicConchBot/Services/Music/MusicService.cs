@@ -1,30 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using Discord.Commands;
-using MagicConchBotApp.Common.Enums;
-using MagicConchBotApp.Common.Interfaces;
-using MagicConchBotApp.Common.Types;
-using MagicConchBotApp.Helpers;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
 using NLog;
 
-namespace MagicConchBotApp.Services.Music
+namespace MagicConchBot.Services.Music
 {
     public class MusicService : IMusicService
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private readonly ISongPlayer _songPlayer;
-        private readonly List<ISongResolver> _songResolvers;
+        private readonly IEnumerable<ISongResolver> _songResolvers;
 
         private int _songIndex;
 
         private CancellationTokenSource _tokenSource;
 
-        public MusicService(List<ISongResolver> songResolvers, ISongPlayer songPlayer)
+        public MusicService(IEnumerable<ISongResolver> songResolvers, ISongPlayer songPlayer)
         {
             _songResolvers = songResolvers;
             _songPlayer = songPlayer;
@@ -50,7 +51,7 @@ namespace MagicConchBotApp.Services.Music
 
         public Song CurrentSong { get; private set; }
 
-        public async Task PlayAsync(ICommandContext context)
+        public async Task Play(ICommandContext context)
         {
             if (_tokenSource == null || _tokenSource.Token.IsCancellationRequested)
             {
@@ -63,7 +64,7 @@ namespace MagicConchBotApp.Services.Music
             {
                 try
                 {
-                    audioClient = await AudioHelper.JoinChannelAsync(context).ConfigureAwait(false);
+                    audioClient = await AudioHelper.JoinChannelAsync(context);//.ConfigureAwait(false);
 
                     if (audioClient == null)
                     {
@@ -95,8 +96,9 @@ namespace MagicConchBotApp.Services.Music
                             }
                         }
 
-                        CurrentSong.StreamUri = streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
-                        await StatusUpdaterAsync(context.Channel).ConfigureAwait(false);
+                        CurrentSong.StreamUri =
+                            streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
+                        await StatusUpdater(context.Channel).ConfigureAwait(false);
 
                         try
                         {
@@ -126,6 +128,10 @@ namespace MagicConchBotApp.Services.Music
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Log.Error(ex);
+                }
                 finally
                 {
                     await AudioHelper.LeaveChannelAsync(audioClient).ConfigureAwait(false);
@@ -133,7 +139,7 @@ namespace MagicConchBotApp.Services.Music
             }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
-        private async Task StatusUpdaterAsync(IMessageChannel channel)
+        private async Task StatusUpdater(IMessageChannel channel)
         {
             await Task.Factory.StartNew(async () =>
             {
@@ -141,10 +147,13 @@ namespace MagicConchBotApp.Services.Music
                 try
                 {
                     var song = CurrentSong;
+                    var time = 2000;
+                    var stopwatch = new Stopwatch();
+
                     if (song == null)
                         return;
 
-                    message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true));
+                    message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true, Volume));
 
                     while (_songPlayer.PlayerState == PlayerState.Playing || _songPlayer.PlayerState == PlayerState.Loading)
                     {
@@ -154,8 +163,12 @@ namespace MagicConchBotApp.Services.Music
 
                         song.Token.ThrowIfCancellationRequested();
 
-                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true));
-                        await Task.Delay(4700);
+                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true, Volume));
+                        if (stopwatch.ElapsedMilliseconds < time)
+                        {
+                            await Task.Delay(time - (int)stopwatch.ElapsedMilliseconds);
+                        }
+                        stopwatch.Restart();
                     }
 
                 }

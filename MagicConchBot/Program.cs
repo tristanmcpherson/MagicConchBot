@@ -6,26 +6,26 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using MagicConchBotApp.Handlers;
-using MagicConchBotApp.Helpers;
-using MagicConchBotApp.Resources;
-using MagicConchBotApp.Services.Music;
+using MagicConchBot.Services.Music;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Handlers;
+using MagicConchBot.Helpers;
+using MagicConchBot.Resources;
+using MagicConchBot.Services;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
-using NLog.Conditions;
-using NLog.Config;
-using NLog.Targets;
 
-namespace MagicConchBotApp
+namespace MagicConchBot
 {
     public class Program
     {
         // Release: https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
         // Debug:   https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private static DiscordSocketClient _client;
-        private static CommandHandler _handler;
         private static CancellationTokenSource _cts;
+        private static DiscordSocketClient _client;
+
+        private static Logger Log = LogManager.GetCurrentClassLogger();
 
         private static string Version => Assembly.GetEntryAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
@@ -33,7 +33,7 @@ namespace MagicConchBotApp
 
         public static void Main()
         {
-            ConfigureLogs();
+            Logging.ConfigureLogs();
             EnsureConfigExists();
 
             Log.Info("Starting Magic Conch Bot. Press 'q' at any time to quit.");
@@ -102,111 +102,75 @@ namespace MagicConchBotApp
 
         private static async Task MainAsync(CancellationToken cancellationToken)
         {
-            try
+
+            using (var services = ConfigureServices())
             {
-                _client = new DiscordSocketClient(new DiscordSocketConfig
+                _client = services.GetService<DiscordSocketClient>();
+
+                try
                 {
-					WebSocketProvider = Discord.Net.Providers.WS4Net.WS4NetProvider.Instance,
-                    LogLevel = LogSeverity.Info
-                });
 
-                _client.Log += WriteToLog;
+                    _client.Log += a => { Log.WriteToLog(a); return Task.CompletedTask; };
 
-                _handler = new CommandHandler();
-                _handler.ConfigureServices(_client);
 
-                await _handler.InstallAsync().ConfigureAwait(false);
 
-                // Configuration.Load().Token
-                await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token).ConfigureAwait(false);
-                await _client.StartAsync().ConfigureAwait(false);
+                    await services.GetService<CommandHandler>().InstallAsync().ConfigureAwait(false);
 
-                await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TaskCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                await WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, ex.ToString(), ex));
-            }
-            finally
-            {
-                _handler.ServiceProvider.Get<MusicServiceProvider>().StopAll();
-                await _client.StopAsync();
+                    // Configuration.Load().Token
+                    await _client.LoginAsync(TokenType.Bot, Configuration.Load().Token).ConfigureAwait(false);
+                    await _client.StartAsync().ConfigureAwait(false);
+
+                    await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
+
+                }
+                catch (TaskCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, ex.ToString(), ex));
+                }
+                finally
+                {
+                    //services.GetService<GuildServiceProvider>().StopAll();
+                    await _client.StopAsync();
+                }
             }
         }
 
-        private static void ConfigureLogs()
+
+        public static ServiceProvider ConfigureServices()
         {
-            // Step 1. Create configuration object 
-            var config = new LoggingConfiguration();
-
-            // Step 2. Create targets and add them to the configuration 
-            var consoleTarget = new ColoredConsoleTarget();
-
-            config.AddTarget("console", consoleTarget);
-
-            var fileTarget = new FileTarget();
-            config.AddTarget("file", fileTarget);
-
-            consoleTarget.UseDefaultRowHighlightingRules = false;
-
-            ConsoleRowHighlightingRule RowHighlight(LogLevel loglevel, ConsoleOutputColor foregroundColor,
-                ConsoleOutputColor backgroundColor = ConsoleOutputColor.Black)
+            var config = new DiscordSocketConfig
             {
-                var condition = ConditionParser.ParseExpression($"level == {loglevel.GetType().Name}.{loglevel}");
-                return new ConsoleRowHighlightingRule(condition, foregroundColor, backgroundColor);
-            }
+                //WebSocketProvider = Discord.Net.Providers.WS4Net.WS4NetProvider.Instance,
+                LogLevel = LogSeverity.Info,
 
-            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Info, ConsoleOutputColor.Green));
-            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Debug, ConsoleOutputColor.Yellow));
-            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Fatal, ConsoleOutputColor.Red));
-            consoleTarget.RowHighlightingRules.Add(RowHighlight(LogLevel.Warn, ConsoleOutputColor.Blue));
 
-            // Step 3. Set target properties 
-            const string layout = @"${date:format=HH\:mm\:ss} | ${pad:padding=-5:fixedlength=true:inner:${level:uppercase=true}} ${message} ${exception}";
-            consoleTarget.Layout = layout;
-            fileTarget.Layout = layout;
-            fileTarget.FileName = "log.txt";
+            };
 
-            // Step 4. Define rules
-            var rule1 = new LoggingRule("*", LogLevel.Debug, consoleTarget);
-            config.LoggingRules.Add(rule1);
-
-            var rule2 = new LoggingRule("*", LogLevel.Debug, fileTarget);
-            config.LoggingRules.Add(rule2);
-
-            // Step 5. Activate the configuration
-            LogManager.Configuration = config;
+            return new ServiceCollection()
+                .AddSingleton(config)
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<CommandHandler>()
+                .AddSingleton<CommandService>()
+                .AddSingleton<GoogleApiInfoService>()
+                .AddSingleton<ISongInfoService, GoogleApiInfoService>()
+                .AddSingleton<ISongInfoService, SoundCloudInfoService>()
+                .AddSingleton<ISongResolutionService, SongResolutionService>()
+                .AddSingleton<GuildServiceProvider>()
+                .AddSingleton<SoundCloudInfoService>()
+                .AddSingleton<ChanService>()
+                .AddSingleton<StardewValleyService>()
+                .AddSingleton<GuildSettingsProvider>()
+                .BuildServiceProvider();
         }
 
-        private static Task WriteToLog(LogMessage message)
-        {
-            if (message.Message != null && message.Message.Contains("Unknown OpCode"))
-                return Task.CompletedTask;
 
-            switch (message.Severity)
-            {
-                case LogSeverity.Debug:
-                    Log.Debug(message.Exception, message.Message);
-                    break;
-                case LogSeverity.Verbose:
-                case LogSeverity.Info:
-                    Log.Info(message.Exception, message.Message);
-                    break;
-                case LogSeverity.Warning:
-                    Log.Warn(message.Exception, message.Message);
-                    break;
-                case LogSeverity.Error:
-                case LogSeverity.Critical:
-                    Log.Fatal(message.Exception, message.Message);
-                    break;
-            }
 
-            return Task.CompletedTask;
-        }
-
+        /// <summary>
+        /// Revamp to use environment variables instead of config file for dockerization
+        /// </summary>
         private static void EnsureConfigExists()
         {
             var loc = Path.Combine(AppContext.BaseDirectory, "Configuration.json");

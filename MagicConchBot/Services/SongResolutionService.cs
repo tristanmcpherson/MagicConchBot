@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MagicConchBotApp.Common.Interfaces;
-using MagicConchBotApp.Common.Types;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
 
-namespace MagicConchBotApp.Services
+namespace MagicConchBot.Services
 {
-    public class SongResolutionService
+    public class SongResolutionService : ISongResolutionService
     {
-        private readonly List<ISongInfoService> _musicInfoServices;
+        private readonly IEnumerable<ISongInfoService> _musicInfoServices;
 
-        public SongResolutionService(List<ISongInfoService> musicInfoServices)
+        public SongResolutionService(IEnumerable<ISongInfoService> musicInfoServices)
         {
             _musicInfoServices = musicInfoServices;
         }

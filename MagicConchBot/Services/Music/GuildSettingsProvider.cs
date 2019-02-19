@@ -1,31 +1,26 @@
 ﻿using LiteDB;
-using MagicConchBotApp.Common.Types;
+using MagicConchBot.Common.Types;
 
-namespace MagicConchBotApp.Services.Music
-{
-    public class GuildSettingsProvider
-    {
-        private readonly LiteDatabase _db;
+namespace MagicConchBot.Services.Music {
+	public class GuildSettingsProvider {
+		private readonly LiteDatabase _db;
 
-        public GuildSettingsProvider()
-        {
-            _db = new LiteDatabase(@"Settings.db");
-        }
+		public GuildSettingsProvider() {
+			_db = new LiteDatabase(@"Settings.db");
+			//_db.Engine.EnsureIndex("GuildSettings", "");
+		}
 
-        public GuildSettings GetSettings(ulong guildId)
-        {
-            var settings = _db.GetCollection<GuildSettings>().FindById(guildId);
-            if (settings == null)
-            {
-                settings = new GuildSettings();
-                UpdateSettings(guildId, settings);
-            }
-            return settings;
-        }
+		public GuildSettings GetSettings(ulong guildId) {
+			var settings = _db.GetCollection<GuildSettings>().FindById(guildId);
+			if (settings == null) {
+				settings = new GuildSettings();
+				UpdateSettings(guildId, settings);
+			}
+			return settings;
+		}
 
-        public void UpdateSettings(ulong guildId, GuildSettings settings)
-        {
-            _db.GetCollection<GuildSettings>().Upsert(guildId, settings);
-        }
-    }
+		public void UpdateSettings(ulong guildId, GuildSettings settings) {
+			_db.GetCollection<GuildSettings>().Upsert(guildId, settings);
+		}
+	}
 }

@@ -9,6 +9,8 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 
 FROM microsoft/dotnet:2.0-sdk AS build
 WORKDIR /src
+
+COPY MagicConchBot/NuGet.config ./
 COPY MagicConchBot/MagicConchBot.csproj MagicConchBot/
 RUN dotnet restore MagicConchBot/MagicConchBot.csproj
 COPY . .
@@ -22,4 +24,3 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
 ENTRYPOINT ["dotnet", "MagicConchBot.dll"]
-
