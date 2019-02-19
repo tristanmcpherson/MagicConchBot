@@ -16,7 +16,7 @@ namespace MagicConchBot.Helpers
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         public static readonly Regex UrlRegex =
-            new Regex(@"(\b(https?):\/\/)?[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
+            new Regex(@"(\b(https?):\/\/)[-A-Za-z0-9+\/%?=_!.]+\.[-A-Za-z0-9+&#\/%=_]+");
 
         private const string GitHubRef =
             "https://api.github.com/repos/tristanmcpherson/MagicConchBot/git/refs/heads/dev";

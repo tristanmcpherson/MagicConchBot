@@ -39,7 +39,14 @@ namespace MagicConchBot.Helpers
         {
             if (audio != null && audio.ConnectionState == ConnectionState.Connected)
             {
-                await audio.StopAsync();
+                try
+                {
+                    await audio.StopAsync();
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
         }
 
