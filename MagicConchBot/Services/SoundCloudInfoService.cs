@@ -11,8 +11,8 @@ namespace MagicConchBot.Services
     {
         public SoundCloudInfoService()
         {
-            var config = Configuration.Load();
-            var connector = new SoundCloudConnector(config.SoundCloudClientId, config.SoundCloudClientSecret);
+            var connector = new SoundCloudConnector(Configuration.SoundCloudClientId, 
+                Configuration.SoundCloudClientSecret);
 
             Client = connector.UnauthorizedConnect();
         }

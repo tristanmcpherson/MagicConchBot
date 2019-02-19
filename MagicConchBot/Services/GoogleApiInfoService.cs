@@ -18,11 +18,10 @@ namespace MagicConchBot.Services
 
         public GoogleApiInfoService()
         {
-            var config = Configuration.Load();
             _youtubeService = new YouTubeService(new BaseClientService.Initializer
             {
-                ApiKey = config.GoogleApiKey,
-                ApplicationName = config.ApplicationName
+                ApiKey = Configuration.GoogleApiKey,
+                ApplicationName = Configuration.ApplicationName
             });
         }
 

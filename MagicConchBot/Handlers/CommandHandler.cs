@@ -80,7 +80,7 @@ namespace MagicConchBot.Handlers
 
             // If the command failed, notify the user
             if (!result.IsSuccess)
-                if (result.ErrorReason == Configuration.Load().WrongChannelError)
+                if (result.ErrorReason == Configuration.WrongChannelError)
                     await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
                 else
                     await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
@@ -102,7 +102,7 @@ namespace MagicConchBot.Handlers
         private async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
             await HandleGuildAvailableAsync(arg);
-            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
+            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
         }
 
         private Task HandleGuildAvailableAsync(SocketGuild guild)
