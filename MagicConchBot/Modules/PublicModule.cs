@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using MagicConchBotApp.Helpers;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Helpers;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Modules
+namespace MagicConchBot.Modules
 {
     [Name("Default Commands")]
     public class PublicModule : ModuleBase

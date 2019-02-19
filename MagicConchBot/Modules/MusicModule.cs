@@ -2,17 +2,16 @@
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
-using MagicConchBotApp.Attributes;
-using MagicConchBotApp.Common.Enums;
-using MagicConchBotApp.Common.Types;
-using MagicConchBotApp.Helpers;
-using MagicConchBotApp.Services;
-using MagicConchBotApp.Services.Music;
+using MagicConchBot.Attributes;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
+using MagicConchBot.Services;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 
-namespace MagicConchBotApp.Modules
+namespace MagicConchBot.Modules
 {
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]
@@ -21,8 +20,7 @@ namespace MagicConchBotApp.Modules
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private readonly MusicServiceProvider _musicServiceProvider;
-        private readonly SongResolutionService _songResolutionService;
+        private readonly ISongResolutionService _songResolutionService;
 
         private readonly ChanService _chanService;
 
@@ -30,17 +28,17 @@ namespace MagicConchBotApp.Modules
 
         public MusicModule(IServiceProvider serviceProvider)
         {
-            _songResolutionService = serviceProvider.Get<SongResolutionService>();
-            _musicServiceProvider = serviceProvider.Get<MusicServiceProvider>();
-            _googleApiInfoService = serviceProvider.Get<GoogleApiInfoService>();
-            _chanService = serviceProvider.Get<ChanService>();
+            _songResolutionService = serviceProvider.GetService<ISongResolutionService>();
+
+            _googleApiInfoService = serviceProvider.GetService<GoogleApiInfoService>();
+            _chanService = serviceProvider.GetService<ChanService>();
         }
 
         [Command("play"), Alias("resume")]
         [Summary(
             "Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube."
         )]
-        public async Task PlayAsync()
+        public async Task Play()
         {
             if (Context.MusicService.PlayerState == PlayerState.Playing || Context.MusicService.PlayerState == PlayerState.Loading)
             {
@@ -48,7 +46,7 @@ namespace MagicConchBotApp.Modules
             }
             else if (Context.MusicService.SongList.Count > 0)
             {
-                await Context.MusicService.PlayAsync(Context);
+                await Context.MusicService.Play(Context);
                 await ReplyAsync("Resuming queue.");
             }
             else
@@ -59,7 +57,7 @@ namespace MagicConchBotApp.Modules
 
         [Command("play", RunMode = RunMode.Async), Alias("p")]
         [Summary("Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube.")]
-        public async Task PlayAsync([Remainder] [Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
+        public async Task Play([Remainder] [Summary("The url or search terms optionally followed by a time to start at (e.g. 00:01:30 for 1m 30s.)")] string query)
         {
             var terms = query.Split(' ');
             var startTime = TimeSpan.Zero;
@@ -122,7 +120,7 @@ namespace MagicConchBotApp.Modules
             if (Context.MusicService.PlayerState == PlayerState.Stopped || Context.MusicService.PlayerState == PlayerState.Paused)
             {
                 Log.Info("No song currently playing, playing.");
-                await Context.MusicService.PlayAsync(Context);
+                await Context.MusicService.Play(Context);
             }
         }
 
@@ -200,8 +198,7 @@ namespace MagicConchBotApp.Modules
 
             await ReplyAsync("Generating mp3 file... please wait.");
 
-            var mp3Service = _musicServiceProvider.GetMp3Service(Context.Guild.Id);
-			await mp3Service.GetMp3(currentSong, Context.User);
+			await Context.Mp3Service.GetMp3(currentSong, Context.User);
         }
 
         [Command("ygyl", RunMode = RunMode.Async)]
@@ -218,7 +215,7 @@ namespace MagicConchBotApp.Modules
             }
 
             if (Context.MusicService.CurrentSong == null)
-                await Context.MusicService.PlayAsync(Context);
+                await Context.MusicService.Play(Context);
         }
     }
 }

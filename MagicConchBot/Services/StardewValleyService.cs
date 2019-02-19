@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HtmlAgilityPack;
+
 //using Wiki.Net;
 
-namespace MagicConchBotApp.Services
+namespace MagicConchBot.Services
 {
     public class StardewValleyService
     {

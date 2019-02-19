@@ -3,12 +3,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
-using MagicConchBotApp.Common.Enums;
-using MagicConchBotApp.Common.Types;
-using MagicConchBotApp.Helpers;
-using MagicConchBotApp.Services;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
+using MagicConchBot.Services;
+using MagicConchBot.Services.Music;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace MagicConchBotApp.Modules
+namespace MagicConchBot.Modules
 {
     public class PlaylistModule : ModuleBase<ConchCommandContext>
     {
@@ -31,13 +34,14 @@ namespace MagicConchBotApp.Modules
         [Group("playlist"), Alias("pl")]
         public class PlaylistSubModule : ModuleBase<ConchCommandContext>
         {
-            private readonly SongResolutionService _songResolution;
 
-            public PlaylistSubModule(SongResolutionService songResolution)
+            private readonly ISongResolutionService _songResolution;
+
+            public PlaylistSubModule(IServiceProvider serviceProvider)
             {
-                _songResolution = songResolution;
+                _songResolution = serviceProvider.GetService<ISongResolutionService>();
             }
-            
+
             [Command("play"), Alias("load")]
             public async Task LoadPlaylist(string name = Playlist.DefaultName)
             {
@@ -71,7 +75,7 @@ namespace MagicConchBotApp.Modules
                 if (Context.MusicService.PlayerState == PlayerState.Stopped ||
                     Context.MusicService.PlayerState == PlayerState.Paused)
                 {
-                    await Context.MusicService.PlayAsync(Context);
+                    await Context.MusicService.Play(Context);
                 }
             }
 
@@ -112,7 +116,7 @@ namespace MagicConchBotApp.Modules
                 await ReplyAsync($"Added {song} to playlist {playlist.Name}");
             }
 
-            [Command, Alias("show")]
+            [Command("songs"), Alias("show")]
             public async Task ShowPlaylist(string name = Playlist.DefaultName)
             {
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);

@@ -1,11 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using MagicConchBotApp.Attributes;
-using MagicConchBotApp.Common.Enums;
-using MagicConchBotApp.Helpers;
+using MagicConchBot.Attributes;
+using MagicConchBot.Common.Enums;
+using MagicConchBot.Helpers;
 
-namespace MagicConchBotApp.Modules
+namespace MagicConchBot.Modules
 {
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]

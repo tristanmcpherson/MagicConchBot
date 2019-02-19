@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MagicConchBotApp.Helpers;
+using MagicConchBot.Helpers;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 
-namespace MagicConchBotApp.Modules
+namespace MagicConchBot.Modules
 {
     public class Globals
     {
@@ -30,9 +30,9 @@ namespace MagicConchBotApp.Modules
         {
             ScriptOptions = ScriptOptions.Default
                 .WithImports("System", "System.Diagnostics", "System.Text", "System.Collections.Generic",
-                    "System.Linq", "System.Net", "MagicConchBot.Modules", "MagicConchBot.Services", "Newtonsoft.Json",
+                    "System.Linq", "System.Net", nameof(Modules), nameof(Services), "Newtonsoft.Json",
                     "Newtonsoft.Json.Linq")
-                .WithReferences("MagicConchBot", "System.Linq", "Newtonsoft.Json");
+                .WithReferences(nameof(MagicConchBot), "System.Linq", "Newtonsoft.Json");
         }
 
         private static readonly string[] BlockedTokens =

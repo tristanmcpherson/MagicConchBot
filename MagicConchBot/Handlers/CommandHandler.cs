@@ -2,60 +2,37 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using MagicConchBotApp.Common.Interfaces;
-using MagicConchBotApp.Modules;
-using MagicConchBotApp.Resources;
-using MagicConchBotApp.Services;
-using MagicConchBotApp.Services.Music;
+using MagicConchBot;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Modules;
+using MagicConchBot.Resources;
+using MagicConchBot.Services;
+using MagicConchBot.Services.Music;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 
-namespace MagicConchBotApp.Handlers
+namespace MagicConchBot.Handlers
 {
     public class CommandHandler
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        private DiscordSocketClient _client;
+        private BaseSocketClient _client;
 
         private CommandService _commands;
 
-        private ServiceCollection _services;
-        public IServiceProvider ServiceProvider { get; set; }
+        private IServiceProvider _services;
+       // private ServiceCollection _services;
+        //public IServiceProvider ServiceProvider { get; set; }
 
         // I hate the way this code looks
-        public void ConfigureServices(DiscordSocketClient client)
+        public CommandHandler(IServiceProvider services)
         {
-            var googleApiInfoService = new GoogleApiInfoService();
-            _services = new ServiceCollection();
-
-            _services.AddSingleton(new SongResolutionService(new List<ISongInfoService>
-            {
-                googleApiInfoService,
-                new SoundCloudInfoService(),
-            }));
-
-            _services.AddSingleton(googleApiInfoService);
-            _services.AddSingleton(new MusicServiceProvider());
-            _services.AddSingleton(new SoundCloudInfoService());
-            _services.AddSingleton(new ChanService());
-            _services.AddSingleton(new StardewValleyService());
-            _services.AddSingleton(new GuildSettingsProvider());
-            _services.AddSingleton(client);
-
-            ServiceProvider = _services.BuildServiceProvider();
-        }
-
-        public async Task InstallAsync()
-        {
-            // Create Command Service, inject it into Dependency ServiceProvider
-            _client = ServiceProvider.GetService<DiscordSocketClient>();
-            _commands = new CommandService();
-
-            //_map.Add(_commands);
-
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            _services = services;
+            _client = services.GetService<DiscordSocketClient>();
+            _commands = services.GetService<CommandService>();
 
             _client.MessageReceived += HandleCommandAsync;
             _client.GuildAvailable += HandleGuildAvailableAsync;
@@ -63,10 +40,25 @@ namespace MagicConchBotApp.Handlers
             _client.MessageReceived += HandleMessageReceivedAsync;
         }
 
+
+        public async Task InstallAsync()
+        {
+            // Create Command Service, inject it into Dependency ServiceProvider
+            //_client = ServiceProvider.GetService<DiscordSocketClient>();
+            //_commands = new CommandService();
+
+            //_map.Add(_commands);
+
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+
+        }
+
         private async Task HandleCommandAsync(SocketMessage parameterMessage)
         {
             // Don't handle the command if it is a system message
             if (!(parameterMessage is SocketUserMessage message))
+                return;
+            if (message.Source != MessageSource.User)
                 return;
 
             // Mark where the prefix ends and the command begins
@@ -81,10 +73,10 @@ namespace MagicConchBotApp.Handlers
                 return;
 
             // Create a Command Context
-            var context = new ConchCommandContext(_client, message, ServiceProvider);
+            var context = new ConchCommandContext(_client, message, _services);
 
             // Execute the Command, store the result
-            var result = await _commands.ExecuteAsync(context, argPos, ServiceProvider, MultiMatchHandling.Best);
+            var result = await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
 
             // If the command failed, notify the user
             if (!result.IsSuccess)
@@ -109,23 +101,24 @@ namespace MagicConchBotApp.Handlers
 
         private async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
-            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
             await HandleGuildAvailableAsync(arg);
+            await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.Load().RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
         }
 
         private Task HandleGuildAvailableAsync(SocketGuild guild)
         {
-            var songPlayer = new FfmpegSongPlayer();
+            //var musicService = _services.GetService<IMusicService>();
+            //var mp3Service = _services.GetService<IMp3ConverterService>();
+            var guildServiceProvider = _services.GetService<GuildServiceProvider>();
 
-            var songResolvers = new List<ISongResolver>
-            {
-                new UrlStreamResolver(),
-                new LocalStreamResolver()
-            };
+            guildServiceProvider.AddService<ISongResolver, UrlStreamResolver>(guild.Id);
+            guildServiceProvider.AddService<ISongResolver, LocalStreamResolver>(guild.Id);
+            guildServiceProvider.AddService<ISongPlayer, FfmpegSongPlayer>(guild.Id);
+            guildServiceProvider.AddService<IMusicService, MusicService>(guild.Id);
+            guildServiceProvider.AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
+            guildServiceProvider.AddService<IMusicService, MusicService>(guild.Id);
 
-            var musicService = new MusicService(songResolvers, songPlayer);
-
-            ServiceProvider.Get<MusicServiceProvider>().AddServices(guild.Id, musicService, new Mp3ConverterService());
+            _services.GetService<GuildServiceProvider>().AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
             return Task.CompletedTask;
         }
     }

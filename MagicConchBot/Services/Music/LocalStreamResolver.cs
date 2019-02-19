@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using MagicConchBotApp.Common.Interfaces;
-using MagicConchBotApp.Resources;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Resources;
 
-namespace MagicConchBotApp.Services.Music
+namespace MagicConchBot.Services.Music
 {
     public class LocalStreamResolver : ISongResolver
     {

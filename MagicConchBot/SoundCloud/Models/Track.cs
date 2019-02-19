@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MagicConchBotApp.SoundCloud.Models
+namespace MagicConchBot.SoundCloud.Models
 {
     class Track
     {

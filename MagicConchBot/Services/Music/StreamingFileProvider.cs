@@ -2,12 +2,12 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading.Tasks;
-using MagicConchBotApp.Common.Interfaces;
-using MagicConchBotApp.Common.Types;
-using MagicConchBotApp.Helpers;
+using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
+using MagicConchBot.Helpers;
 using NLog;
 
-namespace MagicConchBotApp.Services.Music
+namespace MagicConchBot.Services.Music
 {
     public class StreamingFileProvider : IFileProvider
     {

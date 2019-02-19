@@ -2,11 +2,11 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using MagicConchBotApp.Common.Interfaces;
+using MagicConchBot.Common.Interfaces;
 using NLog;
 using YoutubeExtractor;
 
-namespace MagicConchBotApp.Services.Music
+namespace MagicConchBot.Services.Music
 {
     public class UrlStreamResolver : ISongResolver
     {
@@ -21,16 +21,13 @@ namespace MagicConchBotApp.Services.Music
             if (DirectPlayFormats.Contains(uri.Split('.').LastOrDefault()))
             {
                 streamUrl = uri;
-            }
-            else if (uri.Contains("youtube"))
-            {
+            } else if (uri.Contains("youtube")) {
                 var video = DownloadUrlResolver.GetDownloadUrls(uri)
                     .OrderByDescending(info => info.AudioBitrate)
                     .ThenBy(info => info.Resolution)
                     .FirstOrDefault();
                 streamUrl = video?.DownloadUrl;
-            }
-            else
+            } else
             {
                 Log.Debug("Retrieving url using youtube-dl");
                 var stopwatch = new Stopwatch();
@@ -51,6 +48,7 @@ namespace MagicConchBotApp.Services.Music
 
         private static async Task<string> GetUrlFromYoutubeDlAsync(string url)
         {
+            //-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5
             var youtubeDl = new ProcessStartInfo
             {
                 FileName = "youtube-dl",

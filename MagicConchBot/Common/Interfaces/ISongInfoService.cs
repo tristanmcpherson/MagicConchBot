@@ -1,8 +1,8 @@
 ﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using MagicConchBotApp.Common.Types;
+using MagicConchBot.Common.Types;
 
-namespace MagicConchBotApp.Common.Interfaces
+namespace MagicConchBot.Common.Interfaces
 {
     public interface ISongInfoService
     {
