@@ -3,7 +3,7 @@
 Magic Conch Bot for Discord
 ===================
 
-![Docker Badge](https://img.shields.io/docker/build/tristanmcpherson/MagicConchBot.svg)
+![Docker Badge](https://img.shields.io/docker/build/shredder8910/MagicConchBot.svg)
 
 Written in C# using the Discord.Net library v1.0.
 
