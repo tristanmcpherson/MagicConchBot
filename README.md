@@ -3,6 +3,8 @@
 Magic Conch Bot for Discord
 ===================
 
+![Docker Badge](https://img.shields.io/docker/build/shredder8910/MagicConchBot.svg)
+
 Written in C# using the Discord.Net library v1.0.
 
 To add this bot to your server click [this link](https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384).
