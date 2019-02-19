@@ -120,7 +120,7 @@ namespace MagicConchBot.Modules
             if (Context.MusicService.PlayerState == PlayerState.Stopped || Context.MusicService.PlayerState == PlayerState.Paused)
             {
                 Log.Info("No song currently playing, playing.");
-                await Context.MusicService.Play(Context);
+                await Context.MusicService.Play(Context).ConfigureAwait(false);
             }
         }
 
