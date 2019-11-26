@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,6 +13,9 @@
     <PostBuildEvent></PostBuildEvent>
     <FileVersion>1.0.0.0</FileVersion>
     <Platforms>AnyCPU;x64;x86</Platforms>
+    <Version>1.0.1.6-dev0032</Version>
+    <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
+
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -69,6 +73,7 @@
     <None Remove="ffmpeg.exe" />
     <None Remove="libsodium.dll" />
     <None Remove="opus.dll" />
+    <None Remove="Properties\launchSettings.json" />
     <None Remove="run.bat" />
     <None Remove="run.sh" />
     <None Remove="Settings-journal.db" />
@@ -83,17 +88,13 @@
     <PackageReference Include="LiteDB" Version="4.1.4" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.0.0-beta3-final" />
-    <PackageReference Include="NLog" Version="5.0.0-beta11" />
+    <PackageReference Include="MSBump" Version="2.3.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NLog" Version="4.5.11" />
     <PackageReference Include="System.Diagnostics.FileVersionInfo" Version="4.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="libvideo">
-      <HintPath>..\..\..\..\Downloads\libvideo-master\libvideo-master\src\libvideo\bin\Debug\netstandard1.1\libvideo.dll</HintPath>
-    </Reference>
-    <Reference Include="libvideo.compat">
-      <HintPath>..\..\..\..\Downloads\libvideo-master\libvideo-master\src\libvideo.compat\bin\Debug\netstandard1.1\libvideo.compat.dll</HintPath>
-    </Reference>
+    <PackageReference Include="YoutubeExplode" Version="4.7.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -121,6 +122,10 @@
     <None Update="NuGet.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>

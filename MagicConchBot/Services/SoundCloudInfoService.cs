@@ -27,7 +27,8 @@ namespace MagicConchBot.Services
             var track = await Client.Resolve.GetTrack(url);
             return new Song(
                 track.Title, 
-                new TimeSpan(0,0,0,0,track.Duration), 
+                new TimeSpan(0,0,0,0,track.Duration),
+                MusicType.SoundCloud,
                 url,
                 track.ArtworkUrl);
         }

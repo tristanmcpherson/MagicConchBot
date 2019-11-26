@@ -2,6 +2,7 @@
 using Discord.Audio;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
+using MagicConchBot.Services.Music;
 
 namespace MagicConchBot.Common.Interfaces
 {
@@ -21,6 +22,13 @@ namespace MagicConchBot.Common.Interfaces
 
     public interface ISongResolver
     {
-        Task<string> GetSongStreamUrl(string uri);
+        Task<string> GetSongStreamUrl(MusicType musicType, string data);
+    }
+
+    public enum MusicType
+    {
+	    YouTube = 0,
+	    SoundCloud = 1,
+	    Other
     }
 }

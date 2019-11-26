@@ -57,7 +57,7 @@ namespace MagicConchBot.Helpers
                 var channel = (msg.Message.Author as IGuildUser)?.VoiceChannel;
                 if (DebugTools.Debug && channel == null)
                 {
-                    var connectAsync = (await msg.Guild.GetVoiceChannelsAsync()).FirstOrDefault()?.ConnectAsync();
+	                var connectAsync = (await msg.Guild.GetVoiceChannelsAsync()).FirstOrDefault()?.ConnectAsync();
                     if (connectAsync != null)
                         return await connectAsync;
                 }

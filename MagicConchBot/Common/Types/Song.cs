@@ -1,33 +1,37 @@
 ﻿using System;
 using System.Threading;
 using Discord;
+using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Resources;
 
 namespace MagicConchBot.Common.Types
 {
     public class Song
     {
-        public Song(string name, TimeSpan length, string url, string thumbnailUrl = "")
-            : this(name, length, url, thumbnailUrl, TimeSpan.Zero)
+        public Song(string name, TimeSpan length, MusicType musicType, string data, string thumbnailUrl = "")
+            : this(name, length, musicType, data, thumbnailUrl, TimeSpan.Zero)
         {
         }
 
-        public Song(string url) : this(string.Empty, TimeSpan.Zero, url)
+        public Song(MusicType musicType, string data) : this(string.Empty, TimeSpan.Zero, musicType, data
+        )
         {
         }
 
-        public Song(string name, TimeSpan length, string url, string thumbnailUrl, TimeSpan startTime)
+        public Song(string name, TimeSpan length, MusicType musicType, string data, string thumbnailUrl, TimeSpan startTime)
         {
             ThumbnailUrl = thumbnailUrl;
             Name = name;
             Length = length;
-            Url = url;
+            Data = data;
             StartTime = startTime;
         }
 
         public string Name { get; }
 
-        public string Url { get; }
+        public string Data { get; }
+
+        public MusicType MusicType { get; }
 
         public string StreamUri { get; set; }
 
@@ -55,16 +59,16 @@ namespace MagicConchBot.Common.Types
 
         public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false, double volume = 1)
         {
-            var progressChar = '─';
-            var currentHead = ":white_circle:";
-            var progressLength = 41;
+            const char progressChar = '─';
+            const string currentHead = ":white_circle:";
+            const int progressLength = 41;
             var progressIndex = (int)((CurrentTime.TotalSeconds / (Math.Abs(Length.TotalSeconds) < 1 ? CurrentTime.TotalSeconds: Length.TotalSeconds)) * progressLength);
             var progressString = $"{new string(progressChar, progressIndex)}{currentHead}{new string(progressChar, progressLength - progressIndex)}";
 
-            // volume ───○
-            var volumeChar = '─';
-            var volumeHead = '○';
-            var volumeLength = 4;
+			// volume ───○
+			const char volumeChar = '─';
+			const char volumeHead = '○';
+			const int volumeLength = 4;
             var volumeIndex = (int)(volume * volumeLength);
             var volumeString = $"{new string(volumeChar, volumeIndex)}{volumeHead}{new string(volumeChar, volumeLength - volumeIndex)}";
 
@@ -84,7 +88,7 @@ namespace MagicConchBot.Common.Types
             builder.AddField(x =>
             {
                 x.WithName(title == string.Empty ? Name == string.Empty ? "Default" : Name : title)
-                    .WithValue($"**Url**:\n{Url}\n\n**Duration**:\n" +
+                    .WithValue($"**Url**:\n{Data}\n\n**Duration**:\n" +
                                (showDuration ? timeString : $"{LengthPretty}"));
             });
 
