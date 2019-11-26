@@ -35,7 +35,7 @@ namespace MagicConchBot.Services
             }
 
             // Song info not found from search or url
-            return song ?? new Song(url);
+            return song ?? new Song(MusicType.Other, url);
 
             // valid url but song information not found by any song info service
         }

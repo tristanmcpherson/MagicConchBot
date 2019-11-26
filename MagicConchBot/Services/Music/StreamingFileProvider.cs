@@ -22,10 +22,10 @@ namespace MagicConchBot.Services.Music
 
         public async Task<string> GetStreamingFile(Song song)
         {
-            if (!_songIdDictionary.TryGetValue(song.Url, out var guid))
+            if (!_songIdDictionary.TryGetValue(song.Data, out var guid))
             {
                 guid = Guid.NewGuid();
-                _songIdDictionary.TryAdd(song.Url, guid);
+                _songIdDictionary.TryAdd(song.Data, guid);
             }
 
             var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");

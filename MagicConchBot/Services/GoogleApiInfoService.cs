@@ -68,7 +68,7 @@ namespace MagicConchBot.Services
 
             var totalDuration = new TimeSpan(Convert(h), Convert(m), Convert(s));
 
-            return new Song(video.Snippet.Title, totalDuration, $"https://www.youtube.com/watch?v={video.Id}",
+            return new Song(video.Snippet.Title, totalDuration, MusicType.YouTube, video.Id,
                 video.Snippet.Thumbnails.Default__.Url);
         }
 

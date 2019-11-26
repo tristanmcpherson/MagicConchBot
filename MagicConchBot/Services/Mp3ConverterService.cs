@@ -48,14 +48,14 @@ namespace MagicConchBot.Services {
 
         public async Task GenerateMp3Async(Song song)
         {
-            if (GeneratingMp3.ContainsKey(song.Url))
+            if (GeneratingMp3.ContainsKey(song.Data))
             {
                 return;
             }
 
             try
             {
-                GeneratingMp3.TryAdd(song.Url, true);
+                GeneratingMp3.TryAdd(song.Data, true);
 
                 if (_urlToUniqueFile.TryGetValue(song.StreamUri, out Guid guid))
                 {
@@ -120,12 +120,12 @@ namespace MagicConchBot.Services {
                 File.Delete(outputFile);
                 File.Delete(downloadFile);
 
-                GeneratingMp3.TryRemove(song.Url, out _);
+                GeneratingMp3.TryRemove(song.Data, out _);
             }
             catch (Exception)
             {
                 await Task.WhenAll(Recipients.Select(async user => await user.Key.SendMessageAsync("Failed to get mp3 for song.")));
-                GeneratingMp3.TryRemove(song.Url, out _);
+                GeneratingMp3.TryRemove(song.Data, out _);
                 Recipients.Clear();
             }
         }

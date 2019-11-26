@@ -53,24 +53,14 @@ namespace MagicConchBot.Services.Music {
 			PlayerState = PlayerState.Loading;
 
 			try {
-				var directory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
-				//var outputFile = Path.Combine(directory, $"{Guid.NewGuid()}.raw");
-				Directory.CreateDirectory(directory);
-
-                //var ffmpegTask = new Task(async () => , TaskCreationOptions.LongRunning);
-			    //ffmpegTask.Start();
 			    var inStream = StartFfmpeg(song.StreamUri, song);
-
-                //await FileHelper.WaitForFile(outputFile, FrameSize, song.Token, -1);
 
                 Log.Debug($"Creating PCM stream for file {song.StreamUri}.");
 
 				var buffer = new byte[FrameSize];
 				var retryCount = 0;
 				var stopwatch = new Stopwatch();
-
-				//using (var inStream = new FileStream(outputFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-					using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music)) {
+			    using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music, packetLoss: 0)) {
 						PlayerState = PlayerState.Playing;
 						Log.Debug("Playing song.");
 						song.CurrentTime = song.StartTime;
@@ -106,10 +96,10 @@ namespace MagicConchBot.Services.Music {
 							song.CurrentTime += CalculateCurrentTime(byteCount);
 						}
 						await pcmStream.FlushAsync();
-					}
-				//}
+			    }
+			    //}
 
-				//ffmpegTask.Wait(song.Token);
+			    //ffmpegTask.Wait(song.Token);
 			} catch (OperationCanceledException ex) {
 				Log.Info("Song cancelled: " + ex.Message);
 			} catch (Exception ex) {

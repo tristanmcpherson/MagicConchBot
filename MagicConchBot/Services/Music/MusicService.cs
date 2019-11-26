@@ -88,16 +88,17 @@ namespace MagicConchBot.Services.Music
                         string streamUri = null;
                         foreach (var resolver in _songResolvers)
                         {
-                            var uri = await resolver.GetSongStreamUrl(CurrentSong.Url);
-                            if (uri != null)
+                            var uri = await resolver.GetSongStreamUrl(CurrentSong.MusicType, CurrentSong.Data);
+                            if (uri == null)
                             {
-                                streamUri = uri;
-                                break;
+	                            continue;
                             }
+                            streamUri = uri;
+                            break;
                         }
 
                         CurrentSong.StreamUri =
-                            streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Url}");
+                            streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Data}");
                         await StatusUpdater(context.Channel).ConfigureAwait(false);
 
                         try
@@ -158,7 +159,7 @@ namespace MagicConchBot.Services.Music
                     while (_songPlayer.PlayerState == PlayerState.Playing || _songPlayer.PlayerState == PlayerState.Loading)
                     {
                         // Song changed. Stop updating song info.
-                        if (CurrentSong.Url != song.Url)
+                        if (CurrentSong.Data != song.Data)
                             break;
 
                         song.Token.ThrowIfCancellationRequested();

@@ -35,6 +35,8 @@ namespace MagicConchBot
         {
             Logging.ConfigureLogs();
 
+			Log.Info("To add this bot, use the url: https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384");
+
             Log.Info("Starting Magic Conch Bot. Press 'q' at any time to quit.");
 
             Log.Info($"Version: {Version}");

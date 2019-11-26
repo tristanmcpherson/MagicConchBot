@@ -4,7 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using NLog;
-using YoutubeExtractor;
+using YoutubeExplode;
+using YoutubeExplode.Models.MediaStreams;
 
 namespace MagicConchBot.Services.Music
 {
@@ -14,33 +15,36 @@ namespace MagicConchBot.Services.Music
 
         private static readonly string[] DirectPlayFormats = { "webm", "mp3", "avi", "wav", "mp4", "flac" };
 
-        public async Task<string> GetSongStreamUrl(string uri)
+        private static readonly YoutubeClient client = new YoutubeClient();
+
+
+
+        public async Task<string> GetSongStreamUrl(MusicType musicType, string data)
         {
             string streamUrl;
 
-            if (DirectPlayFormats.Contains(uri.Split('.').LastOrDefault()))
+            if (DirectPlayFormats.Contains(data.Split('.').LastOrDefault()))
             {
-                streamUrl = uri;
-                //} else if (uri.Contains("youtube")) {
-                //    var video = DownloadUrlResolver.GetDownloadUrls(uri)
-                //        .OrderByDescending(info => info.AudioBitrate)
-                //        .ThenBy(info => info.Resolution)
-                //        .FirstOrDefault();
-                //    streamUrl = video?.DownloadUrl;
-            } else
+                streamUrl = data;
+			} else if (musicType == MusicType.YouTube) {
+	            var streamInfoSet = await client.GetVideoMediaStreamInfosAsync(data);
+	            var streamInfo = streamInfoSet.Audio.WithHighestBitrate();
+
+				streamUrl = streamInfo.Url;
+			} else
             {
                 Log.Debug("Retrieving url using youtube-dl");
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                streamUrl = await GetUrlFromYoutubeDlAsync(uri).ConfigureAwait(false);
+                streamUrl = await GetUrlFromYoutubeDlAsync(data).ConfigureAwait(false);
 
                 stopwatch.Stop();
 
                 if (streamUrl == null)
                     Log.Error("Failed to get url from youtube-dl. Possible update needed.");
                 else
-                    Log.Debug("Url source found: " + stopwatch.Elapsed);
+                    Log.Debug("Data source found: " + stopwatch.Elapsed);
             }
 
             return streamUrl;
@@ -52,7 +56,7 @@ namespace MagicConchBot.Services.Music
             var youtubeDl = new ProcessStartInfo
             {
                 FileName = "youtube-dl",
-                Arguments = $"-g --audio-quality 0 {url}",
+                Arguments = $"-g -f bestaudio --audio-quality 0 {url}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = false,
                 CreateNoWindow = true,

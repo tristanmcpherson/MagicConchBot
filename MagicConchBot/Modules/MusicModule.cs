@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
 using MagicConchBot.Services;
@@ -210,7 +211,7 @@ namespace MagicConchBot.Modules
             {
                 var song = !songUrl.EndsWith("webm")
                     ? await _googleApiInfoService.GetSongInfoAsync(songUrl)
-                    : new Song(songUrl);
+                    : new Song(MusicType.Other, songUrl);
                 Context.MusicService.QueueSong(song);
             }
 

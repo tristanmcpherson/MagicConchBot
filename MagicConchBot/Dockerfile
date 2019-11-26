@@ -5,7 +5,10 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 	libopus-dev \
 	libsodium-dev \
 	ffmpeg \
-	youtube-dl
+	python
+
+RUN curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
+RUN chmod a+rx /usr/local/bin/youtube-dl
 
 FROM microsoft/dotnet:2.0-sdk AS build
 WORKDIR /src

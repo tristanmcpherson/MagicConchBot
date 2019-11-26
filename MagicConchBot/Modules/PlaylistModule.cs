@@ -25,7 +25,7 @@ namespace MagicConchBot.Modules
 
             var playlist = Context.Settings.GetPlaylistOrCreate(name);
 
-            playlist.Songs.Add(Context.MusicService.CurrentSong.Url);
+            playlist.Songs.Add(Context.MusicService.CurrentSong.Data);
             Context.SaveSettings();
 
             await ReplyAsync($"Added {Context.MusicService.CurrentSong.Name} to playlist {playlist.Name}");
@@ -91,7 +91,7 @@ namespace MagicConchBot.Modules
 
                 foreach (var song in Context.MusicService.SongList)
                 {
-                    playlist.Songs.Add(song.Url);
+                    playlist.Songs.Add(song.Data);
                 }
 
                 await ReplyAsync($"Saved {playlist.Songs.Count} songs to playlist {playlist.Name}");
