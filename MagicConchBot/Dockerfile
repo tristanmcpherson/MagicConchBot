@@ -10,10 +10,10 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
 
-COPY MagicConchBot/MagicConchBot.csproj MagicConchBot/
-RUN dotnet restore MagicConchBot/MagicConchBot.csproj
+COPY MagicConchBot.csproj /
+RUN dotnet restore MagicConchBot.csproj
 COPY . .
-WORKDIR /src/MagicConchBot
+WORKDIR /src/
 RUN dotnet build MagicConchBot.csproj -c Release -o /app
 
 FROM build AS publish
