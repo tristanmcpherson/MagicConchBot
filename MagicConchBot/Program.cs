@@ -14,6 +14,7 @@ using MagicConchBot.Resources;
 using MagicConchBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
+using System.Net.Http;
 
 namespace MagicConchBot
 {
@@ -148,6 +149,7 @@ namespace MagicConchBot
 
             return new ServiceCollection()
                 .AddSingleton(config)
+                .AddSingleton<HttpClient>()
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()

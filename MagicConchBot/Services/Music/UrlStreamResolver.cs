@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using NLog;
 using YoutubeExplode;
-using YoutubeExplode.Models.MediaStreams;
+using YoutubeExplode.Videos;
 
 namespace MagicConchBot.Services.Music
 {
@@ -27,8 +27,9 @@ namespace MagicConchBot.Services.Music
             {
                 streamUrl = data;
 			} else if (musicType == MusicType.YouTube) {
-	            var streamInfoSet = await client.GetVideoMediaStreamInfosAsync(data);
-	            var streamInfo = streamInfoSet.Audio.WithHighestBitrate();
+                var manifest = await client.Videos.Streams.GetManifestAsync(VideoId.Parse(data));
+                var streams = manifest.GetAudioOnlyStreams();
+                var streamInfo = streams.OrderBy(s => s.Bitrate).FirstOrDefault();
 
 				streamUrl = streamInfo.Url;
 			} else

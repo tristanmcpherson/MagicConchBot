@@ -107,6 +107,7 @@ namespace MagicConchBot.Services.Music {
 			} finally {
 				PlayerState = _pauseRequested ? PlayerState.Paused : PlayerState.Stopped;
 				_pauseRequested = false;
+				if (!song.Token.IsCancellationRequested) { song.TokenSource.Cancel(); }
 			}
 		}
 
