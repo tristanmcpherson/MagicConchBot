@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.0-runtime AS base
+FROM mcr.microsoft.com/dotnet/runtime:5.0 AS base
 WORKDIR /app
 
 RUN apt-get clean && apt-get update && apt-get install -y \
@@ -7,10 +7,7 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 	ffmpeg \
 	python
 
-RUN curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
-RUN chmod a+rx /usr/local/bin/youtube-dl
-
-FROM microsoft/dotnet:2.0-sdk AS build
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
 
 COPY MagicConchBot/NuGet.config ./

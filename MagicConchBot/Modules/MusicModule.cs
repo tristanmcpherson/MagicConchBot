@@ -89,6 +89,8 @@ namespace MagicConchBot.Modules
                 url = query;
             }
 
+            Log.Debug(url);
+
             // url invalid
             if (string.IsNullOrEmpty(url))
             {
@@ -109,9 +111,11 @@ namespace MagicConchBot.Modules
             }
             else
             {
+                Log.Info("Resolving song");
                 var song = await _songResolutionService.ResolveSong(url, startTime);
 
                 // add to queue
+                Log.Debug("Queueing song");
                 Context.MusicService.QueueSong(song);
 
                 await ReplyAsync("Queued song:", false, song.GetEmbed());
