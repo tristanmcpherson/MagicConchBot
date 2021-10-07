@@ -35,7 +35,7 @@ namespace MagicConchBot.Modules
             _chanService = serviceProvider.GetService<ChanService>();
         }
 
-        [Command("play"), Alias("resume")]
+        [Command("play", RunMode = RunMode.Async), Alias("resume")]
         [Summary(
             "Plays a song from YouTube or SoundCloud. Alternatively uses the search terms to find a corresponding video on YouTube."
         )]
@@ -89,8 +89,6 @@ namespace MagicConchBot.Modules
                 url = query;
             }
 
-            Log.Debug(url);
-
             // url invalid
             if (string.IsNullOrEmpty(url))
             {
@@ -125,7 +123,7 @@ namespace MagicConchBot.Modules
             if (Context.MusicService.PlayerState == PlayerState.Stopped || Context.MusicService.PlayerState == PlayerState.Paused)
             {
                 Log.Info("No song currently playing, playing.");
-                await Context.MusicService.Play(Context).ConfigureAwait(false);
+                await Context.MusicService.Play(Context);
             }
         }
 
