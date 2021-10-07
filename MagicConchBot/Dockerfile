@@ -2,7 +2,9 @@ FROM mcr.microsoft.com/dotnet/runtime:5.0 AS base
 WORKDIR /app
 
 RUN apt-get clean && apt-get update && apt-get install -y \
+	libopus0 \
 	libopus-dev \
+	libsodium23 \
 	libsodium-dev \
 	ffmpeg \
 	python
