@@ -4,7 +4,7 @@ WORKDIR /app
 RUN apt-get clean && apt-get update && apt-get install -y \
 	libopus0 \
 	libopus-dev \
-	libsodium23 \
+#	libsodium23 \
 	libsodium-dev \
 	ffmpeg \
 	python
