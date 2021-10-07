@@ -13,6 +13,7 @@ FROM mcr.microsoft.com/dotnet/sdk:2.1 AS build
 WORKDIR /src
 
 COPY MagicConchBot.csproj MagicConchBot.csproj
+COPY Dependencies/x64 /
 RUN dotnet restore MagicConchBot.csproj
 COPY . .
 WORKDIR /src/
