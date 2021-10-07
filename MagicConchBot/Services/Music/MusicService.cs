@@ -51,7 +51,7 @@ namespace MagicConchBot.Services.Music
 
         public Song CurrentSong { get; private set; }
 
-        public async Task Play(ICommandContext context)
+        public void Play(ICommandContext context)
         {
             if (_tokenSource == null || _tokenSource.Token.IsCancellationRequested)
             {
@@ -60,7 +60,7 @@ namespace MagicConchBot.Services.Music
 
             IAudioClient audioClient = null;
 
-            await Task.Factory.StartNew(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 try
                 {

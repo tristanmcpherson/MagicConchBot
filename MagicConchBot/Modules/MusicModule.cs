@@ -47,7 +47,7 @@ namespace MagicConchBot.Modules
             }
             else if (Context.MusicService.SongList.Count > 0)
             {
-                await Context.MusicService.Play(Context);
+                Context.MusicService.Play(Context);
                 await ReplyAsync("Resuming queue.");
             }
             else
@@ -123,7 +123,7 @@ namespace MagicConchBot.Modules
             if (Context.MusicService.PlayerState == PlayerState.Stopped || Context.MusicService.PlayerState == PlayerState.Paused)
             {
                 Log.Info("No song currently playing, playing.");
-                await Context.MusicService.Play(Context);
+                Context.MusicService.Play(Context);
             }
         }
 
@@ -218,7 +218,7 @@ namespace MagicConchBot.Modules
             }
 
             if (Context.MusicService.CurrentSong == null)
-                await Context.MusicService.Play(Context);
+                Context.MusicService.Play(Context);
         }
     }
 }

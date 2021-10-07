@@ -21,7 +21,7 @@ namespace MagicConchBot.Common.Interfaces
 
         PlayerState PlayerState { get; }
 
-        Task Play(ICommandContext msg);
+        void Play(ICommandContext msg);
 
         bool Stop();
 
