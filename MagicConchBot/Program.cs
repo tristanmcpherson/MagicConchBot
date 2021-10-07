@@ -149,7 +149,6 @@ namespace MagicConchBot
 
             return new ServiceCollection()
                 .AddSingleton(config)
-                .AddSingleton<HttpClient>()
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()

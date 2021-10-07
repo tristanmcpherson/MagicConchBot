@@ -21,9 +21,9 @@ namespace MagicConchBot.Services
 
         YoutubeClient _youtubeClient;
 
-        public GoogleApiInfoService(HttpClient httpClient)
+        public GoogleApiInfoService()
         {
-            _youtubeClient = new YoutubeClient(httpClient);
+            _youtubeClient = new YoutubeClient();
         }
 
         public async Task<string> GetFirstVideoByKeywordsAsync(string keywords)
