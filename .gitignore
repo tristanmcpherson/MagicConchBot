@@ -6,8 +6,6 @@
 *.user
 *.userosscache
 *.sln.docstates
-launchSettings.json
-
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -271,3 +269,4 @@ __pycache__/
 /MagicConchBot/Settings.db
 /MagicConchBot/Configuration.json
 /Configuration.json
+MagicConchBot/Properties/launchSettings.json
