@@ -74,7 +74,7 @@ namespace MagicConchBot.Handlers
 
             // Create a Command Context
             var context = new ConchCommandContext(_client, message, _services);
-
+            _commands.Log += LogAsync;
             // Execute the Command, store the result
             var result = await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
 
@@ -84,6 +84,17 @@ namespace MagicConchBot.Handlers
                     await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
                 else
                     await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
+        }
+
+        public async Task LogAsync(LogMessage logMessage) {
+            if (logMessage.Exception is CommandException cmdException) {
+                // We can tell the user that something unexpected has happened
+                await cmdException.Context.Channel.SendMessageAsync("Something went catastrophically wrong!");
+
+                // We can also log this incident
+                Console.WriteLine($"{cmdException.Context.User} failed to execute '{cmdException.Command.Name}' in {cmdException.Context.Channel}.");
+                Console.WriteLine(cmdException.ToString());
+            }
         }
 
         private static async Task HandleMessageReceivedAsync(SocketMessage arg)
