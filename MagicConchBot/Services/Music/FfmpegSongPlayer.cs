@@ -60,47 +60,47 @@ namespace MagicConchBot.Services.Music {
 				var buffer = new byte[FrameSize];
 				var retryCount = 0;
 				var stopwatch = new Stopwatch();
-			    using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music, packetLoss: 0)) {
-						PlayerState = PlayerState.Playing;
-						Log.Debug("Playing song.");
-						song.CurrentTime = song.StartTime;
+                using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music, packetLoss: 0)) {
+                    PlayerState = PlayerState.Playing;
+                    Log.Debug("Playing song.");
+                    song.CurrentTime = song.StartTime;
 
-						stopwatch.Start();
-						while (!song.TokenSource.IsCancellationRequested) {
-							var byteCount = await inStream.ReadAsync(buffer, 0, buffer.Length, song.Token);
+                    stopwatch.Start();
+                    while (!song.TokenSource.IsCancellationRequested) {
+                        var byteCount = await inStream.ReadAsync(buffer.AsMemory(0, buffer.Length), song.Token);
 
-							if (byteCount == 0) {
-								if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(1000)) {
-									Log.Info("Read 0 bytes but song is finished.");
-									break;
-								}
+                        if (byteCount == 0) {
+                            if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(1000)) {
+                                Log.Info("Read 0 bytes but song is finished.");
+                                break;
+                            }
 
-								await Task.Delay(100, song.Token).ConfigureAwait(false);
+                            await Task.Delay(100, song.Token).ConfigureAwait(false);
 
-								if (++retryCount == MaxRetryCount) {
-									Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
-									break;
-								}
-							} else {
-								retryCount = 0;
-							}
+                            if (++retryCount == MaxRetryCount) {
+                                Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
+                                break;
+                            }
+                        } else {
+                            retryCount = 0;
+                        }
 
-							song.Token.ThrowIfCancellationRequested();
-							buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
-							if (stopwatch.ElapsedMilliseconds < Milliseconds) {
-								//await Task.Delay((int)((Milliseconds - (int)stopwatch.ElapsedMilliseconds) * 0.5));
-							}
-							stopwatch.Restart();
+                        song.Token.ThrowIfCancellationRequested();
+                        buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
+                        if (stopwatch.ElapsedMilliseconds < Milliseconds) {
+                            //await Task.Delay((int)((Milliseconds - (int)stopwatch.ElapsedMilliseconds) * 0.5));
+                        }
+                        stopwatch.Restart();
 
-							await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
-							song.CurrentTime += CalculateCurrentTime(byteCount);
-						}
-						await pcmStream.FlushAsync();
-			    }
-			    //}
+                        await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
+                        song.CurrentTime += CalculateCurrentTime(byteCount);
+                    }
+                    await pcmStream.FlushAsync();
+                    //}
+                }
 
-			    //ffmpegTask.Wait(song.Token);
-			} catch (OperationCanceledException ex) {
+                //ffmpegTask.Wait(song.Token);
+            } catch (OperationCanceledException ex) {
 				Log.Info("Song cancelled: " + ex.Message);
 			} catch (Exception ex) {
 				Log.Error(ex);
