@@ -64,7 +64,7 @@ namespace MagicConchBot.Services.Music
             {
                 try
                 {
-                    audioClient = await AudioHelper.JoinChannelAsync(context);//.ConfigureAwait(false);
+                    audioClient = await AudioHelper.JoinChannelAsync(context).ConfigureAwait(false);
 
                     if (audioClient == null)
                     {
