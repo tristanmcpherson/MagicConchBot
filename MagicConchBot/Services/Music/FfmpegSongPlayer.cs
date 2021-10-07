@@ -54,6 +54,9 @@ namespace MagicConchBot.Services.Music {
 
 			try {
 			    var inStream = StartFfmpeg(song.StreamUri, song);
+                if (inStream == null) {
+                    throw new Exception("FFMPEG stream was not created.");
+                }
 
                 Log.Debug($"Creating PCM stream for file {song.StreamUri}.");
 
@@ -67,7 +70,7 @@ namespace MagicConchBot.Services.Music {
 
                     stopwatch.Start();
                     while (!song.TokenSource.IsCancellationRequested) {
-                        var byteCount = await inStream.ReadAsync(buffer.AsMemory(0, buffer.Length), song.Token);
+                        var byteCount = await inStream.ReadAsync(buffer, 0, buffer.Length, song.Token);
 
                         if (byteCount == 0) {
                             if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(1000)) {
@@ -119,14 +122,23 @@ namespace MagicConchBot.Services.Music {
                 var seek = song.StartTime.TotalSeconds > 0 ? $"-ss {song.StartTime.TotalSeconds}" : "";
                 var arguments = $"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{inputFile}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1 -loglevel error";
 
+                Log.Debug(arguments);
+
+                Log.Info(Directory.GetCurrentDirectory());
+
+                if (!File.Exists("ffmpeg") && !File.Exists("ffmpeg.exe")) {
+                    Log.Error("FFMPEG not found.");
+                    throw new Exception();
+                }
+
                 var startInfo = new ProcessStartInfo {
                     FileName = "ffmpeg",
                     Arguments = arguments,
                     RedirectStandardOutput = true,
-                    RedirectStandardError = false,
+                    RedirectStandardError = true,
                     CreateNoWindow = true,
                     //RedirectStandardInput = true,
-                    UseShellExecute = false
+                    UseShellExecute = false,
                 };
 
                 //if (File.Exists(outputFile)) {
@@ -149,6 +161,7 @@ namespace MagicConchBot.Services.Music {
                     throw new Exception("Could not start FFMPEG");
                 }
 
+                
                 return p.StandardOutput.BaseStream;
 
             } catch (Exception ex) {
