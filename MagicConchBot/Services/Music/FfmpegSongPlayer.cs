@@ -88,14 +88,13 @@ namespace MagicConchBot.Services.Music {
                             retryCount = 0;
                         }
 
-                        song.Token.ThrowIfCancellationRequested();
                         buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
                         if (stopwatch.ElapsedMilliseconds < Milliseconds) {
                             //await Task.Delay((int)((Milliseconds - (int)stopwatch.ElapsedMilliseconds) * 0.5));
                         }
                         stopwatch.Restart();
 
-                        await pcmStream.WriteAsync(buffer, 0, byteCount, song.Token);
+                        await pcmStream.WriteAsync(buffer.AsMemory(0, byteCount), song.Token);
                         song.CurrentTime += CalculateCurrentTime(byteCount);
                     }
                     await pcmStream.FlushAsync();
