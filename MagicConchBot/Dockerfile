@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/runtime:5.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:5.0-focal AS base
 WORKDIR /app
 
 RUN apt-get clean && apt-get update && apt-get install -y \
@@ -9,7 +9,7 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 	ffmpeg \
 	python
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:5.0-focal AS build
 WORKDIR /src
 
 COPY MagicConchBot.csproj MagicConchBot.csproj
