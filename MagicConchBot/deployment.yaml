@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: magicconchbot
+    labels:
+    app: app
+spec:
+    replicas: 2
+    selector:
+    matchLabels:
+        app: app
+    template:
+    metadata:
+        labels:
+        app: app
+    spec:
+        containers:
+        - name: bot
+          image: shredder8910/magicconchbot
+          ports:
+            - containerPort: 80

@@ -15,13 +15,13 @@ using YoutubeExplode.Videos;
 
 namespace MagicConchBot.Services
 {
-    public class GoogleApiInfoService : ISongInfoService
+    public class YoutubeInfoService : ISongInfoService
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         YoutubeClient _youtubeClient;
 
-        public GoogleApiInfoService()
+        public YoutubeInfoService()
         {
             _youtubeClient = new YoutubeClient();
         }

@@ -37,10 +37,12 @@ namespace MagicConchBot.Services.Music
 
         public PlayerState PlayerState => _songPlayer.PlayerState;
 
-        public float Volume
-        {
-            get => _songPlayer.Volume;
-            set => _songPlayer.Volume = value;
+        public float GetVolume() {
+            return _songPlayer.GetVolume();
+        }
+
+        public void SetVolume(float value) {
+            _songPlayer.SetVolume(value);
         }
 
         public List<Song> SongList { get; }
@@ -154,7 +156,7 @@ namespace MagicConchBot.Services.Music
                     if (song == null)
                         return;
 
-                    message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true, Volume));
+                    message = await channel.SendMessageAsync(string.Empty, false, song.GetEmbed("", false, true, GetVolume()));
 
                     while (_songPlayer.PlayerState == PlayerState.Playing || _songPlayer.PlayerState == PlayerState.Loading)
                     {
@@ -164,7 +166,7 @@ namespace MagicConchBot.Services.Music
 
                         song.Token.ThrowIfCancellationRequested();
 
-                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true, Volume));
+                        await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true, GetVolume()));
                         if (stopwatch.ElapsedMilliseconds < time)
                         {
                             await Task.Delay(time - (int)stopwatch.ElapsedMilliseconds);

@@ -4,6 +4,7 @@ namespace MagicConchBot.Common.Enums
     {
         Stopped = 0,
         Loading,
+        PauseRequested,
         Paused,
         Playing
     }

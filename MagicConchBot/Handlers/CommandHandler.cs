@@ -33,6 +33,7 @@ namespace MagicConchBot.Handlers
             _services = services;
             _client = services.GetService<DiscordSocketClient>();
             _commands = services.GetService<CommandService>();
+            _commands.Log += LogAsync;
 
             _client.MessageReceived += HandleCommandAsync;
             _client.GuildAvailable += HandleGuildAvailableAsync;
@@ -43,20 +44,13 @@ namespace MagicConchBot.Handlers
 
         public async Task InstallAsync()
         {
-            // Create Command Service, inject it into Dependency ServiceProvider
-            //_client = ServiceProvider.GetService<DiscordSocketClient>();
-            //_commands = new CommandService();
-
-            //_map.Add(_commands);
-
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-
         }
 
         private async Task HandleCommandAsync(SocketMessage parameterMessage)
         {
             // Don't handle the command if it is a system message
-            if (!(parameterMessage is SocketUserMessage message))
+            if (parameterMessage is not SocketUserMessage message)
                 return;
             if (message.Source != MessageSource.User)
                 return;
@@ -74,7 +68,7 @@ namespace MagicConchBot.Handlers
 
             // Create a Command Context
             var context = new ConchCommandContext(_client, message, _services);
-            _commands.Log += LogAsync;
+          
             // Execute the Command, store the result
             var result = await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
 
@@ -86,7 +80,7 @@ namespace MagicConchBot.Handlers
                     await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
         }
 
-        public async Task LogAsync(LogMessage logMessage) {
+        public static async Task LogAsync(LogMessage logMessage) {
             if (logMessage.Exception is CommandException cmdException) {
                 // We can tell the user that something unexpected has happened
                 await cmdException.Context.Channel.SendMessageAsync("Something went catastrophically wrong!");
@@ -127,7 +121,6 @@ namespace MagicConchBot.Handlers
             guildServiceProvider.AddService<ISongPlayer, FfmpegSongPlayer>(guild.Id);
             guildServiceProvider.AddService<IMusicService, MusicService>(guild.Id);
             guildServiceProvider.AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
-            guildServiceProvider.AddService<IMusicService, MusicService>(guild.Id);
 
             _services.GetService<GuildServiceProvider>().AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
             return Task.CompletedTask;
