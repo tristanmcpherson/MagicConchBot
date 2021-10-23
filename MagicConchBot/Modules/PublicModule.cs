@@ -55,10 +55,9 @@ namespace MagicConchBot.Modules
             {
                 f.WithName("Stats")
                         .WithValue($"**Heap Size:**\n{GetHeapSize()} MB\n\n" +
-                                   $"**Guilds:**\n{((DiscordShardedClient) Context.Client).Guilds.Count}\n\n" +
-                                   $"**Channels:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
-                                   $"**Users:**\n{((DiscordShardedClient) Context.Client).Guilds.Sum(g => g.Users.Count)}\n\n" +
-                                   $"**Shards:**\n{((DiscordShardedClient) Context.Client).Shards.Count}");
+                                   $"**Guilds:**\n{((DiscordSocketClient) Context.Client).Guilds.Count}\n\n" +
+                                   $"**Channels:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Channels.Count)}\n\n" +
+                                   $"**Users:**\n{((DiscordSocketClient) Context.Client).Guilds.Sum(g => g.Users.Count)}\n\n");
             });
 
             await ReplyAsync(string.Empty, false, embed.Build());
