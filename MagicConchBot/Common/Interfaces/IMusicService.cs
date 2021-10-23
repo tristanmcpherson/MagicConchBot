@@ -9,7 +9,8 @@ namespace MagicConchBot.Common.Interfaces
 {
     public interface IMusicService
     {
-        float Volume { get; set; }
+        float GetVolume();
+        void SetVolume(float value);
 
         List<Song> SongList { get; }
 

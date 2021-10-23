@@ -25,23 +25,21 @@ namespace MagicConchBot.Services.Music {
 
 		private Song _song;
 
-		private bool _pauseRequested;
+        public float GetVolume() {
+            return _currentVolume;
+        }
 
-		public float Volume {
-			get => _currentVolume;
+        public void SetVolume(float value) {
+            _currentVolume = Math.Clamp(value, MinVolume, MaxVolume);
+        }
 
-			set {
-				if (value < MinVolume)
-					value = MinVolume;
+        private static TimeSpan CalculateCurrentTime(int currentBytes) {
+            return TimeSpan.FromSeconds(currentBytes /
+                                        (1000d * FrameSize /
+                                         Milliseconds));
+        }
 
-				if (value > MaxVolume)
-					value = MaxVolume;
-
-				_currentVolume = value;
-			}
-		}
-
-		public PlayerState PlayerState { get; private set; } = PlayerState.Stopped;
+        public PlayerState PlayerState { get; private set; } = PlayerState.Stopped;
 
 		public async Task PlaySong(IAudioClient audio, Song song) {
 			if (audio == null || audio.ConnectionState != ConnectionState.Connected) {
@@ -74,7 +72,7 @@ namespace MagicConchBot.Services.Music {
 
                         if (byteCount == 0) {
                             if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(1000)) {
-                                Log.Info("Read 0 bytes but song is finished.");
+                                Log.Debug("Read 0 bytes but song is finished.");
                                 break;
                             }
 
@@ -89,27 +87,24 @@ namespace MagicConchBot.Services.Music {
                         }
 
                         buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
-                        if (stopwatch.ElapsedMilliseconds < Milliseconds) {
-                            //await Task.Delay((int)((Milliseconds - (int)stopwatch.ElapsedMilliseconds) * 0.5));
-                        }
+              
                         stopwatch.Restart();
 
                         await pcmStream.WriteAsync(buffer.AsMemory(0, byteCount), song.Token);
                         song.CurrentTime += CalculateCurrentTime(byteCount);
                     }
                     await pcmStream.FlushAsync();
-                    //}
                 }
 
-                //ffmpegTask.Wait(song.Token);
             } catch (OperationCanceledException ex) {
 				Log.Info("Song cancelled: " + ex.Message);
 			} catch (Exception ex) {
 				Log.Error(ex);
 			} finally {
-				PlayerState = _pauseRequested ? PlayerState.Paused : PlayerState.Stopped;
-				_pauseRequested = false;
-				if (!song.Token.IsCancellationRequested) { song.TokenSource.Cancel(); }
+				PlayerState = PlayerState == PlayerState.PauseRequested ? PlayerState.Paused : PlayerState.Stopped;
+				if (!song.Token.IsCancellationRequested) { 
+                    song.TokenSource.Cancel(); 
+                }
 			}
 		}
 
@@ -136,25 +131,10 @@ namespace MagicConchBot.Services.Music {
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true,
-                    //RedirectStandardInput = true,
                     UseShellExecute = false,
                 };
 
-                //if (File.Exists(outputFile)) {
-                //    File.Delete(outputFile);
-                //}
-
                 var p = Process.Start(startInfo);
-
-                //while (!song.Token.IsCancellationRequested && !p.HasExited) {
-                //	await Task.Delay(100);
-                //}
-
-                //if (!p.HasExited) {
-                //	await p.StandardInput.WriteLineAsync('q');
-                //}
-
-                //p.WaitForExit();
 
                 if (p == null) {
                     throw new Exception("Could not start FFMPEG");
@@ -177,15 +157,9 @@ namespace MagicConchBot.Services.Music {
 		}
 
 		public void Pause() {
-			_pauseRequested = true;
+			PlayerState = PlayerState.PauseRequested;
 			_song.StartTime = _song.CurrentTime;
 			_song.TokenSource.Cancel();
-		}
-
-		private static TimeSpan CalculateCurrentTime(int currentBytes) {
-			return TimeSpan.FromSeconds(currentBytes /
-										(1000d * FrameSize /
-										 Milliseconds));
 		}
 	}
 }

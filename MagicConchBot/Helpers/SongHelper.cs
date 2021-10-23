@@ -9,7 +9,7 @@ namespace MagicConchBot.Helpers
 {
     public static class SongHelper
     {
-        public static async Task<string> ParseUrlOrSearch(string query, GoogleApiInfoService service)
+        public static async Task<string> ParseUrlOrSearch(string query, YoutubeInfoService service)
         {
             string url;
             var terms = query.Split(' ');
