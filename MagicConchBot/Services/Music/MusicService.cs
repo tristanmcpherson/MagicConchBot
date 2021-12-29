@@ -99,7 +99,6 @@ namespace MagicConchBot.Services.Music
                                     streamUri = uri;
                                     break;
                                 }
-                                
                             } 
                             catch
                             {
