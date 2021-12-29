@@ -90,13 +90,20 @@ namespace MagicConchBot.Services.Music
                         string streamUri = null;
                         foreach (var resolver in _songResolvers)
                         {
-                            var uri = await resolver.GetSongStreamUrl(CurrentSong.MusicType, CurrentSong.Data);
-                            if (uri == null)
+                            try
                             {
-	                            continue;
+                                var uri = await resolver.GetSongStreamUrl(CurrentSong.MusicType, CurrentSong.Data);
+
+                                if (uri != null)
+                                {
+                                    streamUri = uri;
+                                    break;
+                                }
+                                
+                            } 
+                            catch
+                            {
                             }
-                            streamUri = uri;
-                            break;
                         }
 
                         CurrentSong.StreamUri =
