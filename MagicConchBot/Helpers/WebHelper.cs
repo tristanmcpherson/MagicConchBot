@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NLog;
+using System;
 
 namespace MagicConchBot.Helpers
 {
@@ -36,7 +37,7 @@ namespace MagicConchBot.Helpers
             }
         }
 
-        public static async Task ThrottledFileDownload(string outputPath, string url, CancellationToken token,
+        public static async Task ThrottledFileDownload(HttpClient httpClient, string outputPath, string url, CancellationToken token,
             int bytesPerSecond = 1048576)
         {
             Log.Debug($"Starting to download file: {url}");
@@ -48,39 +49,32 @@ namespace MagicConchBot.Helpers
 			if (File.Exists(outputPath)) {
 				File.Delete(outputPath);
 			}
-            using (var outFile = new FileStream(outputPath, FileMode.CreateNew, FileAccess.ReadWrite,
-                FileShare.ReadWrite))
+            using var outFile = new FileStream(outputPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.ReadWrite);
+            using var stream = await httpClient.GetStreamAsync(url);
+            stopwatch.Start();
+            while (!token.IsCancellationRequested)
             {
-                using (var httpClient = new HttpClient())
+                if (totalBytes > bytesPerSecond && stopwatch.ElapsedMilliseconds < 1000)
                 {
-                    using (var stream = await httpClient.GetStreamAsync(url))
-                    {
-                        stopwatch.Start();
-                        while (!token.IsCancellationRequested)
-                        {
-                            if (totalBytes > bytesPerSecond && stopwatch.ElapsedMilliseconds < 1000)
-                            {
-                                await Task.Delay(1000 - (int) stopwatch.ElapsedMilliseconds, token);
-                                totalBytes = 0;
-                            }
-                            stopwatch.Restart();
-
-                            var bytesDownloaded = await stream.ReadAsync(buffer, 0, buffer.Length, token);
-                            totalBytes += bytesDownloaded;
-
-                            if (bytesDownloaded == 0)
-                            {
-                                if (++retryCount == 20)
-                                    break;
-
-                                await Task.Delay(50, token);
-                            }
-
-                            await outFile.WriteAsync(buffer, 0, bytesDownloaded, token);
-                        }
-                    }
+                    await Task.Delay(1000 - (int)stopwatch.ElapsedMilliseconds, token);
+                    totalBytes = 0;
                 }
+                stopwatch.Restart();
+
+                var bytesDownloaded = await stream.ReadAsync(buffer, token);
+                totalBytes += bytesDownloaded;
+
+                if (bytesDownloaded == 0)
+                {
+                    if (++retryCount == 20)
+                        break;
+
+                    await Task.Delay(50, token);
+                }
+
+                await outFile.WriteAsync(buffer.AsMemory(0, bytesDownloaded), token);
             }
+            
 
             Log.Debug("Finished downloading file.");
         }

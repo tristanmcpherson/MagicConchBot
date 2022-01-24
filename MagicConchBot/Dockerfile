@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/runtime:6.0-focal AS base
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 WORKDIR /app
 
 RUN apt-get clean && apt-get update && apt-get install -y \
@@ -13,7 +13,6 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build
 WORKDIR /src
 
 COPY MagicConchBot.csproj MagicConchBot.csproj
-COPY Dependencies/x64 /
 RUN dotnet restore MagicConchBot.csproj
 COPY . .
 WORKDIR /src/

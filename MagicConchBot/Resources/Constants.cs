@@ -14,5 +14,6 @@ namespace MagicConchBot.Resources
 		public const string GoogleApiKeyVariable = "GOOGLE_API_KEY";
         public const string SoundCloudClientSecretVariable = "SOUNDCLOUD_CLIENTSECRET";
         public const string SoundCloudClientIdVariable = "SOUNDCLOUD_CLIENTID";
+        public const string SpotifyToken = "SPOTIFY_TOKEN";
 	}
 }

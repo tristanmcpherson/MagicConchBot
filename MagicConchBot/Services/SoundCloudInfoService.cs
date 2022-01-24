@@ -11,13 +11,10 @@ namespace MagicConchBot.Services
     {
         public SoundCloudInfoService()
         {
-            var connector = new SoundCloudConnector(Configuration.SoundCloudClientId, 
-                Configuration.SoundCloudClientSecret);
-
-            Client = connector.UnauthorizedConnect();
+            Client = SoundCloudConnector.AuthorizedConnect(Configuration.SoundCloudClientId, Configuration.SoundCloudClientSecret);
         }
 
-        public IUnauthorizedSoundCloudClient Client { get; set; }
+        public IAuthorizedSoundCloudClient Client { get; set; }
 
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?soundcloud\.com\/(?:[a-z0-9-]+\/?)+",
             RegexOptions.IgnoreCase);
@@ -26,11 +23,12 @@ namespace MagicConchBot.Services
         {
             var track = await Client.Resolve.GetTrack(url);
             return new Song(
-                track.Title, 
-                new TimeSpan(0,0,0,0,track.Duration),
-                MusicType.SoundCloud,
+                track.title, 
+                new TimeSpan(0,0,0,0, track.duration),
                 url,
-                track.ArtworkUrl);
+                track.artwork_url ?? track.user?.avatar_url,
+                null,
+                MusicType.SoundCloud);
         }
     }
 }

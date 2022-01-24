@@ -24,13 +24,14 @@ namespace MagicConchBot.Common.Interfaces
 
     public interface ISongResolver
     {
-        Task<string> GetSongStreamUrl(MusicType musicType, string data);
+        Task<string> GetSongStreamUrl(Song song);
     }
 
     public enum MusicType
     {
 	    YouTube = 0,
 	    SoundCloud = 1,
+        Spotify = 2,
 	    Other
     }
 }

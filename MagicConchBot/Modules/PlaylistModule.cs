@@ -2,20 +2,18 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord.Commands;
+using Discord.Interactions;
 using MagicConchBot.Common.Enums;
-using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
 using MagicConchBot.Services;
-using MagicConchBot.Services.Music;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MagicConchBot.Modules
 {
-    public class PlaylistModule : ModuleBase<ConchCommandContext>
+    public class PlaylistModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
-        [Command("save"), Alias("s")]
+        [SlashCommand("save", "Save a song to a playlist")]
         public async Task SaveToPlaylist(string name = Playlist.DefaultName)
         {
             if (Context.MusicService.CurrentSong == null)
@@ -28,11 +26,11 @@ namespace MagicConchBot.Modules
             playlist.Songs.Add(Context.MusicService.CurrentSong.Data);
             Context.SaveSettings();
 
-            await ReplyAsync($"Added {Context.MusicService.CurrentSong.Name} to playlist {playlist.Name}");
+            await RespondAsync($"Added {Context.MusicService.CurrentSong.Name} to playlist {playlist.Name}");
         }
 
-        [Group("playlist"), Alias("pl")]
-        public class PlaylistSubModule : ModuleBase<ConchCommandContext>
+        [Group("playlist", "Playlist commands")]
+        public class PlaylistSubModule : InteractionModuleBase<ConchInteractionCommandContext>
         {
 
             private readonly ISongResolutionService _songResolution;
@@ -42,17 +40,17 @@ namespace MagicConchBot.Modules
                 _songResolution = serviceProvider.GetService<ISongResolutionService>();
             }
 
-            [Command("play"), Alias("load")]
+            [SlashCommand("play", "Play a playlist")]
             public async Task LoadPlaylist(string name = Playlist.DefaultName)
             {
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
                 if (playlist.Songs.Count == 0)
                 {
-                    await ReplyAsync($"No songs found in playlist: {name}");
+                    await RespondAsync($"No songs found in playlist: {name}");
                     return;
                 }
 
-                await ReplyAsync("Queueing songs from playlist. This may take awhile.");
+                await RespondAsync("Queueing songs from playlist. This may take awhile.");
 
                 var tasks = new Task<Song>[playlist.Songs.Count];
 
@@ -70,7 +68,7 @@ namespace MagicConchBot.Modules
                     Context.MusicService.QueueSong(song);
                 }
 
-                await ReplyAsync($"Queued {playlist.Songs.Count} songs.");
+                await RespondAsync($"Queued {playlist.Songs.Count} songs.");
 
                 if (Context.MusicService.PlayerState == PlayerState.Stopped ||
                     Context.MusicService.PlayerState == PlayerState.Paused)
@@ -79,7 +77,7 @@ namespace MagicConchBot.Modules
                 }
             }
 
-            [Command("save queue")]
+            [SlashCommand("savequeue", "Save queue as a playlist")]
             public async Task SaveQueueToPlaylist(string name = Playlist.DefaultName)
             {
                 if (Context.MusicService.SongList.Count == 0)
@@ -94,40 +92,40 @@ namespace MagicConchBot.Modules
                     playlist.Songs.Add(song.Data);
                 }
 
-                await ReplyAsync($"Saved {playlist.Songs.Count} songs to playlist {playlist.Name}");
+                await RespondAsync($"Saved {playlist.Songs.Count} songs to playlist {playlist.Name}");
             }
 
             // TODO: Comment all code, general cleanup
             /* TODO: Add some form of checking in order to make sure the
                TODO: specified string is a valid url, possibly a search term that is resolved */
-            [Command("add")]
+            [SlashCommand("add", "Add a song to playlist by name or url")]
             public async Task AddToPlaylist(string song, string name = Playlist.DefaultName)
             {
                 if (!WebHelper.UrlRegex.IsMatch(song))
                 {
-                    await ReplyAsync($"The url {song} is invalid. Please enter a valid url to save to this playlist.");
+                    await RespondAsync($"The url {song} is invalid. Please enter a valid url to save to this playlist.");
                     return;
                 }
-                 
+
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
                 playlist.Songs.Add(song);
                 Context.SaveSettings();
 
-                await ReplyAsync($"Added {song} to playlist {playlist.Name}");
+                await RespondAsync($"Added {song} to playlist {playlist.Name}");
             }
 
-            [Command("songs"), Alias("show")]
+            [SlashCommand("songs", "List songs in playlist")]
             public async Task ShowPlaylist(string name = Playlist.DefaultName)
             {
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
 
                 if (playlist.Songs.Count == 0)
                 {
-                    await ReplyAsync($"No songs found in playlist: {playlist.Name}");
+                    await RespondAsync($"No songs found in playlist: {playlist.Name}");
                     return;
                 }
 
-                await ReplyAsync("Resolving songs from playlist. This may take awhile.");
+                await RespondAsync("Resolving songs from playlist. This may take awhile.");
 
                 var tasks = new Task<Song>[playlist.Songs.Count];
 
@@ -141,13 +139,13 @@ namespace MagicConchBot.Modules
                 await SongHelper.DisplaySongsClean(songs, Context.Channel);
             }
 
-            [Command("showall"), Alias("list")]
+            [SlashCommand("all", "Show all playlists")]
             public async Task ListAllPlaylists()
             {
                 var playlists = Context.Settings.Playlists;
                 if (playlists.Count == 0)
                 {
-                    await ReplyAsync("No playlists found.");
+                    await RespondAsync("No playlists found.");
                     return;
                 }
 
@@ -158,11 +156,11 @@ namespace MagicConchBot.Modules
                 {
                     reply.Append($"{p.Name} + {string.Join(",", p.Songs.Take(3).Where(s => s != null))}, ...\n");
                 }
-                
-                await ReplyAsync(reply.ToString());
+
+                await RespondAsync(reply.ToString());
             }
 
-            [Command("delete"), Alias("delet")]
+            [SlashCommand("delete", "Delete playlist with name")]
             public async Task DeletePlaylist(string name)
             {
                 var playlist = Context.Settings.GetPlaylistOrNull(name);
@@ -173,7 +171,7 @@ namespace MagicConchBot.Modules
 
                 Context.Settings.Playlists.Remove(playlist);
                 Context.SaveSettings();
-                await ReplyAsync($"Deleted playlist by the name of: {playlist.Name}");
+                await RespondAsync($"Deleted playlist by the name of: {playlist.Name}");
             }
         }
     }

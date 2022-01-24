@@ -53,7 +53,7 @@ namespace MagicConchBot.Services.Music
 
         public Song CurrentSong { get; private set; }
 
-        public void Play(ICommandContext context)
+        public void Play(IInteractionContext context)
         {
             if (_tokenSource == null || _tokenSource.Token.IsCancellationRequested)
             {
@@ -83,7 +83,6 @@ namespace MagicConchBot.Services.Music
                             return;
 
                         CurrentSong = SongList[_songIndex];
-                        CurrentSong.TokenSource = new CancellationTokenSource();
 
                         _tokenSource.Token.ThrowIfCancellationRequested();
 
@@ -92,7 +91,7 @@ namespace MagicConchBot.Services.Music
                         {
                             try
                             {
-                                var uri = await resolver.GetSongStreamUrl(CurrentSong.MusicType, CurrentSong.Data);
+                                var uri = await resolver.GetSongStreamUrl(CurrentSong);
 
                                 if (uri != null)
                                 {
@@ -120,7 +119,7 @@ namespace MagicConchBot.Services.Music
                         }
                         finally
                         {
-                            Log.Info($"Song ended at {CurrentSong.CurrentTimePretty} / {CurrentSong.LengthPretty}");
+                            Log.Info($"Song ended at {CurrentSong.GetCurrentTimePretty()} / {CurrentSong.GetLengthPretty()}");
 
                             if (_songPlayer.PlayerState != PlayerState.Paused)
                             {
@@ -166,11 +165,9 @@ namespace MagicConchBot.Services.Music
 
                     while (_songPlayer.PlayerState == PlayerState.Playing || _songPlayer.PlayerState == PlayerState.Loading)
                     {
-                        // Song changed. Stop updating song info.
-                        if (CurrentSong.Data != song.Data)
+                        // Song changed or stopped. Stop updating song info.
+                        if (CurrentSong == null || CurrentSong.Data != song.Data)
                             break;
-
-                        song.Token.ThrowIfCancellationRequested();
 
                         await message.ModifyAsync(m => m.Embed = song.GetEmbed("", false, true, GetVolume()));
                         if (stopwatch.ElapsedMilliseconds < time)
@@ -194,7 +191,7 @@ namespace MagicConchBot.Services.Music
                    if (message != null)
                         await message.DeleteAsync();
                 }
-            }, CurrentSong.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, TaskCreationOptions.LongRunning);
         }
 
         public bool Stop()
@@ -238,16 +235,16 @@ namespace MagicConchBot.Services.Music
 
         public Song RemoveSong(int songNumber)
         {
-            if (songNumber < 0 || songNumber > SongList.Count)
+            if (songNumber < 0 || songNumber >= SongList.Count)
                 return null;
 
             if (songNumber == 0)
                 Stop();
 
-            var removedSong = SongList[songNumber];
-            SongList.RemoveAt(songNumber);
+            var song = SongList[songNumber];
+            SongList.Remove(song);
 
-            return removedSong;
+            return song;
         }
 
         public void ClearQueue()

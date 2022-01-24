@@ -16,6 +16,7 @@ namespace MagicConchBot.Services.Music
         //    new ConcurrentDictionary<ulong, Mp3ConverterService>();
 
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        private readonly IServiceProvider globalServiceCollection;
 
         public void AddService<TInterface, TImplementation>(ulong guildId) where TInterface : class where TImplementation : class, TInterface
         {
@@ -35,7 +36,6 @@ namespace MagicConchBot.Services.Music
 
             return provider.GetService<T>();
         }
-
         //public Mp3ConverterService GetMp3Service(ulong guildId)
         //{
         //    if (!_mp3Services.TryGetValue(guildId, out Mp3ConverterService service))

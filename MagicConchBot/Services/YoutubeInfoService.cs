@@ -50,11 +50,11 @@ namespace MagicConchBot.Services
 
         private static Song ParseVideo(Video video)
         {
-            return new Song(video.Title, (TimeSpan)video.Duration, MusicType.YouTube, video.Url, video.Thumbnails.First().Url);
+            return new Song(video.Title, (TimeSpan)video.Duration, video.Url, video.Thumbnails[0].Url, null, MusicType.YouTube);
         }
 
         private static Song ParseVideo(PlaylistVideo video) {
-            return new Song(video.Title, (TimeSpan)video.Duration, MusicType.YouTube, video.Url, video.Thumbnails.First().Url);
+            return new Song(video.Title, (TimeSpan)video.Duration, video.Url, video.Thumbnails[0].Url, null, MusicType.YouTube);
         }
 
         public async Task<List<Song>> GetSongsByPlaylistAsync(string id) {

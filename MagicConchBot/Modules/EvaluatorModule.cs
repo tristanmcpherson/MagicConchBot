@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using MagicConchBot.Helpers;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
@@ -13,15 +14,15 @@ namespace MagicConchBot.Modules
 {
     public class Globals
     {
-        public ConchCommandContext Context;
+        public ConchInteractionCommandContext Context;
 
-        public Globals(ConchCommandContext context)
+        public Globals(ConchInteractionCommandContext context)
         {
             Context = context;
         }
     }
 
-    public class EvaluatorModule : ModuleBase<ConchCommandContext>
+    public class EvaluatorModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
         private static readonly ScriptOptions ScriptOptions;
         private static CancellationTokenSource tokenSource;
@@ -62,7 +63,7 @@ namespace MagicConchBot.Modules
             "MethodRental."
         };
 
-        [Command("eval")]
+        [SlashCommand("eval", "Evaluates code")]
         public async Task Eval([Remainder] string code)
         {
             tokenSource?.Cancel();
@@ -71,7 +72,7 @@ namespace MagicConchBot.Modules
 
             if (BlockedTokens.Any(t => code.Contains(t)))
             {
-                await ReplyAsync("Failed. You've used a blocked keyword.");
+                await RespondAsync("Failed. You've used a blocked keyword.");
                 return;
             }
 
