@@ -53,9 +53,6 @@ namespace MagicConchBot.Resources
 		/// <summary> Gets or sets the destination path to copy music to. </summary>
 		public static string ServerMusicPath { get; set; } = "";
 
-		/// <summary> Gets or sets the base of the url ex. https://website.com/music/. </summary>
-		public static string ServerMusicUrlBase { get; set; } = "https://www.magicconchbot.com/";
-
         /// <summary> Gets or sets the default playlist. </summary>
         public static Playlist DefaultPlaylist { get; set; }
 
@@ -87,9 +84,11 @@ namespace MagicConchBot.Resources
         public static string SoundCloudClientId { get; set; } =
             Environment.GetEnvironmentVariable(Constants.SoundCloudClientIdVariable);
 
+        public static string SpotifyToken { get; set; } =
+            Environment.GetEnvironmentVariable(Constants.SpotifyToken);
         /// <summary>
         /// Gets or sets the local path for music to be played from.
         /// </summary>
-        public static string LocalMusicPath { get; set; }
+        public static string LocalMusicPath { get; set; } = "Music";
     }
 }

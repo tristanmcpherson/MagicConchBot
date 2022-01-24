@@ -1,82 +1,169 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
-using MagicConchBot.Resources;
-using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.Extensions.Caching.Memory;
 using NLog;
 
-namespace MagicConchBot.Services {
+namespace MagicConchBot.Services
+{
+    public record Mp3Request(string Name, string Url);
+
     public class Mp3ConverterService : IMp3ConverterService
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        private static HttpClient _httpClient = new HttpClient();
 
-        private static string _serverUrl;
+        private const string Folder = "Downloads";
 
-        private readonly ConcurrentDictionary<string, Guid> _urlToUniqueFile;
+        private readonly ConcurrentQueue<Mp3Request> _queueRequests;
+        private readonly ConcurrentDictionary<Mp3Request, bool> _processingRequests;
+        private readonly ConcurrentDictionary<Mp3Request, ConcurrentBag<IUser>> _recipients;
 
-        public Mp3ConverterService()
+        private readonly HttpClient _httpClient;
+        private readonly IMemoryCache _fileCache;
+        private readonly SemaphoreSlim _semaphore;
+        private Task _longRunningTask;
+
+        public Mp3ConverterService(HttpClient httpClient, IMemoryCache fileCache)
         {
-            _urlToUniqueFile = new ConcurrentDictionary<string, Guid>();
-            _serverUrl = Configuration.ServerMusicUrlBase;
+            _httpClient = httpClient;
+            _fileCache = fileCache;
+            _semaphore = new SemaphoreSlim(10);
+            _queueRequests = new ConcurrentQueue<Mp3Request>();
+            _recipients = new ConcurrentDictionary<Mp3Request, ConcurrentBag<IUser>>();
+            _processingRequests = new ConcurrentDictionary<Mp3Request, bool>();
 
-            Recipients = new ConcurrentDictionary<IUser, bool>();
-            GeneratingMp3 = new ConcurrentDictionary<string, bool>();
-            Mp3Links = new ConcurrentDictionary<string, string>();
-        }
-
-        public ConcurrentDictionary<string, string> Mp3Links { get; private set; }
-        public ConcurrentDictionary<string, bool> GeneratingMp3 { get; private set; }
-
-        public ConcurrentDictionary<IUser, bool> Recipients { get; }
-
-        public async Task GetMp3(Song song, IUser user)
-        {
-            Recipients.TryAdd(user, true);
-            await GenerateMp3Async(song);
-        }
-
-        public async Task GenerateMp3Async(Song song)
-        {
-            if (GeneratingMp3.ContainsKey(song.Data))
-            {
-                return;
-            }
 
             try
             {
-                GeneratingMp3.TryAdd(song.Data, true);
-
-                if (_urlToUniqueFile.TryGetValue(song.StreamUri, out Guid guid))
+                if (Directory.Exists(Folder))
                 {
-                    var finalUrl = $"{_serverUrl}/api/upload/{guid.ToString().Replace("\"", "")}/";
-
-                    await Task.WhenAll(Recipients.Select(async user =>
-                        await user.Key.SendMessageAsync($"Here's your mp3!: {finalUrl}")));
-                    return;
+                    Directory.Delete(Folder, true);
                 }
 
-                string sanitizedName = String.Concat(song.Name.Split(Path.GetInvalidFileNameChars()));
+                Directory.CreateDirectory(Folder);
+            }
+            catch { }
+        }
 
-                var outputFile = sanitizedName + "_" + ".mp3";
-                var downloadFile = sanitizedName + "_" + ".raw";
+        public void GetMp3(Mp3Request request, IUser user)
+        {
+            if (!_processingRequests.ContainsKey(request))
+            {
+                _queueRequests.Enqueue(request);
+            }
 
-                var outputUrl = _serverUrl + Uri.EscapeDataString(outputFile);
+            _recipients.GetOrAdd(request, _ => new ConcurrentBag<IUser>()).Add(user);
+            EnsureLongRunningTask();
+        }
+
+        private void EnsureLongRunningTask()
+        {
+            if (_longRunningTask == null)
+            {
+                _longRunningTask = Task.Factory.StartNew(ProcessQueue, TaskCreationOptions.LongRunning);
+            }
+        }
+
+        private async Task ProcessQueue()
+        {
+            while (true)
+            {
+                if (_queueRequests.IsEmpty)
+                {
+                    await Task.Delay(100);
+                    continue;
+                }
+
+                var taskQueue = new List<Task>();
+
+                while (_queueRequests.TryDequeue(out var request))
+                {
+                    await _semaphore.WaitAsync();
+
+                    taskQueue.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await HandleMp3Request(request);
+
+                        }
+                        finally
+                        {
+                            _semaphore.Release();
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(taskQueue);
+            }
+        }
+
+        private async Task HandleMp3Request(Mp3Request request)
+        {
+            _processingRequests.TryAdd(request, true);
+            var filePath = await DownloadMp3(request);
+            await SendMp3(request, filePath);
+            if (filePath != null)
+            {
+                _fileCache
+                    .GetOrCreate(request, (entry) =>
+                    {
+                        entry
+                            .SetSlidingExpiration(TimeSpan.FromHours(1))
+                            .RegisterPostEvictionCallback((_, value, _, _) => File.Delete(value as string));
+                        return filePath;
+                    });
+            }
+
+            _processingRequests.TryRemove(request, out var _);
+        }
+
+        private async Task SendMp3(Mp3Request request, string filePath)
+        {
+            if (_recipients.TryRemove(request, out var users))
+            {
+                await Task.WhenAll(
+                    users.Select(async user =>
+                    {
+                        if (filePath == null)
+                        {
+                            await user.SendMessageAsync("Failed to download and convert file. Please try again later.");
+                        }
+                        else
+                        {
+                            await user.SendFileAsync(filePath);
+                        }
+                    })
+                );
+            }
+        }
+
+        public async Task<string> DownloadMp3(Mp3Request request)
+        {
+            try
+            {
+                if (_fileCache.TryGetValue(request, out var filePath))
+                {
+                    return filePath as string;
+                }
+
+                string sanitizedName = string.Concat(request.Name.Split(Path.GetInvalidFileNameChars()));
+
+                var downloadFile = Path.Combine(Folder, sanitizedName + "_" + ".raw");
+                var outputFile = Path.Combine(Folder, sanitizedName + "_" + ".mp3");
 
                 var tokenSource = new CancellationTokenSource();
                 // just let ffmpeg stream the file, no need to download it separately
                 // on second thought, this allows us to stream the file down as to not saturate our download bandwidth
-                await WebHelper.ThrottledFileDownload(downloadFile, song.StreamUri, tokenSource.Token);
+                await WebHelper.ThrottledFileDownload(_httpClient, downloadFile, request.Url, tokenSource.Token);
 
                 var convert = Process.Start(new ProcessStartInfo
                 {
@@ -91,42 +178,18 @@ namespace MagicConchBot.Services {
                 if (convert == null)
                 {
                     Log.Error("Couldn't start ffmpeg process.");
-                    return;
+                    return null;
                 }
 
-                convert.StandardOutput.ReadToEnd();
-                convert.WaitForExit();
+                await convert.StandardOutput.ReadToEndAsync();
+                await convert.WaitForExitAsync();
 
-                using (var file = File.OpenRead(outputFile))
-                {
-                    using (var content = new MultipartFormDataContent())
-                    {
-                        content.Add(new StreamContent(file), "file", outputFile);
-
-                        var response = await _httpClient.PostAsync($"{_serverUrl}/api/upload", content, tokenSource.Token);
-                        var fileId = await response.Content.ReadAsStringAsync();
-                        var fileGuid = Guid.Parse(fileId.Replace("\"", ""));
-
-                        _urlToUniqueFile.TryAdd(song.StreamUri, fileGuid);
-
-                        var finalUrl = $"{_serverUrl}/api/upload/{fileId.Replace("\"", "")}/";
-
-                        await Task.WhenAll(Recipients.Select(async user =>
-                            await user.Key.SendMessageAsync($"Here's your mp3!: {finalUrl}")));
-                        Recipients.Clear();
-                    }
-                }
-
-                File.Delete(outputFile);
                 File.Delete(downloadFile);
-
-                GeneratingMp3.TryRemove(song.Data, out _);
+                return outputFile;
             }
-            catch (Exception)
+            catch
             {
-                await Task.WhenAll(Recipients.Select(async user => await user.Key.SendMessageAsync("Failed to get mp3 for song.")));
-                GeneratingMp3.TryRemove(song.Data, out _);
-                Recipients.Clear();
+                return null;
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Common.Types;
 using NLog;
 using YoutubeExplode;
 using YoutubeExplode.Videos;
@@ -19,11 +20,18 @@ namespace MagicConchBot.Services.Music
 
 
 
-        public async Task<string> GetSongStreamUrl(MusicType musicType, string data)
+        public async Task<string> GetSongStreamUrl(Song song)
         {
             string streamUrl;
+            var musicType = song.MusicType;
+            var data = song.Data;
 
-            if (DirectPlayFormats.Contains(data.Split('.').LastOrDefault()))
+            if (musicType == MusicType.Spotify)
+            {
+                var results = client.Search.GetResultsAsync(song.Name);
+                var res = await results.FirstAsync();
+                streamUrl = res.Url;
+            } else if (DirectPlayFormats.Contains(data.Split('.').LastOrDefault()))
             {
                 streamUrl = data;
 			} else if (musicType == MusicType.YouTube) {

@@ -1,11 +1,9 @@
-﻿using System.Threading.Tasks;
-using Discord;
-using MagicConchBot.Common.Types;
+﻿using Discord;
 
 namespace MagicConchBot.Services
 {
     public interface IMp3ConverterService
     {
-        Task GetMp3(Song song, IUser user);
+        void GetMp3(Mp3Request song, IUser user);
     }
 }

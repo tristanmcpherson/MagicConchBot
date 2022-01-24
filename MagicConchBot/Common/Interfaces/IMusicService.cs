@@ -22,7 +22,7 @@ namespace MagicConchBot.Common.Interfaces
 
         PlayerState PlayerState { get; }
 
-        void Play(ICommandContext msg);
+        void Play(IInteractionContext msg);
 
         bool Stop();
 

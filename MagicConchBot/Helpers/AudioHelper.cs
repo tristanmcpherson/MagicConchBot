@@ -50,11 +50,11 @@ namespace MagicConchBot.Helpers
             }
         }
 
-        public static async Task<IAudioClient> JoinChannelAsync(ICommandContext msg)
+        public static async Task<IAudioClient> JoinChannelAsync(IInteractionContext msg)
         {
             try
             {
-                var channel = (msg.Message.Author as IGuildUser)?.VoiceChannel;
+                var channel = (msg.User as IGuildUser)?.VoiceChannel;
                 if (DebugTools.Debug && channel == null)
                 {
 	                var connectAsync = (await msg.Guild.GetVoiceChannelsAsync()).FirstOrDefault()?.ConnectAsync(false, false, true);

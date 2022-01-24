@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
-using MagicConchBot;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Modules;
 using MagicConchBot.Resources;
@@ -19,32 +18,61 @@ namespace MagicConchBot.Handlers
     public class CommandHandler
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        private BaseSocketClient _client;
+        private readonly DiscordSocketClient _client;
 
-        private CommandService _commands;
+        private readonly CommandService _commands;
+        private readonly InteractionService _interactionService;
+        private readonly IServiceProvider _services;
 
-        private IServiceProvider _services;
-       // private ServiceCollection _services;
-        //public IServiceProvider ServiceProvider { get; set; }
-
-        // I hate the way this code looks
-        public CommandHandler(IServiceProvider services)
+        public CommandHandler(InteractionService interactionService, DiscordSocketClient client, CommandService commands, IServiceProvider services)
         {
+            _interactionService = interactionService;
+            _client = client;
+            _commands = commands;
             _services = services;
-            _client = services.GetService<DiscordSocketClient>();
-            _commands = services.GetService<CommandService>();
-            _commands.Log += LogAsync;
+        }
 
+        public void SetupEvents()
+        {
+            _commands.Log += LogAsync;
+            _interactionService.Log += LogAsync;
+
+            _client.InteractionCreated += HandleInteraction;
             _client.MessageReceived += HandleCommandAsync;
             _client.GuildAvailable += HandleGuildAvailableAsync;
             _client.JoinedGuild += HandleJoinedGuildAsync;
             _client.MessageReceived += HandleMessageReceivedAsync;
+            _client.Ready += ClientReady;
         }
 
+        private async Task ClientReady()
+        {
+            await _interactionService.RegisterCommandsGloballyAsync(true);
+        }
 
         public async Task InstallAsync()
         {
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+        }
+
+        private async Task HandleInteraction(SocketInteraction arg)
+        {
+            try
+            {
+                // Create an execution context that matches the generic type parameter of your InteractionModuleBase<T> modules
+                var ctx = new ConchInteractionCommandContext(_client, arg, _services);
+                await _interactionService.ExecuteCommandAsync(ctx, _services);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+
+                // If a Slash Command execution fails it is most likely that the original interaction acknowledgement will persist. It is a good idea to delete the original
+                // response, or at least let the user know that something went wrong during the command execution.
+                if (arg.Type == InteractionType.ApplicationCommand)
+                    await arg.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+            }
         }
 
         private async Task HandleCommandAsync(SocketMessage parameterMessage)

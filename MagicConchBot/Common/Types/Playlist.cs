@@ -5,7 +5,7 @@ namespace MagicConchBot.Common.Types
 {
     public class Playlist
     {
-        public const string DefaultName = "Default";
+        public const string DefaultName = "default";
 
         public Playlist()
         {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
@@ -18,12 +19,14 @@ namespace MagicConchBot.Services.Music {
 		private const int FrameSize = 3840;
 		private const int MaxRetryCount = 50;
 
-		private const int MaxVolume = 1;
-		private const int MinVolume = 0;
+		private const float MaxVolume = 1f;
+		private const float MinVolume = 0f;
 
 		private float _currentVolume = 0.5f;
 
 		private Song _song;
+
+        private CancellationTokenSource tokenSource;
 
         public float GetVolume() {
             return _currentVolume;
@@ -46,7 +49,8 @@ namespace MagicConchBot.Services.Music {
 				return;
 			}
 
-			_song = song;
+            tokenSource = new CancellationTokenSource();
+            _song = song;
 
 			PlayerState = PlayerState.Loading;
 
@@ -60,23 +64,21 @@ namespace MagicConchBot.Services.Music {
 
 				var buffer = new byte[FrameSize];
 				var retryCount = 0;
-				var stopwatch = new Stopwatch();
                 using (var pcmStream = audio.CreatePCMStream(AudioApplication.Music, packetLoss: 0)) {
                     PlayerState = PlayerState.Playing;
                     Log.Debug("Playing song.");
                     song.CurrentTime = song.StartTime;
 
-                    stopwatch.Start();
-                    while (!song.TokenSource.IsCancellationRequested) {
-                        var byteCount = await inStream.ReadAsync(buffer.AsMemory(0, buffer.Length), song.Token);
+                    while (!tokenSource.IsCancellationRequested) {
+                        var byteCount = await inStream.ReadAsync(buffer.AsMemory(0, buffer.Length), tokenSource.Token);
 
                         if (byteCount == 0) {
                             if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(1000)) {
-                                Log.Debug("Read 0 bytes but song is finished.");
+                                Log.Debug("Read 0 bytes but s5ong is finished.");
                                 break;
                             }
 
-                            await Task.Delay(100, song.Token).ConfigureAwait(false);
+                            await Task.Delay(100, tokenSource.Token).ConfigureAwait(false);
 
                             if (++retryCount == MaxRetryCount) {
                                 Log.Warn($"Failed to read from ffmpeg. Retries: {retryCount}");
@@ -87,10 +89,12 @@ namespace MagicConchBot.Services.Music {
                         }
 
                         buffer = AudioHelper.ChangeVol(buffer, _currentVolume);
-              
-                        stopwatch.Restart();
 
-                        await pcmStream.WriteAsync(buffer.AsMemory(0, byteCount), song.Token);
+                        if (pcmStream.CanWrite)
+                        {
+                            await pcmStream.WriteAsync(buffer.AsMemory(0, byteCount), tokenSource.Token);
+                        }
+
                         song.CurrentTime += CalculateCurrentTime(byteCount);
                     }
                     await pcmStream.FlushAsync();
@@ -102,8 +106,8 @@ namespace MagicConchBot.Services.Music {
 				Log.Error(ex);
 			} finally {
 				PlayerState = PlayerState == PlayerState.PauseRequested ? PlayerState.Paused : PlayerState.Stopped;
-				if (!song.Token.IsCancellationRequested) { 
-                    song.TokenSource.Cancel(); 
+				if (!tokenSource.Token.IsCancellationRequested) { 
+                    tokenSource.Cancel(); 
                 }
 			}
 		}
@@ -153,13 +157,14 @@ namespace MagicConchBot.Services.Music {
         }
 
         public void Stop() {
-			_song.TokenSource.Cancel();
+			tokenSource?.Cancel();
 		}
 
 		public void Pause() {
 			PlayerState = PlayerState.PauseRequested;
-			_song.StartTime = _song.CurrentTime;
-			_song.TokenSource.Cancel();
+            tokenSource?.Cancel();
+
+            _song.StartTime = _song.CurrentTime;
 		}
 	}
 }

@@ -1,21 +1,21 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Discord.Interactions;
+
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Helpers;
+using GroupAttribute = Discord.Interactions.GroupAttribute;
 
 namespace MagicConchBot.Modules
 {
     [RequireUserInVoiceChannel]
     [RequireBotControlRole]
-    [Name("Queue Commands")]
-    [Group("queue")]
-    public class QueueModule : ModuleBase<ConchCommandContext>
+    [Group("queue", "Queue Commands")]
+    public class QueueModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
-        [Command]
-        [Summary("Lists all the songs in the queue.")]
+        [SlashCommand("list", "Lists all the songs in the queue.")]
         public async Task ListQueueAsync()
         {
             var songs = Context.MusicService.SongList;
@@ -38,16 +38,15 @@ namespace MagicConchBot.Modules
             }
         }
 
-        [Command("clear")]
-        [Summary("Clears all the songs from the queue")]
+        [SlashCommand("clear", "Clears all the songs from the queue")]
         public async Task ClearAsync()
         {
             Context.MusicService.ClearQueue();
             await ReplyAsync("Successfully removed all songs from queue.");
         }
 
-        [Command("remove")]
-        public async Task RemoveAsync([Summary("Song number to remove.")] int songNumber)
+        [SlashCommand("remove", "Song number to remove.")]
+        public async Task RemoveAsync(int songNumber)
         {
             var song = Context.MusicService.RemoveSong(songNumber);
             if (song == null)
@@ -56,27 +55,11 @@ namespace MagicConchBot.Modules
                 await ReplyAsync("Successfully removed song from queue:", false, song.GetEmbed($"{song.Name}"));
         }
 
-        [Command("mode")]
-        [Alias("changemode")]
-        [Summary(
-            "Change the queue mode to queue (removes songs after playing) or playlist (keeps on playing through the queue)."
-        )]
-        public async Task ChangeModeAsync([Summary("The mode to change to, either `playlist` or `queue`.")] string mode)
+        [SlashCommand("mode", "Change the queue mode to queue (removes songs after playing) or playlist (keeps on playing through the queue).")]
+        public async Task ChangeModeAsync(PlayMode mode)
         {
-            if (mode.ToLower() == "queue")
-            {
-                Context.MusicService.PlayMode = PlayMode.Queue;
-                await ReplyAsync("Successfully changed mode to queue mode.");
-            }
-            else if (mode.ToLower() == "playlist")
-            {
-                Context.MusicService.PlayMode = PlayMode.Playlist;
-                await ReplyAsync("Successfully changed mode to playlist mode.");
-            }
-            else
-            {
-                await ReplyAsync("Invalid play mode. Available play modes: Queue, Playlist");
-            }
+            Context.MusicService.PlayMode = mode;
+            await ReplyAsync($"Successfully changed mode to {mode} mode.");
         }
     }
 }

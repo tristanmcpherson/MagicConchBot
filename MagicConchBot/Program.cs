@@ -15,6 +15,7 @@ using MagicConchBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using System.Net.Http;
+using Discord.Interactions;
 
 namespace MagicConchBot
 {
@@ -24,7 +25,7 @@ namespace MagicConchBot
         // Debug:   https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
 
         private static CancellationTokenSource _cts;
-        private static BaseSocketClient _client;
+        private static DiscordSocketClient _client;
 
         private static Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -104,35 +105,41 @@ namespace MagicConchBot
 
         private static async Task MainAsync(CancellationToken cancellationToken)
         {
+            using var services = ConfigureServices();
+            _client = services.GetService<DiscordSocketClient>();
+            var _interactionService = services.GetService<InteractionService>();
 
-            using (var services = ConfigureServices())
+            try
             {
-                _client = services.GetService<DiscordSocketClient>();
+                _client.Log += a => { Log.WriteToLog(a); return Task.CompletedTask; };
+                var commandHandler = services.GetService<CommandHandler>();
 
-                try
-                {
-                    _client.Log += a => { Log.WriteToLog(a); return Task.CompletedTask; };
+                commandHandler.SetupEvents();
+                await commandHandler.InstallAsync();
 
-                    await services.GetService<CommandHandler>().InstallAsync().ConfigureAwait(false);
 
-                    // Configuration.Load().Token
-                    await _client.LoginAsync(TokenType.Bot, Configuration.Token).ConfigureAwait(false);
-                    await _client.StartAsync().ConfigureAwait(false);
 
-                    await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
-                }
-                catch (TaskCanceledException)
-                {
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, ex.ToString(), ex));
-                }
-                finally
-                {
-                    //services.GetService<GuildServiceProvider>().StopAll();
-                    await _client.StopAsync();
-                }
+
+                // Configuration.Load().Token
+                await _client.LoginAsync(TokenType.Bot, Configuration.Token);
+                await _client.StartAsync();
+
+
+
+
+                await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Log.WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, ex.ToString(), ex));
+            }
+            finally
+            {
+                //services.GetService<GuildServiceProvider>().StopAll();
+                await _client.StopAsync();
             }
         }
 
@@ -149,10 +156,14 @@ namespace MagicConchBot
 
             return new ServiceCollection()
                 .AddSingleton(config)
+                .AddMemoryCache()
                 .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<InteractionService>()
+                .AddSingleton(new HttpClient())
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<YoutubeInfoService>()
+                .AddSingleton<IMp3ConverterService, Mp3ConverterService>()
                 .AddSingleton<ISongInfoService, YoutubeInfoService>()
                 .AddSingleton<ISongInfoService, SoundCloudInfoService>()
                 .AddSingleton<ISongResolutionService, SongResolutionService>()
