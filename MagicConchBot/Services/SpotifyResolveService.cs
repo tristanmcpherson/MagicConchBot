@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
@@ -8,11 +9,20 @@ using SpotifyAPI.Web;
 
 namespace MagicConchBot.Services
 {
-    public class SpotifyResolveservice : ISongInfoService
+    public class SpotifyResolveService : ISongInfoService
     {
-        public SpotifyResolveservice()
+        public SpotifyResolveService()
         {
-            Client = new SpotifyClient(Configuration.SpotifyToken);
+            var authenticator = new ClientCredentialsAuthenticator(
+                Configuration.SpotifyClientId, 
+                Configuration.SpotifyClientSecret
+            );
+
+            Client = new SpotifyClient(
+                SpotifyClientConfig
+                .CreateDefault()
+                .WithAuthenticator(authenticator)
+            );
         }
 
         public SpotifyClient Client { get; set; }
@@ -24,12 +34,15 @@ namespace MagicConchBot.Services
         public async Task<Song> GetSongInfoAsync(string url)
         {
             var trackId = Regex.Match(url).Groups["trackId"];
+
+            var songUrl = $"https://open.spotify.com/track/{trackId}";
+
             var track = await Client.Tracks.Get(trackId.Value);
             return new Song(
                 track.Name,
                 new TimeSpan(0, 0, 0, 0, track.DurationMs),
-                url,
-                track.PreviewUrl,
+                songUrl,
+                track.Album.Images.FirstOrDefault()?.Url,
                 null,
                 MusicType.Spotify);
         }

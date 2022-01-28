@@ -92,7 +92,7 @@ namespace MagicConchBot.Services.Music {
 
                         if (pcmStream.CanWrite)
                         {
-                            await pcmStream.WriteAsync(buffer.AsMemory(0, byteCount), tokenSource.Token);
+                            await pcmStream.WriteAsync(buffer.AsMemory(0, byteCount));
                         }
 
                         song.CurrentTime += CalculateCurrentTime(byteCount);

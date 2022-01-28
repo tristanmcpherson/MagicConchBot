@@ -28,10 +28,14 @@ namespace MagicConchBot.Services.Music
 
             if (musicType == MusicType.Spotify)
             {
+                // search and use as if youtube
                 var results = client.Search.GetResultsAsync(song.Name);
                 var res = await results.FirstAsync();
-                streamUrl = res.Url;
-            } else if (DirectPlayFormats.Contains(data.Split('.').LastOrDefault()))
+                data = res.Url;
+                musicType = MusicType.YouTube;
+            } 
+            
+            if (DirectPlayFormats.Contains(data.Split('.').LastOrDefault()))
             {
                 streamUrl = data;
 			} else if (musicType == MusicType.YouTube) {

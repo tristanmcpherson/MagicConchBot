@@ -84,8 +84,12 @@ namespace MagicConchBot.Resources
         public static string SoundCloudClientId { get; set; } =
             Environment.GetEnvironmentVariable(Constants.SoundCloudClientIdVariable);
 
-        public static string SpotifyToken { get; set; } =
-            Environment.GetEnvironmentVariable(Constants.SpotifyToken);
+        public static string SpotifyClientId { get; set; } =
+            Environment.GetEnvironmentVariable(Constants.SpotifyClientId);
+
+        public static string SpotifyClientSecret { get; set; } =
+            Environment.GetEnvironmentVariable(Constants.SpotifyClientSecret);
+
         /// <summary>
         /// Gets or sets the local path for music to be played from.
         /// </summary>
