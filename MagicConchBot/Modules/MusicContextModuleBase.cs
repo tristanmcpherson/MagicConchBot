@@ -5,7 +5,6 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
-using MagicConchBot.Services;
 using MagicConchBot.Services.Music;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,7 +27,7 @@ namespace MagicConchBot.Modules
         public IMusicService MusicService => _provider.GetService<IMusicService>(Guild.Id);
 
         private GuildSettings _settings;
-        public GuildSettings Settings => _settings ?? (_settings = _settingsProvider.GetSettings(Guild.Id));
+        public GuildSettings Settings => _settings ??= _settingsProvider.GetSettings(Guild.Id);
 
         public void SaveSettings() => _settingsProvider.UpdateSettings(Guild.Id, _settings);
     }

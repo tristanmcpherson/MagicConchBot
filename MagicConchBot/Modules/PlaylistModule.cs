@@ -61,7 +61,7 @@ namespace MagicConchBot.Modules
 
                 var songs = await Task.WhenAll(tasks);
 
-                await SongHelper.DisplaySongsClean(songs, Context.Channel);
+                await SongHelper.DisplaySongsClean(songs, Context);
 
                 foreach (var song in songs)
                 {
@@ -136,7 +136,7 @@ namespace MagicConchBot.Modules
 
                 var songs = await Task.WhenAll(tasks);
 
-                await SongHelper.DisplaySongsClean(songs, Context.Channel);
+                await SongHelper.DisplaySongsClean(songs, Context);
             }
 
             [SlashCommand("all", "Show all playlists")]
