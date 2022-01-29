@@ -137,15 +137,33 @@ namespace MagicConchBot.Services.Music {
                     CreateNoWindow = true,
                     UseShellExecute = false,
                 };
+                var process = new Process()
+                {
+                    StartInfo = startInfo,
 
-                var p = Process.Start(startInfo);
+                };
 
-                if (p == null) {
+                process.ErrorDataReceived += (sender, data) => {
+                    Log.Error(data.Data);
+                };
+
+                try
+                {
+                    process.Start();
+                    process.BeginErrorReadLine();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex);
+                }
+
+                if (process == null) {
+                    
                     throw new Exception("Could not start FFMPEG");
                 }
 
                 
-                return p.StandardOutput.BaseStream;
+                return process.StandardOutput.BaseStream;
 
             } catch (Exception ex) {
                 if (ex.InnerException != null)
