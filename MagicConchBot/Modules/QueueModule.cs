@@ -27,9 +27,7 @@ namespace MagicConchBot.Modules
 
             if (songs.Count < 5)
             {
-                await RespondAsync(string.Empty, embeds: new[] { songs.First().GetEmbed($"[Current]: {songs.First().Name}") });
-                for (var i = 1; i < songs.Count; i++)
-                    await RespondAsync(string.Empty, embeds: new[] { songs[i].GetEmbed($"{i}: {songs[i].Name}") });
+                await RespondAsync(embeds: songs.Select((song, i) => song.GetEmbed($"{(i != 0 ? i : "[Current]")}: {song.Name}")).ToArray());
             }
             else
             {
@@ -51,7 +49,7 @@ namespace MagicConchBot.Modules
             if (song == null)
                 await RespondAsync($"No song at position: {songNumber}");
             else
-                await RespondAsync("Successfully removed song from queue:", embeds: new[] { song.GetEmbed($"{song.Name}") });
+                await RespondAsync("Successfully removed song from queue:", embed: song.GetEmbed($"{song.Name}"));
         }
 
         [SlashCommand("mode", "Change the queue mode to queue (remove after playing) or playlist (repeat).")]

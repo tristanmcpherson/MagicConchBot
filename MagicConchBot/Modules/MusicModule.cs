@@ -92,7 +92,11 @@ namespace MagicConchBot.Modules
                 Log.Debug("Queueing song");
                 Context.MusicService.QueueSong(song);
 
-                await RespondAsync(embeds: new[] { song.GetEmbed() });
+                try
+                {
+                    await RespondAsync(embed: song.GetEmbed());
+                }
+                catch { }
             }
 
             // if not playing, start playing and then the player service
@@ -144,7 +148,7 @@ namespace MagicConchBot.Modules
             if (song == null)
                 await RespondAsync("No song is currently playing.");
             else
-                await RespondAsync(embeds: new[] { song.GetEmbed() });
+                await RespondAsync(embed: song.GetEmbed());
         }
 
         [SlashCommand("loop", "Loops")]

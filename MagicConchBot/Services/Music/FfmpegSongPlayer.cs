@@ -148,6 +148,16 @@ namespace MagicConchBot.Services.Music {
                 return p.StandardOutput.BaseStream;
 
             } catch (Exception ex) {
+                if (ex.InnerException != null)
+                {
+                    Log.Error(ex.InnerException);
+                }
+
+                if (ex.InnerException?.InnerException != null)
+                {
+                    Log.Error(ex.InnerException.InnerException);
+                }
+
                 Log.Warn(ex, "FFMPEG IO EXCEPTION");
             }
 
