@@ -124,10 +124,10 @@ namespace MagicConchBot.Services.Music {
 
                 Log.Info(Directory.GetCurrentDirectory());
 
-                if (!File.Exists("ffmpeg") && !File.Exists("ffmpeg.exe")) {
-                    Log.Error("FFMPEG not found.");
-                    throw new Exception();
-                }
+                //if (!File.Exists("ffmpeg") && !File.Exists("ffmpeg.exe")) {
+                //    Log.Error("FFMPEG not found.");
+                //    throw new Exception();
+                //}
 
                 var startInfo = new ProcessStartInfo {
                     FileName = "ffmpeg",
