@@ -1,9 +1,10 @@
-![](http://i.imgur.com/Uv8fWNY.png)
+![](https://i.imgur.com/Uv8fWNY.png)
 
 Magic Conch Bot for Discord
 ===================
 
-![Docker Badge](https://img.shields.io/docker/build/shredder8910/MagicConchBot.svg)
+![Build status](https://github.com/tristanmcpherson/MagicConchBot/actions/workflows/docker-publish.yml/badge.svg?branch=master)
+
 
 Written in C# using the Discord.Net library v1.0.
 
@@ -15,9 +16,13 @@ To add this bot to your server click [this link](https://discordapp.com/oauth2/a
 - Play songs from YouTube, SoundCloud, or anything else supported by youtube-dl
 - Music Player progress that updates constantly
 
-
-**Music Commands:**
+**Music Slash Commands:**
 ------------------
 
-- `!play url/search` - Plays a url directly, or searches up the query on youtube. If a query is being interpretted as a YouTube link, insert yt before your search, ex: `!play yt test.video`
-- `!stop` - Stops playing the current song
+- `/play url/search` - Plays a url directly (YouTube, Spotify, SoundCloud, direct), or searches up the query on youtube.
+- `/stop` - Stops playing the current song
+
+
+**Screenshot**
+------------------
+![Screenshot](https://i.imgur.com/lwnKGuG.png)
