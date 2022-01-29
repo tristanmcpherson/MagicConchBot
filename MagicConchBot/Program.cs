@@ -63,7 +63,7 @@ namespace MagicConchBot
                             Log.Info("Listing guilds: ");
                             foreach (var guild in _client.Guilds)
                             {
-                                Log.Info($"{guild.Name} - '{guild.Owner.Username}:{guild.Owner.Id}'");
+                                Log.Info($"{guild.Name} - '{guild?.Owner?.Username}:{guild?.Owner?.Id}'");
                             }
                         }
                         continue;

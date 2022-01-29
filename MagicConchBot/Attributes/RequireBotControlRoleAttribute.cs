@@ -9,8 +9,12 @@ namespace MagicConchBot.Attributes
 {
     public class RequireBotControlRoleAttribute : PreconditionAttribute
     {
-        public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command,
-            IServiceProvider map)
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+        {
+            return Task.FromResult(CheckPermissions(context));
+        }
+
+        private static PreconditionResult CheckPermissions(ICommandContext context)
         {
             // return PreconditionResult.FromSuccess();
             // Get the ID of the bot's owner
@@ -32,7 +36,7 @@ namespace MagicConchBot.Attributes
             if (requiredRole == null)
                 return PreconditionResult.FromSuccess();
 
-            if (((IGuildUser) context.User).RoleIds.Contains(requiredRole.Id))
+            if (((IGuildUser)context.User).RoleIds.Contains(requiredRole.Id))
                 return PreconditionResult.FromSuccess();
 
             return PreconditionResult.FromError($"You must have the role {Configuration.RequiredRole} to run this command.");

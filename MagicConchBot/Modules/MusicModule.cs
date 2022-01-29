@@ -92,7 +92,7 @@ namespace MagicConchBot.Modules
                 Log.Debug("Queueing song");
                 Context.MusicService.QueueSong(song);
 
-                await RespondAsync("Queued song:", new[] { song.GetEmbed() });
+                await RespondAsync(embeds: new[] { song.GetEmbed() });
             }
 
             // if not playing, start playing and then the player service
