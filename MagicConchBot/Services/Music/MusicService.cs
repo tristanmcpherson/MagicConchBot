@@ -139,6 +139,8 @@ namespace MagicConchBot.Services.Music
                 catch (Exception ex)
                 {
                     Log.Error(ex);
+                    SongList.Remove(CurrentSong);
+                    CurrentSong = null;
                 }
                 finally
                 {

@@ -47,7 +47,11 @@ namespace MagicConchBot.Handlers
 
         private async Task ClientReady()
         {
-            await _interactionService.RegisterCommandsGloballyAsync(true);
+#if DEBUG
+            await _interactionService.RegisterCommandsToGuildAsync(820144843396612127);
+#else
+            await _interactionService.RegisterCommandsGloballyAsync();
+#endif
         }
 
         public async Task InstallAsync()
@@ -96,16 +100,19 @@ namespace MagicConchBot.Handlers
 
             // Create a Command Context
             var context = new ConchCommandContext(_client, message, _services);
-          
-            // Execute the Command, store the result
-            var result = await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
 
-            // If the command failed, notify the user
-            if (!result.IsSuccess)
-                if (result.ErrorReason == Configuration.WrongChannelError)
-                    await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
-                else
-                    await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
+            await Task.Factory.StartNew(async () =>
+            {
+                // Execute the Command, store the result
+                var result = await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
+
+                // If the command failed, notify the user
+                if (!result.IsSuccess)
+                    if (result.ErrorReason == Configuration.WrongChannelError)
+                        await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
+                    else
+                        await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
+            }, TaskCreationOptions.LongRunning);
         }
 
         public static async Task LogAsync(LogMessage logMessage) {

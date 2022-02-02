@@ -86,7 +86,7 @@ namespace MagicConchBot.Services.Music
                     {
                         if (song.Length != TimeSpan.Zero && song.Length - song.CurrentTime <= TimeSpan.FromMilliseconds(1000))
                         {
-                            Log.Debug("Read 0 bytes but s5ong is finished.");
+                            Log.Debug("Read 0 bytes but song is finished.");
                             break;
                         }
 

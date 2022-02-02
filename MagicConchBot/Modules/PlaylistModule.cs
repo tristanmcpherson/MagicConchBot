@@ -13,6 +13,12 @@ namespace MagicConchBot.Modules
 {
     public class PlaylistModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
+        [SlashCommand("why", "Why")]
+        public async Task Why()
+        {
+            await RespondAsync("Why");
+        }
+
         [SlashCommand("save", "Save a song to a playlist")]
         public async Task SaveToPlaylist(string name = Playlist.DefaultName)
         {

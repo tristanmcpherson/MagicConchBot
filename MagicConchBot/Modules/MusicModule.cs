@@ -30,7 +30,7 @@ namespace MagicConchBot.Modules
         [SlashCommand(
             "resume",
             "Plays a song from YouTube or SoundCloud or search for a song on YouTube",
-            runMode: RunMode.Async)]
+            runMode: RunMode.Async), Alias("p")]
         public async Task Resume() {
             if (Context.MusicService.PlayerState == PlayerState.Playing || Context.MusicService.PlayerState == PlayerState.Loading) {
                 await RespondAsync("Song already playing.");
@@ -48,10 +48,13 @@ namespace MagicConchBot.Modules
             runMode: RunMode.Async), Alias("p")]
         public async Task Play(
             string queryOrUrl,
-            TimeSpan? timeSpan = null)
+            TimeSpan? startTime = null)
         {
-
-            var startTime = timeSpan ?? TimeSpan.Zero;
+            if (queryOrUrl == null)
+            {
+                await Resume();
+                return;
+            }
 
             string url;
 
@@ -86,7 +89,7 @@ namespace MagicConchBot.Modules
             else
             {
                 Log.Info("Resolving song");
-                var song = await _songResolutionService.ResolveSong(url, startTime);
+                var song = await _songResolutionService.ResolveSong(url, startTime ?? TimeSpan.Zero);
 
                 // add to queue
                 Log.Debug("Queueing song");

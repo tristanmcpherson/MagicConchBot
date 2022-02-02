@@ -5,6 +5,8 @@ using MagicConchBot.Resources;
 
 namespace MagicConchBot.Common.Types
 {
+    public record SongTime(TimeSpan StartTime, TimeSpan CurrenTime, TimeSpan Length);
+
     public class Song
     {
         public Song(string name, TimeSpan length, string data, string thumbnailUrl = "", TimeSpan? startTime = null, MusicType musicType = MusicType.Other)
@@ -46,12 +48,17 @@ namespace MagicConchBot.Common.Types
                 ? CurrentTime.ToString(@"hh\:mm\:ss")
                 : CurrentTime.ToString(@"mm\:ss");
         }
+
         public Embed GetEmbed(string title = "", bool embedThumbnail = true, bool showDuration = false, double volume = 1)
         {
             const char progressChar = '─';
             const string currentHead = ":white_circle:";
             const int progressLength = 34;
-            var progressIndex = (int)((CurrentTime.TotalSeconds / (Math.Abs(Length.TotalSeconds) < 1 ? CurrentTime.TotalSeconds: Length.TotalSeconds)) * progressLength);
+
+            var progressIndex = Length == TimeSpan.Zero 
+                ? 0
+                : (int)(CurrentTime.TotalSeconds / Length.TotalSeconds * progressLength);
+
             var progressString = $"{new string(progressChar, progressIndex)}{currentHead}{new string(progressChar, progressLength - progressIndex)}";
 
             var length = GetLengthPretty();
@@ -63,10 +70,7 @@ namespace MagicConchBot.Common.Types
             var volumeIndex = (int)(volume * volumeLength);
             var volumeString = $"{new string(volumeChar, volumeIndex)}{volumeHead}{new string(volumeChar, volumeLength - volumeIndex)}";
 
-            var testString = $"\n{progressString}\n:loud_sound: {volumeString}　{currentTime.PadLeft(4, '⠀')} / {length.PadRight(20, '⠀')}\n\n";
-
-            var timeString = $"{currentTime} / {length}";
-            timeString = testString;
+            var timeString = $"\n{progressString}\n:loud_sound: {volumeString}　{currentTime.PadLeft(4, '⠀')} / {length.PadRight(20, '⠀')}\n\n";
 
             var builder = new EmbedBuilder {Color = Constants.MaterialBlue};
             builder.AddField(field =>
