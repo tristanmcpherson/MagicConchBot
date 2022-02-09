@@ -39,7 +39,7 @@ namespace MagicConchBot.Services
 
             var track = await Client.Tracks.Get(trackId.Value);
             return new Song(
-                track.Name,
+                track.Name + " " + track.Artists.First(),
                 new TimeSpan(0, 0, 0, 0, track.DurationMs),
                 songUrl,
                 track.Album.Images.FirstOrDefault()?.Url,

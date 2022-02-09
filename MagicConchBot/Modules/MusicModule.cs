@@ -55,7 +55,7 @@ namespace MagicConchBot.Modules
                 await Resume();
                 return;
             }
-
+            
             string url;
 
             if (!WebHelper.UrlRegex.IsMatch(queryOrUrl))
