@@ -14,14 +14,14 @@ namespace MagicConchBot.Services
         public SpotifyResolveService()
         {
             var authenticator = new ClientCredentialsAuthenticator(
-                Configuration.SpotifyClientId, 
+                Configuration.SpotifyClientId,
                 Configuration.SpotifyClientSecret
             );
 
             Client = new SpotifyClient(
                 SpotifyClientConfig
-                .CreateDefault()
-                .WithAuthenticator(authenticator)
+                    .CreateDefault()
+                    .WithAuthenticator(authenticator)
             );
         }
 
@@ -38,13 +38,15 @@ namespace MagicConchBot.Services
             var songUrl = $"https://open.spotify.com/track/{trackId}";
 
             var track = await Client.Tracks.Get(trackId.Value);
+
             return new Song(
-                track.Name + " " + track.Artists.First(),
+                track.Name,
                 new TimeSpan(0, 0, 0, 0, track.DurationMs),
-                songUrl,
+                track.Name + " " + track.Artists.First(),
                 track.Album.Images.FirstOrDefault()?.Url,
                 null,
-                MusicType.Spotify);
+                MusicType.Spotify
+            );
         }
     }
 }

@@ -29,22 +29,26 @@ namespace MagicConchBot.Services.Music
             if (musicType == MusicType.Spotify)
             {
                 // search and use as if youtube
-                var results = client.Search.GetResultsAsync(song.Name);
+                var results = client.Search.GetResultsAsync(song.Data);
                 var res = await results.FirstAsync();
                 data = res.Url;
+                song.StreamUri = res.Url;
                 musicType = MusicType.YouTube;
             } 
             
             if (DirectPlayFormats.Contains(data.Split('.').LastOrDefault()))
             {
                 streamUrl = data;
-			} else if (musicType == MusicType.YouTube) {
+			} 
+            else if (musicType == MusicType.YouTube) 
+            {
                 var manifest = await client.Videos.Streams.GetManifestAsync(VideoId.Parse(data));
                 var streams = manifest.GetAudioOnlyStreams();
                 var streamInfo = streams.OrderBy(s => s.Bitrate).FirstOrDefault();
 
 				streamUrl = streamInfo.Url;
-			} else
+			} 
+            else
             {
                 Log.Debug("Retrieving url using youtube-dl");
                 var stopwatch = new Stopwatch();
