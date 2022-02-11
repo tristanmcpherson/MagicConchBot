@@ -18,8 +18,6 @@ namespace MagicConchBot.Services.Music
 
         private static readonly YoutubeClient client = new YoutubeClient();
 
-
-
         public async Task<string> GetSongStreamUrl(Song song)
         {
             string streamUrl;
