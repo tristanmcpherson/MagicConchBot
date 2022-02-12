@@ -34,6 +34,7 @@ namespace MagicConchBot.Services.Games
                         timer.Interval = hoursMillis;
                     }
 
+                    timer.Stop();
                     timer.Start();
                 }
                 else
