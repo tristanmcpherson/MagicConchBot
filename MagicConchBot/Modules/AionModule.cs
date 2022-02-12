@@ -25,7 +25,7 @@ namespace MagicConchBot.Services.Games
                 var name = match.Groups["name"].Value;
 
                 var hours = Convert.ToInt32(match.Groups["hours"].Value);
-                var hoursMillis = 1;// 1000 * 60 * 60 * (hours - 0.5);
+                var hoursMillis = 1000 * 60 * 60 * (hours - 0.5);
 
                 if (Timers.TryGetValue(name, out var timer))
                 {
