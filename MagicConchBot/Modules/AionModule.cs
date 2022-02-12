@@ -13,7 +13,7 @@ namespace MagicConchBot.Services.Games
     public class AionModule : ModuleBase
     {
         private static readonly Dictionary<string, Timer> Timers = new();
-        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d)(-\d)?h(ㅣ|\|)(?<name>\w+-\w+)💀?");
+        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d)(-\d)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
      
         [Command("dead")]
         public async Task Dead()
