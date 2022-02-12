@@ -13,10 +13,10 @@ namespace MagicConchBot.Services.Games
     public class AionModule : ModuleBase
     {
         private static readonly Dictionary<string, Timer> Timers = new();
-        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d)(-\d)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
+        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)(-\d+)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
      
         [Command("dead")]
-        public async Task Dead()
+        public async Task Dead(TimeSpan? offset = null)
         {
             var match = ChannelRegex.Match(Context.Channel.Name);
 
@@ -25,7 +25,8 @@ namespace MagicConchBot.Services.Games
                 var name = match.Groups["name"].Value;
 
                 var hours = Convert.ToInt32(match.Groups["hours"].Value);
-                var hoursMillis = 1000 * 60 * 60 * (hours - 0.5);
+                var defaultInterval = TimeSpan.FromHours(hours - 0.5);
+                var hoursMillis = (defaultInterval - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
                 if (Timers.TryGetValue(name, out var timer))
                 {
