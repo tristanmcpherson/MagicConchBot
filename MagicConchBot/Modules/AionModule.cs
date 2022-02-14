@@ -127,6 +127,11 @@ namespace MagicConchBot.Services.Games
         [Command("checktimers")]
         public async Task CheckTimers()
         {
+            if (Timers.Count == 0) { 
+                await Context.Channel.SendMessageAsync("No timers set.");
+                return;
+            }
+
             var text = string.Join('\n', Timers.Select((kv) => kv.Key + ": " + (DateTime.Now - kv.Value.StartTime)));
             await Context.Channel.SendMessageAsync(text);
         }
