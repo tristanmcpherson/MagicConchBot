@@ -74,6 +74,12 @@ namespace MagicConchBot.Services.Music
                 var buffer = new byte[FrameSize];
                 var retryCount = 0;
                 using var pcmStream = audio.CreatePCMStream(AudioApplication.Music, packetLoss: 0);
+
+
+                var helloBozo = await File.ReadAllBytesAsync("hello_bozo.pcm");
+                await pcmStream.WriteAsync(helloBozo.AsMemory());
+
+
                 PlayerState = PlayerState.Playing;
                 Log.Debug("Playing song.");
                 song.CurrentTime = song.StartTime;
@@ -112,6 +118,7 @@ namespace MagicConchBot.Services.Music
 
                     song.CurrentTime += CalculateCurrentTime(byteCount);
                 }
+                
                 await pcmStream.FlushAsync();
 
             }

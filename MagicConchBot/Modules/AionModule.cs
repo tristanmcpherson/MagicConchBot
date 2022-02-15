@@ -22,11 +22,12 @@ namespace MagicConchBot.Services.Games
         public DiscordSocketClient Client { get; }
         public IServiceProvider Services { get; }
 
-        public AionModule(CommandService commandService, DiscordSocketClient client, IServiceProvider services)
+        public AionModule(CommandService commandService, IServiceProvider services, DiscordSocketClient client)
         {
             CommandService = commandService;
-            Client = client;
             Services = services;
+            Client = client;
+
             Client.Ready += Client_Ready;
         }
 
@@ -76,15 +77,13 @@ namespace MagicConchBot.Services.Games
                 var context = new ConchCommandContext(Client, deadMessage as IUserMessage, Services);
                 await CommandService.ExecuteAsync(context, 1, Services, MultiMatchHandling.Best);
             }
-
-            Console.WriteLine("debug");
         }
 
         private async Task GetOrSetTimer(IMessageChannel textChannel, string name, double hoursMillis, bool emitMessage = true)
         {
-            if (Timers.TryGetValue(name, out var tuple))
+            if (Timers.TryGetValue(name, out var timerEvent))
             {
-                var (timer, _) = tuple;
+                var (timer, _) = timerEvent;
                 if (timer.Interval != hoursMillis)
                 {
                     timer.Interval = hoursMillis;
@@ -108,6 +107,8 @@ namespace MagicConchBot.Services.Games
                 newTimer.Elapsed += async (sender, args) =>
                 {
                     await (Client.GetChannel(textChannelId) as ITextChannel).SendMessageAsync($"@here 30 minutes before {name} window");
+                    Timers[name].Timer.Dispose();
+                    Timers.Remove(name);
                 };
 
                 newTimer.Start();
@@ -156,26 +157,16 @@ namespace MagicConchBot.Services.Games
 
         private static string FormatTimeSpan(TimeSpan timeSpan)
         {
-            Func<(int, string), string> tupleFormatter = t => $"{t.Item1} {t.Item2}{(t.Item1 == 1 ? string.Empty : "s")}";
             var components = new List<(int, string)>
             {
-                ((int) timeSpan.TotalDays, "day"),
-                (timeSpan.Hours, "hour"),
-                (timeSpan.Minutes, "minute")
+                ((int) timeSpan.TotalDays, "d"),
+                (timeSpan.Hours, "h"),
+                (timeSpan.Minutes, "m")
             };
 
             components.RemoveAll(i => i.Item1 == 0);
 
-            string extra = "";
-
-            if (components.Count > 1)
-            {
-                var finalComponent = components[components.Count - 1];
-                components.RemoveAt(components.Count - 1);
-                extra = $" and {tupleFormatter(finalComponent)}";
-            }
-
-            return $"{string.Join(", ", components.Select(tupleFormatter))}{extra}";
+            return components.Select((a) => a.Item1 + a.Item2).Aggregate((a, b) => a + " " + b);
         }
     }
 }
