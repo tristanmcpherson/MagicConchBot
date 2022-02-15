@@ -161,8 +161,7 @@ namespace MagicConchBot.Services.Games
             {
                 ((int) timeSpan.TotalDays, "day"),
                 (timeSpan.Hours, "hour"),
-                (timeSpan.Minutes, "minute"),
-                (timeSpan.Seconds, "second"),
+                (timeSpan.Minutes, "minute")
             };
 
             components.RemoveAll(i => i.Item1 == 0);
