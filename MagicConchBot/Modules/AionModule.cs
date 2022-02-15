@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using MagicConchBot.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,11 +18,15 @@ namespace MagicConchBot.Services.Games
         private static readonly Dictionary<string, TimerEvent> Timers = new();
         private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)(-\d+)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
 
+        public CommandService CommandService { get; }
         public DiscordSocketClient Client { get; }
+        public IServiceProvider Services { get; }
 
-        public AionModule(DiscordSocketClient client)
+        public AionModule(CommandService commandService, DiscordSocketClient client, IServiceProvider services)
         {
+            CommandService = commandService;
             Client = client;
+            Services = services;
             Client.Ready += Client_Ready;
         }
 
@@ -57,22 +62,25 @@ namespace MagicConchBot.Services.Games
 
                 var nowMinusInterval = DateTime.Now - defaultInterval;
 
-                var messages = await channel.GetMessagesAsync().TakeWhile(m => m.All(m => m.Timestamp > nowMinusInterval)).ToListAsync();
-                var allMessages = messages.SelectMany(a => a);
-                var deadMessage = allMessages.FirstOrDefault(m => m.Content == "!dead");
+                var messages = await channel.GetMessagesAsync().TakeWhile(m => m.Any(m => m.Timestamp > nowMinusInterval)).ToListAsync();
 
-                if (deadMessage != null)
+                var allMessages = messages.SelectMany(a => a).Where(m => m.Timestamp > nowMinusInterval);
+                var deadMessage = allMessages.FirstOrDefault(m => m.Content.StartsWith("!dead"));
+
+                if (deadMessage == null)
                 {
-                    var messageAge = DateTime.Now - deadMessage.Timestamp;
-
-                    await GetOrSetTimer(deadMessage.Channel, match.Groups["name"].Value, (defaultInterval - messageAge).TotalMilliseconds);
+                    continue;
                 }
+
+                // re-execute command
+                var context = new ConchCommandContext(Client, deadMessage as IUserMessage, Services);
+                await CommandService.ExecuteAsync(context, 1, Services, MultiMatchHandling.Best);
             }
 
             Console.WriteLine("debug");
         }
 
-        private async Task GetOrSetTimer(IMessageChannel textChannel, string name, double hoursMillis)
+        private async Task GetOrSetTimer(IMessageChannel textChannel, string name, double hoursMillis, bool emitMessage = true)
         {
             if (Timers.TryGetValue(name, out var tuple))
             {
@@ -106,7 +114,7 @@ namespace MagicConchBot.Services.Games
                 Timers.Add(name, new(newTimer, DateTime.Now));
             }
 
-            await textChannel?.SendMessageAsync($"{name} has been killed. Timer set");
+            if (emitMessage) await textChannel?.SendMessageAsync($"{name} has been killed. Timer set");
         }
 
      
@@ -120,10 +128,13 @@ namespace MagicConchBot.Services.Games
                 var name = match.Groups["name"].Value;
 
                 var hours = Convert.ToInt32(match.Groups["hours"].Value);
+                var timeSinceMessage = DateTime.Now - Context.Message.Timestamp;
                 var defaultInterval = TimeSpan.FromHours(hours - 0.5);
-                var hoursMillis = (defaultInterval - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
+                var hoursMillis = (defaultInterval - timeSinceMessage - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
-                await GetOrSetTimer(Context.Channel, name, hoursMillis);
+                var emitMessage = timeSinceMessage < TimeSpan.FromMinutes(1);
+
+                await GetOrSetTimer(Context.Channel, name, hoursMillis, emitMessage);
             }
         }
     
@@ -137,10 +148,35 @@ namespace MagicConchBot.Services.Games
 
             var text = string.Join('\n', Timers.Select((kv) => {
                 var time = TimeSpan.FromMilliseconds(kv.Value.Timer.Interval) - (DateTime.Now - kv.Value.StartTime);
-                var formatted = time.ToString(@"hh\:mm");
+                var formatted = FormatTimeSpan(time);
                 return kv.Key + ": " + formatted;
             }));
             await Context.Channel.SendMessageAsync(text);
+        }
+
+        private static string FormatTimeSpan(TimeSpan timeSpan)
+        {
+            Func<(int, string), string> tupleFormatter = t => $"{t.Item1} {t.Item2}{(t.Item1 == 1 ? string.Empty : "s")}";
+            var components = new List<(int, string)>
+            {
+                ((int) timeSpan.TotalDays, "day"),
+                (timeSpan.Hours, "hour"),
+                (timeSpan.Minutes, "minute"),
+                (timeSpan.Seconds, "second"),
+            };
+
+            components.RemoveAll(i => i.Item1 == 0);
+
+            string extra = "";
+
+            if (components.Count > 1)
+            {
+                var finalComponent = components[components.Count - 1];
+                components.RemoveAt(components.Count - 1);
+                extra = $" and {tupleFormatter(finalComponent)}";
+            }
+
+            return $"{string.Join(", ", components.Select(tupleFormatter))}{extra}";
         }
     }
 }
