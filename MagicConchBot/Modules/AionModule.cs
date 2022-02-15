@@ -63,7 +63,7 @@ namespace MagicConchBot.Services.Games
 
                 if (deadMessage != null)
                 {
-                    var messageAge = deadMessage.Timestamp - DateTime.Now;
+                    var messageAge = DateTime.Now - deadMessage.Timestamp;
 
                     await GetOrSetTimer(deadMessage.Channel, match.Groups["name"].Value, (defaultInterval - messageAge).TotalMilliseconds);
                 }
@@ -84,7 +84,7 @@ namespace MagicConchBot.Services.Games
 
                 timer.Stop();
                 timer.Start();
-                Timers[name] = new(timer, DateTime.Now);
+                Timers[name] = new(timer, Context.Message.Timestamp.LocalDateTime);
             }
             else
             {
@@ -94,9 +94,12 @@ namespace MagicConchBot.Services.Games
                     Interval = hoursMillis
                 };
 
+
+                var textChannelId = textChannel.Id;
+
                 newTimer.Elapsed += async (sender, args) =>
                 {
-                    await textChannel?.SendMessageAsync($"@here 30 minutes before {name} window");
+                    await (Client.GetChannel(textChannelId) as ITextChannel).SendMessageAsync($"@here 30 minutes before {name} window");
                 };
 
                 newTimer.Start();
@@ -132,7 +135,11 @@ namespace MagicConchBot.Services.Games
                 return;
             }
 
-            var text = string.Join('\n', Timers.Select((kv) => kv.Key + ": " + (DateTime.Now - kv.Value.StartTime)));
+            var text = string.Join('\n', Timers.Select((kv) => {
+                var time = TimeSpan.FromMilliseconds(kv.Value.Timer.Interval) - (DateTime.Now - kv.Value.StartTime);
+                var formatted = time.ToString(@"hh\:mm");
+                return kv.Key + ": " + formatted;
+            }));
             await Context.Channel.SendMessageAsync(text);
         }
     }
