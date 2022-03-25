@@ -35,17 +35,18 @@ namespace MagicConchBot.Services
         {
             var trackId = Regex.Match(url).Groups["trackId"];
 
-            var songUrl = $"https://open.spotify.com/track/{trackId}";
+            var songUrl = $"https://open.spotify.com/track/{trackId.Value}";
 
             var track = await Client.Tracks.Get(trackId.Value);
 
             return new Song(
                 track.Name,
                 new TimeSpan(0, 0, 0, 0, track.DurationMs),
-                track.Name + " " + track.Artists.First(),
+                songUrl,
                 track.Album.Images.FirstOrDefault()?.Url,
                 null,
-                MusicType.Spotify
+                MusicType.Spotify,
+                track.Name + " - " + track.Artists.First().Name
             );
         }
     }

@@ -9,19 +9,22 @@ namespace MagicConchBot.Common.Types
 
     public class Song
     {
-        public Song(string name, TimeSpan length, string data, string thumbnailUrl = "", TimeSpan? startTime = null, MusicType musicType = MusicType.Other)
+        public Song(string name, TimeSpan length, string url, string thumbnailUrl = "", TimeSpan? startTime = null, MusicType musicType = MusicType.Other, string identifier = null)
         {
             ThumbnailUrl = thumbnailUrl;
             Name = name;
             Length = length;
-            Data = data;
+            Identifier = url;
+            Url = identifier ?? url;
             StartTime = startTime ?? TimeSpan.Zero;
             MusicType = musicType;
         }
 
         public string Name { get; }
 
-        public string Data { get; }
+        public string Identifier { get; }
+
+        public string Url { get; }
 
         public string StreamUri { get; set; }
 
@@ -73,12 +76,12 @@ namespace MagicConchBot.Common.Types
             var timeString = $"\n{progressString}\n:loud_sound: {volumeString}　{currentTime.PadLeft(4, '⠀')} / {length.PadRight(20, '⠀')}\n\n";
 
             var builder = new EmbedBuilder {Color = Constants.MaterialBlue};
-            builder.AddField(field =>
+            builder.AddField((Action<EmbedFieldBuilder>)(field =>
             {
                 field.WithName(title == string.Empty ? Name == string.Empty ? "Default" : Name : title)
-                    .WithValue($"**Url**:\n{Data}\n\n**Duration**:\n" +
+                    .WithValue($"**Url**:\n{this.Identifier}\n\n**Duration**:\n" +
                                (showDuration ? timeString : $"{length}"));
-            });
+            }));
 
             if (ThumbnailUrl != string.Empty && embedThumbnail)
                 builder.WithThumbnailUrl(ThumbnailUrl);

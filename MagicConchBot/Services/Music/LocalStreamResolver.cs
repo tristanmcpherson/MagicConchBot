@@ -12,13 +12,13 @@ namespace MagicConchBot.Services.Music
         public async Task<string> GetSongStreamUrl(Song song)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            if (File.Exists(song.Data))
-                return new FileInfo(song.Data).FullName;
+            if (File.Exists(song.Identifier))
+                return new FileInfo(song.Identifier).FullName;
 
             if (string.IsNullOrEmpty(Configuration.LocalMusicPath))
                 return null;
             Directory.CreateDirectory(Configuration.LocalMusicPath);
-            var file = Path.Combine(Configuration.LocalMusicPath, song.Data);
+            var file = Path.Combine(Configuration.LocalMusicPath, song.Identifier);
             return File.Exists(file) ? file : null;
         }
     }

@@ -22,12 +22,12 @@ namespace MagicConchBot.Services.Music
         {
             string streamUrl;
             var musicType = song.MusicType;
-            var data = song.Data;
+            var data = song.Identifier;
 
             if (musicType == MusicType.Spotify)
             {
                 // search and use as if youtube
-                var results = client.Search.GetResultsAsync(song.Data);
+                var results = client.Search.GetResultsAsync(song.Identifier);
                 var res = await results.FirstAsync();
                 data = res.Url;
                 song.StreamUri = res.Url;

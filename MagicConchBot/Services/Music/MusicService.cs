@@ -105,7 +105,7 @@ namespace MagicConchBot.Services.Music
                         }
 
                         CurrentSong.StreamUri =
-                            streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Data}");
+                            streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Identifier}");
                         await StatusUpdater(context.Channel).ConfigureAwait(false);
 
                         try
@@ -151,7 +151,7 @@ namespace MagicConchBot.Services.Music
 
         private async Task StatusUpdater(IMessageChannel channel)
         {
-            await Task.Factory.StartNew(async () =>
+            await Task.Factory.StartNew((Func<Task>)(async () =>
             {
                 IUserMessage message = null;
                 try
@@ -168,7 +168,7 @@ namespace MagicConchBot.Services.Music
                     while (_songPlayer.PlayerState == PlayerState.Playing || _songPlayer.PlayerState == PlayerState.Loading)
                     {
                         // Song changed or stopped. Stop updating song info.
-                        if (CurrentSong == null || CurrentSong.Data != song.Data)
+                        if (CurrentSong == null || CurrentSong.Identifier != song.Identifier)
                             break;
 
                         await message.ModifyAsync(m => m.Embed = song.GetEmbed("", true, true, GetVolume()));
@@ -193,7 +193,7 @@ namespace MagicConchBot.Services.Music
                    if (message != null)
                         await message.DeleteAsync();
                 }
-            }, TaskCreationOptions.LongRunning);
+            }), TaskCreationOptions.LongRunning);
         }
 
         public bool Stop()
