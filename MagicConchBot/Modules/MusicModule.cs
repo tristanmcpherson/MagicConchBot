@@ -179,7 +179,6 @@ namespace MagicConchBot.Modules
             _mp3Service.GetMp3(new(currentSong.Name, currentSong.StreamUri), Context.User);
         }
 
-        [RequireBotOwner]
         [SlashCommand("changeintro", "...")]
         public void ChangeIntro(string file)
         {
