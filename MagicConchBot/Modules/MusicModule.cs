@@ -181,7 +181,7 @@ namespace MagicConchBot.Modules
 
         [RequireBotOwner]
         [SlashCommand("changeintro", "...")]
-        public async Task ChangeIntro(string file)
+        public void ChangeIntro(string file)
         {
             if (File.Exists(file))
             {
