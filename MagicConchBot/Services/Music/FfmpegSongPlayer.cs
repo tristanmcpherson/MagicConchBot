@@ -9,6 +9,7 @@ using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
+using MagicConchBot.Resources;
 using NLog;
 
 namespace MagicConchBot.Services.Music
@@ -76,7 +77,7 @@ namespace MagicConchBot.Services.Music
                 using var pcmStream = audio.CreatePCMStream(AudioApplication.Music, packetLoss: 0);
 
 
-                var helloBozo = await File.ReadAllBytesAsync("hello_bozo.pcm");
+                var helloBozo = await File.ReadAllBytesAsync(Configuration.IntroPCM);
                 await pcmStream.WriteAsync(helloBozo.AsMemory());
 
 
@@ -160,8 +161,7 @@ namespace MagicConchBot.Services.Music
                 };
                 var process = new Process()
                 {
-                    StartInfo = startInfo,
-
+                    StartInfo = startInfo
                 };
 
                 process.ErrorDataReceived += (sender, data) =>

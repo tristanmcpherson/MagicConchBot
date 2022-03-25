@@ -94,5 +94,7 @@ namespace MagicConchBot.Resources
         /// Gets or sets the local path for music to be played from.
         /// </summary>
         public static string LocalMusicPath { get; set; } = "Music";
+
+        public static string IntroPCM { get; set; } = "hello_bozo.pcm";
     }
 }

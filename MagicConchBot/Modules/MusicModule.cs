@@ -1,10 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.Interactions;
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Helpers;
+using MagicConchBot.Resources;
 using MagicConchBot.Services;
 using NLog;
 using RunMode = Discord.Interactions.RunMode;
@@ -175,6 +177,16 @@ namespace MagicConchBot.Modules
             await RespondAsync("Generating mp3 file... please wait.");
 
             _mp3Service.GetMp3(new(currentSong.Name, currentSong.StreamUri), Context.User);
+        }
+
+        [RequireBotOwner]
+        [SlashCommand("changeintro", "...")]
+        public async Task ChangeIntro(string file)
+        {
+            if (File.Exists(file))
+            {
+                Configuration.IntroPCM = file;
+            }
         }
     }
 }
