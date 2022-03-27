@@ -12,7 +12,7 @@ namespace MagicConchBot.Common.Interfaces
         void SetVolume(float value);
 
         PlayerState PlayerState { get; }
-        Task PlaySong(IAudioClient client, Song song);
+        Task PlaySong(IAudioClient client, Song song, string intro = "hello_bozo.pcm");
         void Stop();
         void Pause();
     }

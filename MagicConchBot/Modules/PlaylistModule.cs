@@ -79,7 +79,7 @@ namespace MagicConchBot.Modules
                 if (Context.MusicService.PlayerState == PlayerState.Stopped ||
                     Context.MusicService.PlayerState == PlayerState.Paused)
                 {
-                    Context.MusicService.Play(Context);
+                    Context.MusicService.Play(Context, Context.Settings);
                 }
             }
 

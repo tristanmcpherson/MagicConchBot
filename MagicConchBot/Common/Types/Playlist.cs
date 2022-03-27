@@ -26,6 +26,7 @@ namespace MagicConchBot.Common.Types
 
     public class GuildSettings
     {
+        public string IntroPCM { get; set; } = "hello_bozo.pcm";
         public List<Playlist> Playlists { get; set; }
 
         public GuildSettings()

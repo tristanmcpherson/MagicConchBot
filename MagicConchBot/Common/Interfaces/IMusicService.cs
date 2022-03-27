@@ -10,6 +10,7 @@ namespace MagicConchBot.Common.Interfaces
     public interface IMusicService
     {
         float GetVolume();
+
         void SetVolume(float value);
 
         List<Song> SongList { get; }
@@ -22,7 +23,8 @@ namespace MagicConchBot.Common.Interfaces
 
         PlayerState PlayerState { get; }
 
-        void Play(IInteractionContext msg);
+        // Refactor GuildSettings to PlaySettings data record
+        void Play(IInteractionContext msg, GuildSettings settings);
 
         bool Stop();
 

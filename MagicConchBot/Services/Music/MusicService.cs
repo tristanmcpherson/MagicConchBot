@@ -53,7 +53,7 @@ namespace MagicConchBot.Services.Music
 
         public Song CurrentSong { get; private set; }
 
-        public void Play(IInteractionContext context)
+        public void Play(IInteractionContext context, GuildSettings settings)
         {
             if (_tokenSource == null || _tokenSource.Token.IsCancellationRequested)
             {
@@ -111,7 +111,7 @@ namespace MagicConchBot.Services.Music
                         try
                         {
                             Log.Info($"Playing song {CurrentSong.Name} on channel {context.Channel.Name}");
-                            await Task.Run(async () => await _songPlayer.PlaySong(audioClient, CurrentSong));
+                            await Task.Run(async () => await _songPlayer.PlaySong(audioClient, CurrentSong, settings.IntroPCM));
                         }
                         catch (Exception ex)
                         {

@@ -50,7 +50,7 @@ namespace MagicConchBot.Services.Music
 
         public PlayerState PlayerState { get; private set; } = PlayerState.Stopped;
 
-        public async Task PlaySong(IAudioClient audio, Song song)
+        public async Task PlaySong(IAudioClient audio, Song song, string introPCM)
         {
             if (audio == null || audio.ConnectionState != ConnectionState.Connected)
             {
@@ -77,7 +77,7 @@ namespace MagicConchBot.Services.Music
                 using var pcmStream = audio.CreatePCMStream(AudioApplication.Music, packetLoss: 0);
 
 
-                var helloBozo = await File.ReadAllBytesAsync(Configuration.IntroPCM);
+                var helloBozo = await File.ReadAllBytesAsync(introPCM);
                 await pcmStream.WriteAsync(helloBozo.AsMemory());
 
 

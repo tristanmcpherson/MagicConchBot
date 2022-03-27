@@ -15,9 +15,6 @@ namespace MagicConchBot.Services.Music
         //private readonly ConcurrentDictionary<ulong, Mp3ConverterService> _mp3Services =
         //    new ConcurrentDictionary<ulong, Mp3ConverterService>();
 
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        private readonly IServiceProvider globalServiceCollection;
-
         public void AddService<TInterface, TImplementation>(ulong guildId) where TInterface : class where TImplementation : class, TInterface
         {
             if (!_musicServices.ContainsKey(guildId))

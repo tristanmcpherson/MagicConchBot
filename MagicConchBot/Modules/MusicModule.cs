@@ -37,7 +37,7 @@ namespace MagicConchBot.Modules
             if (Context.MusicService.PlayerState == PlayerState.Playing || Context.MusicService.PlayerState == PlayerState.Loading) {
                 await RespondAsync("Song already playing.");
             } else if (Context.MusicService.SongList.Count > 0) {
-                Context.MusicService.Play(Context);
+                Context.MusicService.Play(Context, Context.Settings);
                 await RespondAsync("Resuming queue.");
             } else {
                 await RespondAsync("No songs currently in the queue.");
@@ -108,7 +108,7 @@ namespace MagicConchBot.Modules
             if (Context.MusicService.PlayerState == PlayerState.Stopped || Context.MusicService.PlayerState == PlayerState.Paused)
             {
                 Log.Info("No song currently playing, playing.");
-                Context.MusicService.Play(Context);
+                Context.MusicService.Play(Context, Context.Settings);
             }
         }
 
@@ -184,7 +184,8 @@ namespace MagicConchBot.Modules
         {
             if (File.Exists(file))
             {
-                Configuration.IntroPCM = file;
+                Context.Settings.IntroPCM = file;
+                Context.SaveSettings();
                 await RespondAsync("Changed intro");
             }
             else

@@ -148,7 +148,6 @@ namespace MagicConchBot
         {
             var config = new DiscordSocketConfig
             {
-                //WebSocketProvider = Discord.Net.Providers.WS4Net.WS4NetProvider.Instance,
                 LogLevel = LogSeverity.Info,
 
 
@@ -159,7 +158,7 @@ namespace MagicConchBot
                 .AddMemoryCache()
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<InteractionService>()
-                .AddSingleton(new HttpClient())
+                .AddSingleton<HttpClient>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<YoutubeInfoService>()
@@ -170,8 +169,6 @@ namespace MagicConchBot
                 .AddSingleton<ISongResolutionService, SongResolutionService>()
                 .AddSingleton<GuildServiceProvider>()
                 .AddSingleton<SoundCloudInfoService>()
-                .AddSingleton<ChanService>()
-                .AddSingleton<StardewValleyService>()
                 .AddSingleton<GuildSettingsProvider>()
                 .BuildServiceProvider();
         }
