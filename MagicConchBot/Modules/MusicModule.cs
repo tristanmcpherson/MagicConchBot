@@ -179,12 +179,17 @@ namespace MagicConchBot.Modules
             _mp3Service.GetMp3(new(currentSong.Name, currentSong.StreamUri), Context.User);
         }
 
-        [SlashCommand("changeintro", "...")]
-        public void ChangeIntro(string file)
+        [SlashCommand("changeintro", "...", runMode: RunMode.Async)]
+        public async Task ChangeIntro(string file)
         {
             if (File.Exists(file))
             {
                 Configuration.IntroPCM = file;
+                await RespondAsync("Changed intro");
+            }
+            else
+            {
+                await RespondAsync();
             }
         }
     }
