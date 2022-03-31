@@ -40,13 +40,13 @@ namespace MagicConchBot.Services
             var track = await Client.Tracks.Get(trackId.Value);
 
             return new Song(
-                track.Name + " " + string.Join(" ", track.Artists.Select(a => a.Name)),
+                track.Name + " - " + string.Join(",", track.Artists.Select(a => a.Name)),
                 new TimeSpan(0, 0, 0, 0, track.DurationMs),
                 songUrl,
                 track.Album.Images.FirstOrDefault()?.Url,
                 null,
                 MusicType.Spotify,
-                track.Name + " - " + track.Artists.First().Name
+                track.Name + " " + string.Join(" ", track.Artists.Select(a => a.Name))
             );
         }
     }
