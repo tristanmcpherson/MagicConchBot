@@ -129,8 +129,7 @@ namespace MagicConchBot.Services.Music
                                 }
                                 else
                                 {
-                                    if (++_songIndex == SongList.Count)
-                                        _songIndex = 0;
+                                    _songIndex = (_songIndex + 1) % SongList.Count;
                                 }
                             }
                         }
