@@ -20,10 +20,10 @@ namespace MagicConchBot.Api
             var document = await web.LoadFromWebAsync(url);
             var host = GetArtistNameSelector(url);
 
-            var track = document.DocumentNode.SelectSingleNode(@$"//*[@class=""{TrackNameSelector}""]").InnerText;
-            var album = document.DocumentNode.SelectSingleNode(@$"//*[@class=""{AlbumNameSelector}""]").InnerText;
+            var track = document.DocumentNode.SelectSingleNode(@$"//*[@class=""{TrackNameSelector}""]").InnerText.Trim();
+            var album = document.DocumentNode.SelectSingleNode(@$"//*[@class=""{AlbumNameSelector}""]").InnerText.Trim();
             var length = document.DocumentNode.SelectSingleNode(@$"//*[@class=""{SongLengthSelector}""]");
-            var artist = document.DocumentNode.SelectSingleNode(@$"//*[@id=""name-section""]//*[@href=""{host}""]").InnerText;
+            var artist = document.DocumentNode.SelectSingleNode(@$"//*[@id=""name-section""]//*[@href=""{host}""]").InnerText.Trim();
             var albumArt = document.DocumentNode.SelectSingleNode($@"//*[@class=""{AlbumArtSelector}""]/@href").Attributes["href"].Value;
 
             return new Song($"{track} - {artist}", TimeSpan.Zero, url, albumArt, identifier: url);
