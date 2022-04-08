@@ -22,7 +22,7 @@ namespace MagicConchBot.Common.Types
 
         public string Name { get; }
 
-        public string Identifier { get; }
+        public string Identifier { get; set; }
 
         public string Url { get; }
 

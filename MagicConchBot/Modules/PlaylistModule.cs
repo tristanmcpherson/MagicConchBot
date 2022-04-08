@@ -86,14 +86,14 @@ namespace MagicConchBot.Modules
             [SlashCommand("savequeue", "Save queue as a playlist")]
             public async Task SaveQueueToPlaylist(string name = Playlist.DefaultName)
             {
-                if (Context.MusicService.SongList.Count == 0)
+                if (Context.MusicService.GetSongs().Count == 0)
                 {
                     return;
                 }
 
                 var playlist = Context.Settings.GetPlaylistOrCreate(name);
 
-                foreach (var song in Context.MusicService.SongList)
+                foreach (var song in Context.MusicService.GetSongs())
                 {
                     playlist.Songs.Add(song.Identifier);
                 }

@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Discord.Audio;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
-using MagicConchBot.Services.Music;
 
 namespace MagicConchBot.Common.Interfaces
 {

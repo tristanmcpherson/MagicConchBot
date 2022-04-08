@@ -17,7 +17,7 @@ namespace MagicConchBot.Modules
         [SlashCommand("list", "Lists all the songs in the queue.")]
         public async Task ListQueueAsync()
         {
-            var songs = Context.MusicService.SongList;
+            var songs = Context.MusicService.GetSongs();
 
             if (songs.Count == 0)
             {

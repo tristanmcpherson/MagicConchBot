@@ -16,31 +16,31 @@ namespace MagicConchBot.Services.Music
 
         private static readonly string[] DirectPlayFormats = { "webm", "mp3", "avi", "wav", "mp4", "flac" };
 
-        private static readonly YoutubeClient client = new YoutubeClient();
+        private static readonly YoutubeClient client = new();
 
+        // Output 
         public async Task<string> GetSongStreamUrl(Song song)
         {
             string streamUrl;
             var musicType = song.MusicType;
-            var data = song.Identifier;
-
+            
             if (musicType == MusicType.Spotify)
             {
                 // search and use as if youtube
                 var results = client.Search.GetResultsAsync(song.Identifier);
                 var res = await results.FirstAsync();
-                data = res.Url;
+                song.Identifier = res.Url;
                 song.StreamUri = res.Url;
                 musicType = MusicType.YouTube;
             } 
             
-            if (DirectPlayFormats.Contains(data.Split('.').LastOrDefault()))
+            if (DirectPlayFormats.Contains(song.Identifier.Split('.').LastOrDefault()))
             {
-                streamUrl = data;
+                streamUrl = song.Identifier;
 			} 
             else if (musicType == MusicType.YouTube) 
             {
-                var manifest = await client.Videos.Streams.GetManifestAsync(VideoId.Parse(data));
+                var manifest = await client.Videos.Streams.GetManifestAsync(VideoId.Parse(song.Identifier));
                 var streams = manifest.GetAudioOnlyStreams();
                 var streamInfo = streams.OrderBy(s => s.Bitrate).FirstOrDefault();
 
@@ -52,7 +52,9 @@ namespace MagicConchBot.Services.Music
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                streamUrl = await GetUrlFromYoutubeDlAsync(data).ConfigureAwait(false);
+                var resolvedSongs = await GetUrlFromYoutubeDlAsync(song.Identifier).ConfigureAwait(false);
+
+                streamUrl = resolvedSongs.FirstOrDefault();
 
                 stopwatch.Stop();
 
@@ -65,7 +67,7 @@ namespace MagicConchBot.Services.Music
             return streamUrl;
         }
 
-        private static async Task<string> GetUrlFromYoutubeDlAsync(string url)
+        private static async Task<List<string>> GetUrlFromYoutubeDlAsync(string url)
         {
             //-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5
             var youtubeDl = new ProcessStartInfo
@@ -92,7 +94,7 @@ namespace MagicConchBot.Services.Music
                 output.Add(await p.StandardOutput.ReadLineAsync());
             }
 
-            return output.LastOrDefault();
+            return output;
         }
     }
 }

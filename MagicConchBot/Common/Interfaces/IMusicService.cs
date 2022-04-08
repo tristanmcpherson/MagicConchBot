@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
 
@@ -13,7 +11,7 @@ namespace MagicConchBot.Common.Interfaces
 
         void SetVolume(float value);
 
-        List<Song> SongList { get; }
+        List<Song> GetSongs();
 
         Song LastSong { get; }
         

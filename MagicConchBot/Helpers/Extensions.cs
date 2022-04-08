@@ -12,6 +12,20 @@ namespace MagicConchBot.Helpers
             for (var index = 0; index < str.Length; index += maxLength)
                 yield return str.Substring(index, Math.Min(maxLength, str.Length - index));
         }
+        
+        public static U SelectFirst<T, U>(this IEnumerable<T> items, Func<T, U> mapper)
+        {
+            foreach (var item in items)
+            {
+                var mapped = mapper(item);
+                if (mapped != null)
+                {
+                    return mapped;
+                }
+            }
+
+            return default;
+        }
 
         public static string Dump(this object target)
         {

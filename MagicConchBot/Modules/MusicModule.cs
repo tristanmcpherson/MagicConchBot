@@ -36,7 +36,7 @@ namespace MagicConchBot.Modules
         public async Task Resume() {
             if (Context.MusicService.PlayerState == PlayerState.Playing || Context.MusicService.PlayerState == PlayerState.Loading) {
                 await RespondAsync("Song already playing.");
-            } else if (Context.MusicService.SongList.Count > 0) {
+            } else if (Context.MusicService.GetSongs().Count > 0) {
                 Context.MusicService.Play(Context, Context.Settings);
                 await RespondAsync("Resuming queue.");
             } else {
@@ -84,7 +84,7 @@ namespace MagicConchBot.Modules
                 await RespondAsync("Queueing songs from playlist. This may take a while, please wait.");
                 var songs = await _googleApiInfoService.GetSongsByPlaylistAsync(playlistId);
 
-                Context.MusicService.SongList.AddRange(songs);
+                songs.ForEach(Context.MusicService.QueueSong);
 
                 await RespondAsync($"Queued {songs.Count} songs from playlist.");
             }

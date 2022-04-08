@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
@@ -13,12 +14,15 @@ namespace MagicConchBot.Services.Music
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             if (File.Exists(song.Identifier))
+            {
                 return new FileInfo(song.Identifier).FullName;
+            }
 
             if (string.IsNullOrEmpty(Configuration.LocalMusicPath))
                 return null;
             Directory.CreateDirectory(Configuration.LocalMusicPath);
             var file = Path.Combine(Configuration.LocalMusicPath, song.Identifier);
+
             return File.Exists(file) ? file : null;
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -29,7 +30,7 @@ namespace MagicConchBot.Services.Music
         {
             _songResolvers = songResolvers;
             _songPlayer = songPlayer;
-            SongList = new List<Song>();
+            _songList = new List<Song>();
             PlayMode = PlayMode.Queue;
             CurrentSong = null;
             LastSong = null;
@@ -45,7 +46,12 @@ namespace MagicConchBot.Services.Music
             _songPlayer.SetVolume(value);
         }
 
-        public List<Song> SongList { get; }
+        public List<Song> GetSongs()
+        {
+            return _songList;
+        }
+
+        private List<Song> _songList { get; }
 
         public PlayMode PlayMode { get; set; }
 
@@ -79,33 +85,22 @@ namespace MagicConchBot.Services.Music
                         if (CurrentSong != null)
                             LastSong = CurrentSong;
 
-                        if (_songIndex < 0 || _songIndex >= SongList.Count)
+                        if (_songIndex < 0 || _songIndex >= _songList.Count)
                             return;
 
-                        CurrentSong = SongList[_songIndex];
+                        CurrentSong = _songList[_songIndex];
 
                         _tokenSource.Token.ThrowIfCancellationRequested();
 
-                        string streamUri = null;
-                        foreach (var resolver in _songResolvers)
+                        string streamUrl = await _songResolvers.SelectFirst(async resolver => await resolver.GetSongStreamUrl(CurrentSong));
+                        if (streamUrl == null)
                         {
-                            try
-                            {
-                                var uri = await resolver.GetSongStreamUrl(CurrentSong);
-
-                                if (uri != null)
-                                {
-                                    streamUri = uri;
-                                    break;
-                                }
-                            } 
-                            catch
-                            {
-                            }
+                            throw new Exception($"No songs resolved for song: ${CurrentSong.Identifier}");
                         }
 
-                        CurrentSong.StreamUri =
-                            streamUri ?? throw new Exception($"Failed to resolve song: {CurrentSong.Identifier}");
+                        CurrentSong.StreamUri = streamUrl;
+                        
+
                         await StatusUpdater(context.Channel).ConfigureAwait(false);
 
                         try
@@ -125,11 +120,11 @@ namespace MagicConchBot.Services.Music
                             {
                                 if (PlayMode == PlayMode.Queue)
                                 {
-                                    SongList.Remove(CurrentSong);
+                                    _songList.Remove(CurrentSong);
                                 }
                                 else
                                 {
-                                    _songIndex = (_songIndex + 1) % SongList.Count;
+                                    _songIndex = (_songIndex + 1) % _songList.Count;
                                 }
                             }
                         }
@@ -138,7 +133,7 @@ namespace MagicConchBot.Services.Music
                 catch (Exception ex)
                 {
                     Log.Error(ex);
-                    SongList.Remove(CurrentSong);
+                    _songList.Remove(CurrentSong);
                     CurrentSong = null;
                 }
                 finally
@@ -202,7 +197,7 @@ namespace MagicConchBot.Services.Music
                 return false;
             }
 
-            SongList.Clear();
+            _songList.Clear();
 
             _tokenSource.Cancel();
             _songPlayer.Stop();
@@ -231,26 +226,26 @@ namespace MagicConchBot.Services.Music
 
         public void QueueSong(Song song)
         {
-            SongList.Add(song);
+            _songList.Add(song);
         }
 
         public Song RemoveSong(int songNumber)
         {
-            if (songNumber < 0 || songNumber >= SongList.Count)
+            if (songNumber < 0 || songNumber >= _songList.Count)
                 return null;
 
             if (songNumber == 0)
                 Stop();
 
-            var song = SongList[songNumber];
-            SongList.Remove(song);
+            var song = _songList[songNumber];
+            _songList.Remove(song);
 
             return song;
         }
 
         public void ClearQueue()
         {
-            SongList.Clear();
+            _songList.Clear();
         }
     }
 }
