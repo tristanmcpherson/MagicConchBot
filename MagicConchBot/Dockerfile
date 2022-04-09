@@ -6,7 +6,9 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 	libopus-dev \
 	libsodium23 \
 	libsodium-dev \
+	youtube-dl \
 	ffmpeg \
+	ffprobe \
 	python
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build

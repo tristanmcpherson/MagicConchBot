@@ -22,9 +22,10 @@ namespace MagicConchBot.Services
         public async Task<Song> GetSongInfoAsync(string url)
         {
             var track = await Client.Resolve.GetTrack(url);
+            Console.WriteLine(track.stream_url);
             return new Song(
                 track.title, 
-                new TimeSpan(0,0,0,0, track.duration),
+                new TimeSpan(0, 0, 0, 0, track.duration),
                 url,
                 track.artwork_url ?? track.user?.avatar_url,
                 null,

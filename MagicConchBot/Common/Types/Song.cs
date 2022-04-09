@@ -32,7 +32,7 @@ namespace MagicConchBot.Common.Types
 
         public TimeSpan CurrentTime { get; set; }
 
-        public TimeSpan Length { get; }
+        public TimeSpan Length { get; set; }
 
         public MusicType MusicType { get; set; }
 
