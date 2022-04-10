@@ -64,11 +64,6 @@ namespace MagicConchBot.Services.Music
 
             try
             {
-                if (song.Length == TimeSpan.Zero)
-                {
-                    song.Length = await GetStreamLength(song.StreamUri);
-                }
-
                 var inStream = StartFfmpeg(song.StreamUri, song);
                 if (inStream == null)
                 {
@@ -202,29 +197,6 @@ namespace MagicConchBot.Services.Music
             Log.Debug("ffmpeg exited.");
 
             return null;
-        }
-
-        private static async Task<TimeSpan> GetStreamLength(string url)
-        {
-            var arguments = @$"-i ""{url}"" -show_entries format=duration -v quiet -of csv=""p=0""";
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "ffprobe",
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-                UseShellExecute = false,
-            };
-
-            var process = new Process()
-            {
-                StartInfo = startInfo
-            };
-
-            process.Start();
-            var seconds = await process.StandardOutput.ReadLineAsync();
-            return TimeSpan.FromSeconds(double.Parse(seconds));
         }
 
         public void Stop()
