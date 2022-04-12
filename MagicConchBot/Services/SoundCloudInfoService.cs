@@ -20,7 +20,7 @@ namespace MagicConchBot.Services
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?soundcloud\.com\/(?:[a-z0-9-]+\/?)+",
             RegexOptions.IgnoreCase);
         
-        public async Task<Maybe<Song>> GetSongInfoAsync(string url)
+        public async Task<Song> GetSongInfoAsync(string url)
         {
             var track = await Client.Resolve.GetTrack(url);
             Console.WriteLine(track.stream_url);

@@ -35,7 +35,7 @@ namespace MagicConchBot.Services
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?open\.spotify\.com\/track\/(?<trackId>\w+)?(\?.+)?",
             RegexOptions.IgnoreCase);
 
-        public async Task<Maybe<Song>> GetSongInfoAsync(string url)
+        public async Task<Song> GetSongInfoAsync(string url)
         {
             var trackId = Regex.Match(url).Groups["trackId"];
 

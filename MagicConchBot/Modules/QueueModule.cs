@@ -47,7 +47,7 @@ namespace MagicConchBot.Modules
         [SlashCommand("remove", "Song number to remove.")]
         public async Task RemoveAsync(int songNumber)
         {
-            var song = Context.MusicService.RemoveSong(songNumber);
+            var song = await Context.MusicService.RemoveSong(songNumber);
             await song
                 .Map(async song => await RespondAsync("Successfully removed song from queue:", embed: song.GetEmbed($"{song.Name}")))
                 .ExecuteNoValue(async () => await RespondAsync($"No song at position: {songNumber}"));

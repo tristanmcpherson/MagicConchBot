@@ -92,9 +92,9 @@ namespace MagicConchBot.Services.Music
             songPlayer.Fire(playTrigger, client);
         }
 
-        public void Stop()
+        public async Task Stop()
         {
-            songPlayer.Fire(PlayerAction.Stop);
+            await songPlayer.FireAsync(PlayerAction.Stop);
         }
 
         public async Task Pause()
@@ -142,7 +142,7 @@ namespace MagicConchBot.Services.Music
 
             await StreamAudio(currentSong, inStream, outStream, tokenSource);
 
-            Stop();
+            await Stop();
         }
 
         private async Task StreamAudio(Song song, Stream inStream, AudioOutStream outStream, CancellationTokenSource tokenSource)

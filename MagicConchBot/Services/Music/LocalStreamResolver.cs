@@ -14,7 +14,7 @@ namespace MagicConchBot.Services.Music
         // TODO: maybe remove
         public Regex Regex => new("adfgadfgadfgadfgadfg");
 
-        public Task<Maybe<Song>> GetSongInfoAsync(string url)
+        public Task<Song> GetSongInfoAsync(string url)
         {
             throw new System.NotImplementedException();
         }

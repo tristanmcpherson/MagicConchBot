@@ -178,11 +178,10 @@ namespace MagicConchBot.Services.Music
             }, _tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current);
         }
 
-        public bool Stop()
+        public async Task Stop()
         {
             _songList.Clear();
-            _songPlayer.Stop();
-            return true;
+            await _songPlayer.Stop();
         }
 
         public async Task Pause()
@@ -201,13 +200,13 @@ namespace MagicConchBot.Services.Music
             _songList.Add(song);
         }
 
-        public Maybe<Song> RemoveSong(int songNumber)
+        public async Task<Maybe<Song>> RemoveSong(int songNumber)
         {
             if (songNumber < 0 || songNumber >= _songList.Count)
                 return Maybe.None;
 
             if (songNumber == 0)
-                Stop();
+                await Stop();
 
             var song = _songList[songNumber];
             _songList.Remove(song);

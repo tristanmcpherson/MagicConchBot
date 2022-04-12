@@ -117,8 +117,8 @@ namespace MagicConchBot.Modules
         [SlashCommand("stop", "Stops the bot if it is playing music and disconnects it from the voice channel.")]
         public async Task StopAsync()
         {
-            var stop = Context.MusicService.Stop();
-            await RespondAsync(stop ? "Music stopped playing." : "No music currently playing.");
+            await Context.MusicService.Stop();
+            await RespondAsync("Music stopped playing.");
         }
 
         [SlashCommand("pause", "Pauses the current song.")]

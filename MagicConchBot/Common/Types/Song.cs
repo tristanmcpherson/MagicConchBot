@@ -26,12 +26,12 @@ namespace MagicConchBot.Common.Types
                 : (song.Time.Length == TimeSpan.Zero ? "??" : song.Time.Length.ToString(@"mm\:ss"));
         }
 
-        public static Maybe<string> GetCurrentTimePretty(this Song song)
+        public static string GetCurrentTimePretty(this Song song)
         {
-            return song.Time.CurrentTime.Map(
-                currentTime => song.Time.Length >= TimeSpan.FromHours(1)
+            var currentTime = song.Time.CurrentTime.GetValueOrDefault(TimeSpan.Zero);
+            return song.Time.Length >= TimeSpan.FromHours(1)
                 ? currentTime.ToString(@"hh\:mm\:ss")
-                : currentTime.ToString(@"mm\:ss"));
+                : currentTime.ToString(@"mm\:ss");
         }
 
         public static Embed GetEmbed(this Song song, string title = "", bool embedThumbnail = true, bool showDuration = false, double volume = 1)
@@ -47,7 +47,7 @@ namespace MagicConchBot.Common.Types
             var progressString = $"{new string(progressChar, progressIndex)}{currentHead}{new string(progressChar, progressLength - progressIndex)}";
 
             var length = song.GetLengthPretty();
-            var currentTime = song.GetCurrentTimePretty().GetValueOrDefault();
+            var currentTime = song.GetCurrentTimePretty();
 
             const char volumeChar = '─';
 			const char volumeHead = '○';

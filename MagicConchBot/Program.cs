@@ -167,6 +167,7 @@ namespace MagicConchBot
                 .AddSingleton<ISongInfoService, SoundCloudInfoService>()
                 .AddSingleton<ISongInfoService, SpotifyResolveService>()
                 .AddSingleton<ISongInfoService, BandcampResolveService>()
+                //.AddSingleton<ISongInfoService, YoutubeDlResolver>()
                 .AddSingleton<ISongResolutionService, SongResolutionService>()
                 .AddSingleton<GuildServiceProvider>()
                 .AddSingleton<SoundCloudInfoService>()

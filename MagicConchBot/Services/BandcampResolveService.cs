@@ -20,7 +20,7 @@ namespace MagicConchBot.Services
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?.+\.bandcamp\.com\/track\/(?<trackId>[\w-]+)?",
             RegexOptions.IgnoreCase);
 
-        public async Task<Maybe<Song>> GetSongInfoAsync(string url)
+        public async Task<Song> GetSongInfoAsync(string url)
         {
             return await BandcampApi.GetSongInfo(url);
         }

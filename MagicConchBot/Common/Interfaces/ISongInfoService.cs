@@ -12,7 +12,7 @@ namespace MagicConchBot.Common.Interfaces
     {
         Regex Regex { get; }
 
-        Task<Maybe<Song>> GetSongInfoAsync(string url);
+        Task<Song> GetSongInfoAsync(string url);
 
         /// <summary>
         /// Specifiy specific resolver to resolve Songs to a streamable Uri, defaults to youtube-dl

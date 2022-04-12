@@ -27,7 +27,7 @@ namespace MagicConchBot.Common.Interfaces
         // Refactor GuildSettings to PlaySettings data record
         Task Play(IInteractionContext msg, GuildSettings settings);
 
-        bool Stop();
+        Task Stop();
 
         Task Pause();
 
@@ -35,7 +35,7 @@ namespace MagicConchBot.Common.Interfaces
 
         void QueueSong(Song song);
 
-        Maybe<Song> RemoveSong(int songNumber);
+        Task<Maybe<Song>> RemoveSong(int songNumber);
 
         void ClearQueue();
     }

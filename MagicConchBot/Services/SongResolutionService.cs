@@ -6,6 +6,7 @@ using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Helpers;
 using MagicConchBot.Common.Types;
 using CSharpFunctionalExtensions;
+using System.Linq;
 
 namespace MagicConchBot.Services
 {
@@ -20,17 +21,23 @@ namespace MagicConchBot.Services
 
         public async Task<Song> ResolveSong(string url, TimeSpan startTime)
         {
-            var song = (await _musicInfoServices.SelectFirst(async service =>
+            var resolver = _musicInfoServices.FirstOrDefault(service => service.Regex.IsMatch(url));
+            if (resolver == null)
             {
-                if (service.Regex.IsMatch(url))
-                {
-                    return await service.GetSongInfoAsync(url);
-                }
-                else
-                {
-                    return Maybe.None;
-                }
-            })).GetValueOrDefault(new Song(url, new SongTime(TimeSpan.Zero), url));
+                return new Song(url, new SongTime(TimeSpan.Zero), url);
+            }
+
+            var song = await resolver.GetSongInfoAsync(url);
+            //var song = (=>
+            //{
+            //    if (service.Regex.IsMatch(url))
+            //    {
+            //    }
+            //    else
+            //    {
+            //        return Maybe.None;
+            //    }
+            //})).GetValueOrDefault(;
 
             // url may contain time info but it is specified, overwrite
             if (startTime != TimeSpan.Zero)

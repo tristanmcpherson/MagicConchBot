@@ -13,12 +13,12 @@ namespace MagicConchBot.Helpers
                 yield return str.Substring(index, Math.Min(maxLength, str.Length - index));
         }
         
-        public static U SelectFirst<T, U>(this IEnumerable<T> items, Func<T, U> mapper)
+        public static U SelectFirst<T, U>(this IEnumerable<T> items, Func<T, U> mapper) where U : IEquatable<U>
         {
             foreach (var item in items)
             {
                 var mapped = mapper(item);
-                if (mapped != null)
+                if (!mapped.Equals(default) )
                 {
                     return mapped;
                 }

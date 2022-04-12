@@ -6,7 +6,7 @@ using MagicConchBot.Common.Types;
 
 namespace MagicConchBot.Common.Interfaces
 {
-    public delegate Task AsyncEventHandler<TEventArgs>(object? sender, TEventArgs e);
+    public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
     public record SongCompletedArgs(IAudioClient Client, IMessageChannel MessageChannel, Song Song);
 
     public interface ISongPlayer
@@ -16,7 +16,7 @@ namespace MagicConchBot.Common.Interfaces
         void SetVolume(float value);
         void PlaySong(IAudioClient client, IMessageChannel messageChannel, Song song);
         bool IsPlaying();
-        void Stop();
+        Task Stop();
         Task Pause();
     }
 

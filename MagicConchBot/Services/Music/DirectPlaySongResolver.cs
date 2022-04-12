@@ -16,9 +16,9 @@ namespace MagicConchBot.Services.Music
     {
         public Regex Regex => new(".(webm|mp3|avi|wav|mp4|flac)$");
 
-        public Task<Maybe<Song>> GetSongInfoAsync(string url)
+        public Task<Song> GetSongInfoAsync(string url)
         {
-            return Task.FromResult(Maybe.From(new Song(url, new SongTime())));
+            return Task.FromResult(new Song(url, new SongTime()));
         }
 
         // Output 
