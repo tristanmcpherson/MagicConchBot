@@ -7,7 +7,7 @@ using NLog;
 
 namespace MagicConchBot.Services.Music
 {
-    public class GuildServiceProvider : IGuildServiceProvider {
+    public class GuildServiceProvider : IGuildServiceProvider<GuildServiceProvider> {
         private readonly ConcurrentDictionary<ulong, IServiceCollection> _musicServices =
             new ConcurrentDictionary<ulong, IServiceCollection>();
         private readonly ConcurrentDictionary<ulong, IServiceProvider> _musicServiceProviders = new ConcurrentDictionary<ulong, IServiceProvider>();
@@ -15,11 +15,12 @@ namespace MagicConchBot.Services.Music
         //private readonly ConcurrentDictionary<ulong, Mp3ConverterService> _mp3Services =
         //    new ConcurrentDictionary<ulong, Mp3ConverterService>();
 
-        public void AddService<TInterface, TImplementation>(ulong guildId) where TInterface : class where TImplementation : class, TInterface
+        public GuildServiceProvider AddService<TInterface, TImplementation>(ulong guildId) where TInterface : class where TImplementation : class, TInterface
         {
             if (!_musicServices.ContainsKey(guildId))
                 _musicServices.TryAdd(guildId, new ServiceCollection());
             _musicServices[guildId].AddSingleton<TInterface, TImplementation>();
+            return this;
         }
         
 

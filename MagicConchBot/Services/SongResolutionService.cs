@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
+using MagicConchBot.Helpers;
 using MagicConchBot.Common.Types;
+using CSharpFunctionalExtensions;
 
 namespace MagicConchBot.Services
 {
@@ -18,32 +20,31 @@ namespace MagicConchBot.Services
 
         public async Task<Song> ResolveSong(string url, TimeSpan startTime)
         {
-            Song song = null;
-            foreach (var service in _musicInfoServices)
+            var song = (await _musicInfoServices.SelectFirst(async service =>
             {
-                var match = service.Regex.Match(url);
-                if (!match.Success)
-                    continue;
+                if (service.Regex.IsMatch(url))
+                {
+                    return await service.GetSongInfoAsync(url);
+                }
+                else
+                {
+                    return Maybe.None;
+                }
+            })).GetValueOrDefault(new Song(url, new SongTime(TimeSpan.Zero), url));
 
-                song = await service.GetSongInfoAsync(url);
-
-
-                // url may contain time info but it is specified, overwrite
-                if (startTime != TimeSpan.Zero)
-                    song.StartTime = startTime;
-
-                // song info found, stop info service search
-                break;
+            // url may contain time info but it is specified, overwrite
+            if (startTime != TimeSpan.Zero)
+            {
+                song.Time.StartTime = startTime;
             }
 
-            if (song.Length == TimeSpan.Zero)
-            {
-                song.Length = await GetStreamLength(song.StreamUri);
-            }
+            // this will not work
+            //if (song.Time.Length == TimeSpan.Zero)
+            //{
+            //    song.Time.Length = await GetStreamLength(song.StreamUri);
+            //}
 
-            // Song info not found from search or url
-            return song ?? new Song(url, TimeSpan.Zero, url);
-            // valid url but song information not found by any song info service
+            return song;
         }
 
         private static async Task<TimeSpan> GetStreamLength(string url)

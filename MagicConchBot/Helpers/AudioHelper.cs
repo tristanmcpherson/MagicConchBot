@@ -43,7 +43,7 @@ namespace MagicConchBot.Helpers
                 {
                     await audio.StopAsync();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                 }

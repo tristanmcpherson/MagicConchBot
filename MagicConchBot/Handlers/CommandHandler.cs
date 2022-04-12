@@ -141,6 +141,7 @@ namespace MagicConchBot.Handlers
 
         private async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
+            await _interactionService.RegisterCommandsToGuildAsync(arg.Id);
             await HandleGuildAvailableAsync(arg);
             await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
         }
@@ -150,12 +151,16 @@ namespace MagicConchBot.Handlers
             //var musicService = _services.GetService<IMusicService>();
             //var mp3Service = _services.GetService<IMp3ConverterService>();
             var guildServiceProvider = _services.GetService<GuildServiceProvider>();
-
-            guildServiceProvider.AddService<ISongResolver, UrlStreamResolver>(guild.Id);
-            guildServiceProvider.AddService<ISongResolver, LocalStreamResolver>(guild.Id);
-            guildServiceProvider.AddService<ISongPlayer, FfmpegSongPlayer>(guild.Id);
-            guildServiceProvider.AddService<IMusicService, MusicService>(guild.Id);
-            guildServiceProvider.AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
+            guildServiceProvider
+                .AddService<ISongInfoService, YoutubeInfoService>(guild.Id)
+                .AddService<ISongInfoService, SoundCloudInfoService>(guild.Id)
+                .AddService<ISongInfoService, SpotifyResolveService>(guild.Id)
+                .AddService<ISongInfoService, BandcampResolveService>(guild.Id)
+                .AddService<ISongInfoService, DirectPlaySongResolver>(guild.Id)
+                .AddService<ISongInfoService, LocalStreamResolver>(guild.Id)
+                .AddService<ISongPlayer, FfmpegSongPlayer>(guild.Id)
+                .AddService<IMusicService, MusicService>(guild.Id)
+                .AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
 
             _services.GetService<GuildServiceProvider>().AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
             return Task.CompletedTask;

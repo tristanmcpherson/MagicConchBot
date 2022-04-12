@@ -38,7 +38,8 @@ namespace MagicConchBot.Services.Games
 
         public async Task ResumeTimers(ulong guildId)
         {
-            var guild = Client.Guilds.First(guild => guild.Id == guildId);
+            var guild = Client.Guilds.FirstOrDefault(guild => guild.Id == guildId);
+            if (guild == null) { return; }
             var matches = new List<Match>();
             var channels = new List<ITextChannel>();
 

@@ -54,7 +54,7 @@ namespace MagicConchBot
                     if (!Console.IsInputRedirected && Console.KeyAvailable)
                     {
                         var key = Console.ReadKey(true).Key;
-                        if (key == ConsoleKey.Q)
+                        if (key == ConsoleKey.Q) 
                         {
                             Stop();
                         }

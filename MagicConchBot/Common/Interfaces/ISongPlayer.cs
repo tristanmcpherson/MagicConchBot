@@ -1,30 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Audio;
-using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
 
 namespace MagicConchBot.Common.Interfaces
 {
+    public delegate Task AsyncEventHandler<TEventArgs>(object? sender, TEventArgs e);
+    public record SongCompletedArgs(IAudioClient Client, IMessageChannel MessageChannel, Song Song);
+
     public interface ISongPlayer
     {
+        event AsyncEventHandler<SongCompletedArgs> OnSongCompleted;
         float GetVolume();
         void SetVolume(float value);
-
-        PlayerState PlayerState { get; }
-        Task PlaySong(IAudioClient client, Song song, string intro = "hello_bozo.pcm");
+        void PlaySong(IAudioClient client, IMessageChannel messageChannel, Song song);
+        bool IsPlaying();
         void Stop();
-        void Pause();
+        Task Pause();
     }
 
     public interface IFileProvider
     {
         Task<string> GetStreamingFile(Song song);
-    }
-
-    public interface ISongResolver
-    {
-        Task<string> GetSongStreamUrl(Song song);
     }
 
     public enum MusicType

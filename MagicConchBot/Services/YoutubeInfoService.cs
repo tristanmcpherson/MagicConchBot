@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Resources;
@@ -34,51 +35,66 @@ namespace MagicConchBot.Services
             return (await videos.FirstAsync()).Url;
         }
 
-        public async Task<Song> GetVideoInfoByIdAsync(string id)
+        public async Task<Song> GetVideoInfoByIdAsync(string id, TimeSpan? startTime = null)
         {
             Log.Info("Looking up song.");
-            try {
+            try
+            {
                 var video = await _youtubeClient.Videos.GetAsync(VideoId.Parse(id)).ConfigureAwait(false);
 
                 Log.Info("Song info found.");
-                return ParseVideo(video);
-            } catch (Exception ex) {
+                return ParseVideo(video, startTime);
+            }
+            catch (Exception ex)
+            {
                 Log.Error($"Failed to fetch video info for ${id}");
                 return await Task.FromException<Song>(ex);
             }
         }
 
-        private static Song ParseVideo(Video video)
+        private static Song ParseVideo(Video video, TimeSpan? startTime = null)
         {
-            return new Song(video.Title, (TimeSpan)video.Duration, video.Url, video.Thumbnails[0].Url, null, MusicType.YouTube);
+            return new Song(video.Title, new SongTime(StartTime: startTime, Length: video.Duration.Value), video.Thumbnails[0].Url, video.Url, video.Id, MusicType.YouTube);
         }
 
-        private static Song ParseVideo(PlaylistVideo video) {
-            return new Song(video.Title, (TimeSpan)video.Duration, video.Url, video.Thumbnails[0].Url, null, MusicType.YouTube);
+        private static Song ParseVideo(PlaylistVideo video)
+        {
+            return new Song(video.Title, new SongTime(Length: video.Duration.Value), video.Thumbnails[0].Url, video.Url, video.Id, MusicType.YouTube);
         }
 
-        public async Task<List<Song>> GetSongsByPlaylistAsync(string id) {
-            
+        public async Task<List<Song>> GetSongsByPlaylistAsync(string id)
+        {
+
             var videos = _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(id));
             return await videos.Select(ParseVideo).ToListAsync();
         }
 
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/playlist))(?<VideoId>[\w-]{10,12})?([&\?]list=)?(?<PlaylistId>[\w-]{22,34})?(?:[\&\?]?t=)?(?<Time>[\d]+)?s?(?<TimeAlt>(\d+h)?(\d+m)?(\d+s)?)?", RegexOptions.IgnoreCase);
-        public async Task<Song> GetSongInfoAsync(string url)
+        public async Task<Maybe<Song>> GetSongInfoAsync(string url)
         {
             var match = Regex.Match(url);
 
             if (!match.Success)
-                return null;
+                return Maybe.None;
+
+            var startTime = TimeSpan.Zero;
+
+            if (match.Groups["Time"].Value != string.Empty)
+                startTime = TimeSpan.FromSeconds(Convert.ToInt32(match.Groups["Time"].Value));
+            else if (match.Groups["TimeAlt"].Value != string.Empty)
+                startTime = TimeSpan.Parse(match.Groups["TimeAlt"].Value);
 
             var videoId = match.Groups["VideoId"].Value;
-            var song = await GetVideoInfoByIdAsync(videoId);
-            if (match.Groups["Time"].Value != string.Empty)
-                song.StartTime = TimeSpan.FromSeconds(Convert.ToInt32(match.Groups["Time"].Value));
-            else if (match.Groups["TimeAlt"].Value != string.Empty)
-                song.StartTime = TimeSpan.Parse(match.Groups["TimeAlt"].Value);
+            return await GetVideoInfoByIdAsync(videoId, startTime);
+        }
 
-            return song;
+        public async Task<Song> ResolveStreamUri(Song song)
+        {
+            var manifest = await _youtubeClient.Videos.Streams.GetManifestAsync(VideoId.Parse(song.Identifier));
+            var streams = manifest.GetAudioOnlyStreams();
+            var streamInfo = streams.OrderBy(s => s.Bitrate).FirstOrDefault();
+
+            return song with { StreamUri = streamInfo.Url };
         }
     }
 }

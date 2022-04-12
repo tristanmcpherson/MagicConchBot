@@ -1,10 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using Discord.Commands;
 using Discord.Interactions;
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
 using MagicConchBot.Resources;
 using MagicConchBot.Services;
@@ -34,10 +36,10 @@ namespace MagicConchBot.Modules
             "Plays a song from YouTube or SoundCloud or search for a song on YouTube",
             runMode: RunMode.Async), Alias("p")]
         public async Task Resume() {
-            if (Context.MusicService.PlayerState == PlayerState.Playing || Context.MusicService.PlayerState == PlayerState.Loading) {
+            if (Context.MusicService.IsPlaying) {
                 await RespondAsync("Song already playing.");
             } else if (Context.MusicService.GetSongs().Count > 0) {
-                Context.MusicService.Play(Context, Context.Settings);
+                await Context.MusicService.Play(Context, Context.Settings);
                 await RespondAsync("Resuming queue.");
             } else {
                 await RespondAsync("No songs currently in the queue.");
@@ -105,10 +107,10 @@ namespace MagicConchBot.Modules
             }
 
             // if not playing, start playing and then the player service
-            if (Context.MusicService.PlayerState == PlayerState.Stopped || Context.MusicService.PlayerState == PlayerState.Paused)
+            if (!Context.MusicService.IsPlaying)
             {
                 Log.Info("No song currently playing, playing.");
-                Context.MusicService.Play(Context, Context.Settings);
+                await Context.MusicService.Play(Context, Context.Settings);
             }
         }
 
@@ -122,8 +124,8 @@ namespace MagicConchBot.Modules
         [SlashCommand("pause", "Pauses the current song.")]
         public async Task PauseAsync()
         {
-            var paused = Context.MusicService.Pause();
-            await RespondAsync(paused ? "Music paused successfully." : "No music currently playing.");
+            await Context.MusicService.Pause();
+            await RespondAsync("Music paused successfully.");
         }
 
         [SlashCommand("skip", "Skips the current song if one is playing.")]
@@ -149,11 +151,13 @@ namespace MagicConchBot.Modules
         [SlashCommand("current", "Displays the current song")]
         public async Task CurrentSongAsync()
         {
-            var song = Context.MusicService.CurrentSong;
-            if (song == null)
-                await RespondAsync("No song is currently playing.");
-            else
-                await RespondAsync(embed: song.GetEmbed());
+            await Context.MusicService.CurrentSong
+                .Map(async song =>
+                    await RespondAsync(embed: song.GetEmbed())
+                )
+                .ExecuteNoValue(
+                    async () => await RespondAsync("No song is currently playing.")
+                );
         }
 
         [SlashCommand("loop", "Loops")]
@@ -167,16 +171,14 @@ namespace MagicConchBot.Modules
         [SlashCommand("mp3", "Generates a link to the mp3 of the current song playing or the last song played.", runMode: RunMode.Async)]
         public async Task GenerateMp3Async()
         {
-            var currentSong = Context.MusicService.CurrentSong ?? Context.MusicService.LastSong;
-            if (currentSong == null)
-            {
-                await RespondAsync("No songs recently played.");
-                return;
-            }
-
-            await RespondAsync("Generating mp3 file... please wait.");
-
-            _mp3Service.GetMp3(new(currentSong.Name, currentSong.StreamUri), Context.User);
+            await Context.MusicService.CurrentSong.Or(Context.MusicService.LastSong)
+                .Map(async song => {
+                    await RespondAsync("Generating mp3 file... please wait.");
+                    _mp3Service.GetMp3(new(song.Name, song.StreamUri), Context.User);
+                })
+                .ExecuteNoValue(async () =>
+                    await RespondAsync("No songs recently played.")
+                );
         }
 
         [SlashCommand("changeintro", "...", runMode: RunMode.Async)]

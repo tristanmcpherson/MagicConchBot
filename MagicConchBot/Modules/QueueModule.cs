@@ -1,9 +1,11 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using Discord.Interactions;
 
 using MagicConchBot.Attributes;
 using MagicConchBot.Common.Enums;
+using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
 using GroupAttribute = Discord.Interactions.GroupAttribute;
 
@@ -46,14 +48,9 @@ namespace MagicConchBot.Modules
         public async Task RemoveAsync(int songNumber)
         {
             var song = Context.MusicService.RemoveSong(songNumber);
-            if (song == null)
-            {
-                await RespondAsync($"No song at position: {songNumber}");
-            }
-            else
-            {
-                await RespondAsync("Successfully removed song from queue:", embed: song.GetEmbed($"{song.Name}"));
-            }
+            await song
+                .Map(async song => await RespondAsync("Successfully removed song from queue:", embed: song.GetEmbed($"{song.Name}")))
+                .ExecuteNoValue(async () => await RespondAsync($"No song at position: {songNumber}"));
         }
 
         [SlashCommand("mode", "Change the queue mode to queue (remove after playing) or playlist (repeat).")]

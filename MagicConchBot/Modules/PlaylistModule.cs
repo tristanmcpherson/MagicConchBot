@@ -7,6 +7,7 @@ using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Helpers;
 using MagicConchBot.Services;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MagicConchBot.Modules
@@ -22,17 +23,19 @@ namespace MagicConchBot.Modules
         [SlashCommand("save", "Save a song to a playlist")]
         public async Task SaveToPlaylist(string name = Playlist.DefaultName)
         {
-            if (Context.MusicService.CurrentSong == null)
+            if (Context.MusicService.CurrentSong.HasNoValue)
             {
                 return;
             }
 
             var playlist = Context.Settings.GetPlaylistOrCreate(name);
 
-            playlist.Songs.Add(Context.MusicService.CurrentSong.Identifier);
-            Context.SaveSettings();
+            await Context.MusicService.CurrentSong.Execute(async song => {
+                playlist.Songs.Add(song.Identifier);
+                Context.SaveSettings();
 
-            await RespondAsync($"Added {Context.MusicService.CurrentSong.Name} to playlist {playlist.Name}");
+                await RespondAsync($"Added {song.Name} to playlist {playlist.Name}");
+            });
         }
 
         [Group("playlist", "Playlist commands")]
@@ -76,10 +79,9 @@ namespace MagicConchBot.Modules
 
                 await RespondAsync($"Queued {playlist.Songs.Count} songs.");
 
-                if (Context.MusicService.PlayerState == PlayerState.Stopped ||
-                    Context.MusicService.PlayerState == PlayerState.Paused)
+                if (!Context.MusicService.IsPlaying)
                 {
-                    Context.MusicService.Play(Context, Context.Settings);
+                    await Context.MusicService.Play(Context, Context.Settings);
                 }
             }
 

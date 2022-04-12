@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using Discord;
 using MagicConchBot.Common.Enums;
 using MagicConchBot.Common.Types;
+using MagicConchBot.Services.Music;
 
 namespace MagicConchBot.Common.Interfaces
 {
@@ -13,26 +16,26 @@ namespace MagicConchBot.Common.Interfaces
 
         List<Song> GetSongs();
 
-        Song LastSong { get; }
-        
-        Song CurrentSong { get; }
+        Maybe<Song> CurrentSong { get; }
 
+        Maybe<Song> LastSong { get; }
+        
         PlayMode PlayMode { get; set; }
 
-        PlayerState PlayerState { get; }
+        bool IsPlaying { get; }
 
         // Refactor GuildSettings to PlaySettings data record
-        void Play(IInteractionContext msg, GuildSettings settings);
+        Task Play(IInteractionContext msg, GuildSettings settings);
 
         bool Stop();
 
-        bool Pause();
+        Task Pause();
 
         bool Skip();
 
         void QueueSong(Song song);
 
-        Song RemoveSong(int songNumber);
+        Maybe<Song> RemoveSong(int songNumber);
 
         void ClearQueue();
     }

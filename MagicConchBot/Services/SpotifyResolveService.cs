@@ -2,10 +2,12 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
 using MagicConchBot.Resources;
 using SpotifyAPI.Web;
+using YoutubeExplode;
 
 namespace MagicConchBot.Services
 {
@@ -25,13 +27,15 @@ namespace MagicConchBot.Services
             );
         }
 
+        private YoutubeClient youtubeClient = new();
+
         public SpotifyClient Client { get; set; }
 
         //https://open.spotify.com/track/712uvW1Vezq8WpQi38v2L9?si=b963989009c74cd8
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?open\.spotify\.com\/track\/(?<trackId>\w+)?(\?.+)?",
             RegexOptions.IgnoreCase);
 
-        public async Task<Song> GetSongInfoAsync(string url)
+        public async Task<Maybe<Song>> GetSongInfoAsync(string url)
         {
             var trackId = Regex.Match(url).Groups["trackId"];
 
@@ -41,13 +45,20 @@ namespace MagicConchBot.Services
 
             return new Song(
                 track.Name + " - " + string.Join(",", track.Artists.Select(a => a.Name)),
-                new TimeSpan(0, 0, 0, 0, track.DurationMs),
-                songUrl,
+                new SongTime(Length: new TimeSpan(0, 0, 0, 0, track.DurationMs)),
                 track.Album.Images.FirstOrDefault()?.Url,
-                null,
+                url,
+                songUrl,
                 MusicType.Spotify,
                 track.Name + " " + string.Join(" ", track.Artists.Select(a => a.Name))
             );
+        }
+
+        public async Task<Song> ResolveStreamUri(Song song)
+        {
+            var results = youtubeClient.Search.GetResultsAsync(song.Identifier);
+            var res = await results.FirstAsync();
+            return song with { Identifier = res.Url, StreamUri = res.Url };
         }
     }
 }
