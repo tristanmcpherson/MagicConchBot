@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
@@ -115,10 +116,13 @@ namespace MagicConchBot.Handlers
             }, TaskCreationOptions.LongRunning);
         }
 
-        public static async Task LogAsync(LogMessage logMessage) {
+        public async Task LogAsync(LogMessage logMessage) {
             if (logMessage.Exception is CommandException cmdException) {
                 // We can tell the user that something unexpected has happened
                 await cmdException.Context.Channel.SendMessageAsync("Something went catastrophically wrong!");
+
+                var ownerUser = await _client.GetUserAsync(Configuration.Owners.First());
+                await ownerUser.SendMessageAsync(cmdException.ToString());
 
                 // We can also log this incident
                 Console.WriteLine($"{cmdException.Context.User} failed to execute '{cmdException.Command.Name}' in {cmdException.Context.Channel}.");

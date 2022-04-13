@@ -6,13 +6,15 @@ using MagicConchBot.Resources;
 
 namespace MagicConchBot.Common.Types
 {
-    public record class SongTime(TimeSpan Length)
+    public record class SongTime
     {
+        public TimeSpan Length { get; set; }
         public Maybe<TimeSpan> StartTime { get; set; }
         public Maybe<TimeSpan> CurrentTime { get; set; } = Maybe.None;
-        public SongTime(TimeSpan? StartTime = null, TimeSpan? Length = null, TimeSpan? CurrentTime = null) : this(Length ?? TimeSpan.Zero) {
+        public SongTime(TimeSpan? StartTime = null, TimeSpan? Length = null, TimeSpan? CurrentTime = null) {
             this.StartTime = Maybe.From(StartTime.GetValueOrDefault());
-            this.CurrentTime = Maybe.From(CurrentTime.GetValueOrDefault()); 
+            this.CurrentTime = Maybe.From(CurrentTime.GetValueOrDefault());
+            this.Length = Length ?? TimeSpan.Zero;
         }
     }
 
@@ -73,7 +75,7 @@ namespace MagicConchBot.Common.Types
 
         public static string GetInfo(this Song song)
         {
-            return $"{song.Name} - **[{song.GetLengthPretty()}]**\n";
+            return $"{song.Name.Replace("*", "\\*")} **[{song.GetLengthPretty()}]**\n";
         }
     }
 }

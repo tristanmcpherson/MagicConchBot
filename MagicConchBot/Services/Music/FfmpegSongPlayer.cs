@@ -61,6 +61,7 @@ namespace MagicConchBot.Services.Music
 
             songPlayer.Configure(PlayerState.Stopped)
                 .Ignore(PlayerAction.Stop)
+                .Ignore(PlayerAction.Pause)
                 .OnEntryFrom(PlayerAction.Stop, OnStopFromUser)
                 .OnEntry(OnStop)
                 .OnEntryAsync(() => OnSongCompleted?.Invoke(this, new(audioClient, messageChannel, currentSong)))
@@ -151,7 +152,7 @@ namespace MagicConchBot.Services.Music
             var retryCount = 0;
 
             Log.Debug("Playing song.");
-            song.Time.CurrentTime = song.Time.StartTime;
+            song.Time.CurrentTime = song.Time.StartTime.GetValueOrDefault(TimeSpan.Zero);
 
             while (!tokenSource.IsCancellationRequested)
             {

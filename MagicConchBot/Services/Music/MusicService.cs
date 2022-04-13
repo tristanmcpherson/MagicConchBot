@@ -121,10 +121,6 @@ namespace MagicConchBot.Services.Music
             {
                 Log.Debug(ex.ToString());
             }
-            finally
-            {
-                Log.Info($"Song ended at {resolvedSong.GetCurrentTimePretty()} / {resolvedSong.GetLengthPretty()}");
-            }
         }
 
         private async Task StatusUpdater(IMessageChannel channel)

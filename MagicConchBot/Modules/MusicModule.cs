@@ -88,7 +88,7 @@ namespace MagicConchBot.Modules
 
                 songs.ForEach(Context.MusicService.QueueSong);
 
-                await RespondAsync($"Queued {songs.Count} songs from playlist.");
+                await ReplyAsync($"Queued {songs.Count} songs from playlist.");
             }
             else
             {

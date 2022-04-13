@@ -69,7 +69,7 @@ namespace MagicConchBot.Services
             return await videos.Select(ParseVideo).ToListAsync();
         }
 
-        public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/playlist))(?<VideoId>[\w-]{10,12})?([&\?]list=)?(?<PlaylistId>[\w-]{22,34})?(?:[\&\?]?t=)?(?<Time>[\d]+)?s?(?<TimeAlt>(\d+h)?(\d+m)?(\d+s)?)?", RegexOptions.IgnoreCase);
+        public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/playlist))(?<VideoId>[\w-]{11})?([&\?]list=)?(?<PlaylistId>[\w-]+)?(?:[\&\?]?t=)?(?<Time>[\d]+)?s?(?<TimeAlt>(\d+h)?(\d+m)?(\d+s)?)?", RegexOptions.IgnoreCase);
         public async Task<Song> GetSongInfoAsync(string url)
         {
             var match = Regex.Match(url);
@@ -88,7 +88,7 @@ namespace MagicConchBot.Services
         {
             var manifest = await _youtubeClient.Videos.Streams.GetManifestAsync(VideoId.Parse(song.Identifier));
             var streams = manifest.GetAudioOnlyStreams();
-            var streamInfo = streams.OrderBy(s => s.Bitrate).FirstOrDefault();
+            var streamInfo = streams.OrderByDescending(s => s.Bitrate).FirstOrDefault();
 
             return song with { StreamUri = streamInfo.Url };
         }

@@ -8,6 +8,7 @@ using MagicConchBot.Common.Types;
 using MagicConchBot.Resources;
 using SpotifyAPI.Web;
 using YoutubeExplode;
+using YoutubeExplode.Videos;
 
 namespace MagicConchBot.Services
 {
@@ -58,7 +59,10 @@ namespace MagicConchBot.Services
         {
             var results = youtubeClient.Search.GetResultsAsync(song.Identifier);
             var res = await results.FirstAsync();
-            return song with { Identifier = res.Url, StreamUri = res.Url };
+            var manifest = await youtubeClient.Videos.Streams.GetManifestAsync(VideoId.Parse(res.Url));
+            var streamUri = manifest.GetAudioStreams().OrderByDescending(a => a.Bitrate).FirstOrDefault().Url;
+
+            return song with { Identifier = res.Url, StreamUri = streamUri };
         }
     }
 }

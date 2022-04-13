@@ -28,16 +28,6 @@ namespace MagicConchBot.Services
             }
 
             var song = await resolver.GetSongInfoAsync(url);
-            //var song = (=>
-            //{
-            //    if (service.Regex.IsMatch(url))
-            //    {
-            //    }
-            //    else
-            //    {
-            //        return Maybe.None;
-            //    }
-            //})).GetValueOrDefault(;
 
             // url may contain time info but it is specified, overwrite
             if (startTime != TimeSpan.Zero)
@@ -45,11 +35,12 @@ namespace MagicConchBot.Services
                 song.Time.StartTime = startTime;
             }
 
-            // this will not work
-            //if (song.Time.Length == TimeSpan.Zero)
-            //{
-            //    song.Time.Length = await GetStreamLength(song.StreamUri);
-            //}
+            // too slow, must update later with extra info instead
+            if (song.Time.Length == TimeSpan.Zero)
+            {
+                var songWithUri = await resolver.ResolveStreamUri(song);
+                song.Time.Length = await GetStreamLength(songWithUri.StreamUri);
+            }
 
             return song;
         }

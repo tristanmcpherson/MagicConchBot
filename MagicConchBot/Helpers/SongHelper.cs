@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using MagicConchBot.Common.Types;
@@ -21,6 +24,7 @@ namespace MagicConchBot.Helpers
         public static async Task DisplaySongsClean(Song[] songs, IInteractionContext context)
         {
             var sb = new StringBuilder();
+
             for (var i = 0; i < songs.Length; i++)
             {
                 if (sb.Length > 1500)
@@ -29,7 +33,7 @@ namespace MagicConchBot.Helpers
                     sb.Clear();
                 }
 
-                sb.Append($"`{i + 1}` : {songs[i].GetInfo()}");
+                sb.Append($"`{(i + 1).ToString().PadLeft((int)Math.Log(songs.Length, 10) + 1)}.` : {songs[i].GetInfo()}");
             }
 
             await context.Interaction.RespondAsync(sb.ToString());
