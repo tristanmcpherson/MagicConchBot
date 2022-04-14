@@ -26,9 +26,8 @@ namespace MagicConchBot.Services.Music
         ChangeVolume,
         Play,
         Pause,
-        Stop
-            // NextSong?
-            // need to distinguish how a stop that's caused by a pause vs a stop that's caused by the stop at the end of play.........
+        Stop,
+        SongFinished
     }
 
     public class FfmpegSongPlayer : ISongPlayer
@@ -51,6 +50,7 @@ namespace MagicConchBot.Services.Music
         private readonly StateMachine<PlayerState, PlayerAction>.TriggerWithParameters<IAudioClient> playTrigger;
 
         public event AsyncEventHandler<SongCompletedArgs> OnSongCompleted;
+        private Task HandleSongCompleted() => OnSongCompleted?.Invoke(this, new(audioClient, messageChannel, currentSong));
 
         public FfmpegSongPlayer()
         {
@@ -62,25 +62,29 @@ namespace MagicConchBot.Services.Music
             songPlayer.Configure(PlayerState.Stopped)
                 .Ignore(PlayerAction.Stop)
                 .Ignore(PlayerAction.Pause)
-                .OnEntryFrom(PlayerAction.Stop, OnStopFromUser)
-                .OnEntry(OnStop)
-                .OnEntryAsync(() => OnSongCompleted?.Invoke(this, new(audioClient, messageChannel, currentSong)))
-                .Permit(PlayerAction.Play, PlayerState.Playing);
+                .OnEntry(CancelToken)
+                .OnEntryFrom(PlayerAction.Stop, OnStop)
+                .OnEntryFromAsync(PlayerAction.SongFinished, HandleSongCompleted)
+                .Permit(PlayerAction.Play, PlayerState.Playing)
+                .PermitReentry(PlayerAction.SongFinished);
 
             songPlayer.Configure(PlayerState.Paused)
                 .Ignore(PlayerAction.Pause)
-                .OnEntryAsync(OnPause)
+                .Ignore(PlayerAction.SongFinished)
+                .OnEntry(CancelToken)
+                .OnEntryAsync(SaveTimeAndDisconnect)
                 .Permit(PlayerAction.Play, PlayerState.Playing)
                 .Permit(PlayerAction.Stop, PlayerState.Stopped);
 
             songPlayer.Configure(PlayerState.Playing)
                 .Ignore(PlayerAction.Play)
-                .InternalTransition(changeVolume, (volume, t) => this.volume = volume)
+                .InternalTransition(changeVolume, (volume, _) => this.volume = volume)
+                .Permit(PlayerAction.SongFinished, PlayerState.Stopped)
                 .Permit(PlayerAction.Stop, PlayerState.Stopped)
                 .Permit(PlayerAction.Pause, PlayerState.Paused)
-                .OnEntryFrom(playTrigger, audioClient => Task.Factory.StartNew(async () => await OnPlay(audioClient), tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default));
+                .OnEntryFrom(playTrigger, PlaySongLongRunning);
 
-            songPlayer.OnTransitioned((t) => Log.Info(t.Source + " to " + t.Destination + " by " + t.Trigger));
+            songPlayer.OnTransitioned((transition) => Log.Info(transition.Trigger + ": " + transition.Source + " -> " + transition.Destination));
         }
 
         public void PlaySong(IAudioClient client, IMessageChannel channel, Song song)
@@ -100,24 +104,24 @@ namespace MagicConchBot.Services.Music
 
         public async Task Pause()
         {
-            tokenSource.Cancel();
             await songPlayer.FireAsync(PlayerAction.Pause);
-        }
-
-        private void OnStopFromUser()
-        {
-            currentSong.Time.StartTime = TimeSpan.Zero;
         }
 
         private void OnStop()
         {
+            currentSong.Time.StartTime = TimeSpan.Zero;
+        }
+
+        private void CancelToken()
+        {
             tokenSource.Cancel();
         }
 
-        private async Task OnPause()
+        private async Task SaveTimeAndDisconnect()
         {
             currentSong.Time.StartTime = currentSong.Time.CurrentTime.GetValueOrThrow("No value");
-            await audioClient.StopAsync();
+            if (audioClient.ConnectionState == ConnectionState.Connected)
+                await audioClient.StopAsync();
         }
 
         public void SetVolume(float volume)
@@ -135,15 +139,29 @@ namespace MagicConchBot.Services.Music
             return songPlayer.State == PlayerState.Playing;
         }
 
-        private async Task OnPlay(IAudioClient audioClient)
+        private void PlaySongLongRunning(IAudioClient audioClient)
         {
-            using var inStream = StartFfmpeg(currentSong);
+            Task.Factory.StartNew(() => PlaySong(audioClient), tokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
 
-            using var outStream = await CreatePCMStream(audioClient, currentSong);
+        private async Task PlaySong(IAudioClient audioClient)
+        {
+            try
+            {
+                using var process = StartFfmpeg(currentSong);
+                using var inStream = process.StandardOutput.BaseStream;
+                using var outStream = await CreatePCMStream(audioClient, currentSong);
 
-            await StreamAudio(currentSong, inStream, outStream, tokenSource);
+                tokenSource.Token.Register(() => {
+                    process.CloseMainWindow();
+                });
 
-            await Stop();
+                await StreamAudio(currentSong, inStream, outStream, tokenSource);
+            } 
+            finally
+            {
+                await songPlayer.FireAsync(PlayerAction.SongFinished);
+            }
         }
 
         private async Task StreamAudio(Song song, Stream inStream, AudioOutStream outStream, CancellationTokenSource tokenSource)
@@ -196,13 +214,10 @@ namespace MagicConchBot.Services.Music
         private static async Task<AudioOutStream> CreatePCMStream(IAudioClient audioClient, Song song)
         {
             var audioOut = audioClient.CreatePCMStream(AudioApplication.Music, packetLoss: 0);
-
-            var helloBozo = await File.ReadAllBytesAsync("hello_bozo.pcm");
-            await audioOut.WriteAsync(helloBozo.AsMemory());
             return audioOut;
         }
 
-        private static Stream StartFfmpeg(Song song)
+        private static Process StartFfmpeg(Song song)
         {
             var seek = song.Time.StartTime.Map(totalSeconds => $"-ss {totalSeconds}").GetValueOrDefault(string.Empty);
             var arguments = $"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1 -loglevel error";
@@ -248,7 +263,7 @@ namespace MagicConchBot.Services.Music
                 throw new Exception("FFMPEG stream was not created.");
             }
 
-            return process.StandardOutput.BaseStream;
+            return process;
         }
 
         private static TimeSpan CalculateCurrentTime(int currentBytes)

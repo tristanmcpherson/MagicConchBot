@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
-using MagicConchBot.Resources;
 using NLog;
 using YoutubeExplode;
 using YoutubeExplode.Playlists;
@@ -29,7 +26,7 @@ namespace MagicConchBot.Services
 
         public async Task<string> GetFirstVideoByKeywordsAsync(string keywords)
         {
-            Log.Info("Looking up song.");
+            Log.Info("Looking up song by keywords");
 
             var videos = _youtubeClient.Search.GetVideosAsync(keywords);
             return (await videos.FirstAsync()).Url;
@@ -37,7 +34,7 @@ namespace MagicConchBot.Services
 
         public async Task<Song> GetVideoInfoByIdAsync(string id, TimeSpan? startTime = null)
         {
-            Log.Info("Looking up song.");
+            Log.Info("Looking up song by id");
             try
             {
                 var video = await _youtubeClient.Videos.GetAsync(VideoId.Parse(id)).ConfigureAwait(false);
