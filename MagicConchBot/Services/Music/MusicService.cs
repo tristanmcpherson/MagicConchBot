@@ -79,7 +79,7 @@ namespace MagicConchBot.Services.Music
             }
 
             await CurrentSong.Map(song =>
-                Play(e.Client, e.MessageChannel, song)
+                Play(e.Client, e.MessageChannel, song, e.Bitrate)
             ).ExecuteNoValue(() => AudioHelper.LeaveChannelAsync(e.Client));
         }
 
@@ -87,7 +87,8 @@ namespace MagicConchBot.Services.Music
         {
             await CurrentSong.Execute(async song =>
             {
-                IAudioClient audioClient = await AudioHelper.JoinChannelAsync(context);
+                IVoiceChannel audioChannel = await AudioHelper.GetAudioChannel(context);
+                IAudioClient audioClient = await AudioHelper.JoinChannelAsync(audioChannel);
 
                 if (audioClient == null)
                 {
@@ -95,11 +96,11 @@ namespace MagicConchBot.Services.Music
                     return;
                 }
 
-                await Play(audioClient, context.Channel, song);
+                await Play(audioClient, context.Channel, song, audioChannel.Bitrate);
             });
         }
 
-        public async Task Play(IAudioClient audioClient, IMessageChannel channel, Song song)
+        public async Task Play(IAudioClient audioClient, IMessageChannel channel, Song song, int bitrate)
         {
             if (_tokenSource == null || _tokenSource.Token.IsCancellationRequested)
             {
@@ -114,7 +115,7 @@ namespace MagicConchBot.Services.Music
             try
             {
                 Log.Info($"Playing song {resolvedSong.Name} at {channel.Name}");
-                _songPlayer.PlaySong(audioClient, channel, resolvedSong);
+                _songPlayer.PlaySong(audioClient, channel, resolvedSong, bitrate);
                 await StatusUpdater(channel).ConfigureAwait(false);
             }
             catch (Exception ex)

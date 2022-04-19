@@ -38,7 +38,7 @@ namespace MagicConchBot.Services.Music
         private const int Milliseconds = 20;
         private const int FrameSize = 3840;
         private const int MaxRetryCount = 50;
-
+        private int bitrate;
         private Song currentSong;
         private IAudioClient audioClient;
         private IMessageChannel messageChannel;
@@ -50,7 +50,7 @@ namespace MagicConchBot.Services.Music
         private readonly StateMachine<PlayerState, PlayerAction>.TriggerWithParameters<IAudioClient> playTrigger;
 
         public event AsyncEventHandler<SongCompletedArgs> OnSongCompleted;
-        private Task HandleSongCompleted() => OnSongCompleted?.Invoke(this, new(audioClient, messageChannel, currentSong));
+        private Task HandleSongCompleted() => OnSongCompleted?.Invoke(this, new(audioClient, messageChannel, currentSong, bitrate));
 
         public FfmpegSongPlayer()
         {
@@ -87,8 +87,9 @@ namespace MagicConchBot.Services.Music
             songPlayer.OnTransitioned((transition) => Log.Info(transition.Trigger + ": " + transition.Source + " -> " + transition.Destination));
         }
 
-        public void PlaySong(IAudioClient client, IMessageChannel channel, Song song)
+        public void PlaySong(IAudioClient client, IMessageChannel channel, Song song, int bitrate)
         {
+            this.bitrate = bitrate;
             currentSong = song;
             messageChannel = channel;
             audioClient = client;
@@ -136,7 +137,7 @@ namespace MagicConchBot.Services.Music
 
         public bool IsPlaying()
         {
-            return songPlayer.State == PlayerState.Playing;
+            return songPlayer.IsInState(PlayerState.Playing);
         }
 
         private void PlaySongLongRunning(IAudioClient audioClient)
@@ -150,7 +151,7 @@ namespace MagicConchBot.Services.Music
             {
                 using var process = StartFfmpeg(currentSong);
                 using var inStream = process.StandardOutput.BaseStream;
-                using var outStream = await CreatePCMStream(audioClient, currentSong);
+                using var outStream = audioClient.CreatePCMStream(AudioApplication.Music, bitrate);
 
                 tokenSource.Token.Register(() => {
                     process.CloseMainWindow();
@@ -175,6 +176,7 @@ namespace MagicConchBot.Services.Music
             while (!tokenSource.IsCancellationRequested)
             {
                 var byteCount = await inStream.ReadAsync(buffer.AsMemory(0, buffer.Length), tokenSource.Token);
+                
 
                 if (byteCount == 0)
                 {
@@ -211,16 +213,10 @@ namespace MagicConchBot.Services.Music
             await outStream.FlushAsync(tokenSource.Token);
         }
 
-        private static async Task<AudioOutStream> CreatePCMStream(IAudioClient audioClient, Song song)
-        {
-            var audioOut = audioClient.CreatePCMStream(AudioApplication.Music, packetLoss: 0);
-            return audioOut;
-        }
-
         private static Process StartFfmpeg(Song song)
         {
             var seek = song.Time.StartTime.Map(totalSeconds => $"-ss {totalSeconds}").GetValueOrDefault(string.Empty);
-            var arguments = $"-re -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1 -loglevel error";
+            var arguments = $"-hide_banner -loglevel panic -re -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1";
 
             Log.Debug(arguments);
 

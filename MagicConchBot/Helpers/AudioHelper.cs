@@ -48,18 +48,20 @@ namespace MagicConchBot.Helpers
             }
         }
 
-        public static async Task<IAudioClient> JoinChannelAsync(IInteractionContext msg)
+        public static async Task<IVoiceChannel> GetAudioChannel(IInteractionContext context)
+        {
+            var channel = (context.User as IGuildUser)?.VoiceChannel;
+            if (DebugTools.Debug && channel == null)
+            {
+                return (await context.Guild.GetVoiceChannelsAsync()).FirstOrDefault();
+            }
+            return channel;
+        }
+
+        public static async Task<IAudioClient> JoinChannelAsync(IAudioChannel channel)
         {
             try
             {
-                var channel = (msg.User as IGuildUser)?.VoiceChannel;
-                if (DebugTools.Debug && channel == null)
-                {
-	                var connectAsync = (await msg.Guild.GetVoiceChannelsAsync()).FirstOrDefault()?.ConnectAsync(false, false, true);
-                    if (connectAsync != null)
-                        return await connectAsync;
-                }
-
                 if (channel != null)
                 {
                     try
