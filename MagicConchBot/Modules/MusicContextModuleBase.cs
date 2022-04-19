@@ -24,7 +24,13 @@ namespace MagicConchBot.Modules
             _settingsProvider = map.GetService<GuildSettingsProvider>();
         }
 
-        public IMusicService MusicService => _provider.GetService<IMusicService>(Guild.Id);
+        public IMusicService MusicService => _provider.GetService<IMusicService>(Guild.Id) ?? SetMusicService();
+
+        private IMusicService SetMusicService()
+        {
+            _provider.AddService<IMusicService, MusicService>(Guild.Id);
+            return _provider.GetService<IMusicService>(Guild.Id);
+        }
 
         private GuildSettings _settings;
         public GuildSettings Settings => _settings ??= _settingsProvider.GetSettings(Guild.Id);
