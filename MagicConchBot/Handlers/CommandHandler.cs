@@ -42,7 +42,6 @@ namespace MagicConchBot.Handlers
             _client.MessageReceived += HandleCommandAsync;
             _client.GuildAvailable += HandleGuildAvailableAsync;
             _client.JoinedGuild += HandleJoinedGuildAsync;
-            _client.MessageReceived += HandleMessageReceivedAsync;
             _client.Ready += ClientReady;
         }
 
@@ -116,7 +115,7 @@ namespace MagicConchBot.Handlers
                         await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
                     else
                         await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
-            }, TaskCreationOptions.LongRunning);
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
         public async Task LogAsync(LogMessage logMessage) {
@@ -138,19 +137,6 @@ namespace MagicConchBot.Handlers
             }
         }
 
-        private static async Task HandleMessageReceivedAsync(SocketMessage arg)
-        {
-            foreach (var attachment in arg.Attachments)
-            {
-                if (attachment.Filename.EndsWith(".webm"))
-                {
-                    Log.Info($"Url: {attachment.Url}");
-                    Log.Info($"Proxy: {attachment.ProxyUrl}");
-                    await Task.Delay(1);
-                }
-            }
-        }
-
         private async Task HandleJoinedGuildAsync(SocketGuild arg)
         {
             await _interactionService.RegisterCommandsToGuildAsync(arg.Id);
@@ -160,22 +146,21 @@ namespace MagicConchBot.Handlers
 
         private Task HandleGuildAvailableAsync(SocketGuild guild)
         {
-            //var musicService = _services.GetService<IMusicService>();
-            //var mp3Service = _services.GetService<IMp3ConverterService>();
-            var guildServiceProvider = _services.GetService<GuildServiceProvider>();
-            guildServiceProvider
-                .AddService<ISongInfoService, YoutubeInfoService>(guild.Id)
-                .AddService<ISongInfoService, SoundCloudInfoService>(guild.Id)
-                .AddService<ISongInfoService, SpotifyResolveService>(guild.Id)
-                .AddService<ISongInfoService, BandcampResolveService>(guild.Id)
-                .AddService<ISongInfoService, DirectPlaySongResolver>(guild.Id)
-                .AddService<ISongInfoService, LocalStreamResolver>(guild.Id)
-                .AddService<ISongPlayer, FfmpegSongPlayer>(guild.Id)
-                .AddService<IMusicService, MusicService>(guild.Id)
-                .AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
+            return Task.Run(() =>
+            {
+                var guildServiceProvider = _services.GetService<GuildServiceProvider>();
+                guildServiceProvider
+                    .AddService<ISongInfoService, YoutubeInfoService>(guild.Id)
+                    .AddService<ISongInfoService, SoundCloudInfoService>(guild.Id)
+                    .AddService<ISongInfoService, SpotifyResolveService>(guild.Id)
+                    .AddService<ISongInfoService, BandcampResolveService>(guild.Id)
+                    .AddService<ISongInfoService, DirectPlaySongResolver>(guild.Id)
+                    .AddService<ISongInfoService, LocalStreamResolver>(guild.Id)
+                    .AddService<ISongPlayer, FfmpegSongPlayer>(guild.Id)
+                    .AddService<IMusicService, MusicService>(guild.Id)
+                    .AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
 
-            _services.GetService<GuildServiceProvider>().AddService<IMp3ConverterService, Mp3ConverterService>(guild.Id);
-            return Task.CompletedTask;
+            });
         }
     }
 }
