@@ -1,32 +1,15 @@
-﻿using Microsoft.AspNetCore.WebUtilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
 namespace MagicConchBot.Services
 {
-    public record OAuthResponse(
-        string access_token,
-        int expires_in,
-        string refresh_token,
-        string scope,
-        string token_type
-    );
 
-    public record ResolveResponse(
-        string status,
-        string location
-    );
-
-    public class SoundCloudConnector
+    public class SoundCloudClient
     {
         internal readonly HttpClient httpClient;
         internal const string BaseUrl = "https://api.soundcloud.com/";
@@ -38,10 +21,9 @@ namespace MagicConchBot.Services
         private DateTime _lastRequest = DateTime.MinValue;
         private int _expires = 0;
         private string _refreshToken = null;
-        //private string _token = 
         private string _token = null;
 
-        public SoundCloudConnector(string clientId, string clientSecret)
+        public SoundCloudClient(string clientId, string clientSecret)
         {
             ClientId = clientId;
             ClientSecret = clientSecret;
@@ -51,7 +33,6 @@ namespace MagicConchBot.Services
                 PreAuthenticate = true,
                 AllowAutoRedirect = false
             });
-            
         }
 
         private async Task EnsureAuthenticated()
@@ -84,39 +65,43 @@ namespace MagicConchBot.Services
             _lastRequest = DateTime.Now;
             _refreshToken = content.refresh_token;
             _token = content.access_token;
-
-            
-            //_credentialCache.Add()
-            //httpClient.DefaultRequestHeaders.Authorization = new("OAuth", _token);
-            //httpClient.DefaultRequestHeaders.Accept.Add(new("application/json"));
         }
 
-        public async Task<ResolveResponse> Resolve(string url)
+        public async Task<T> Get<T>(string url)
         {
-            await EnsureAuthenticated();
-            var resolveUri = new Uri(baseUri, "resolve");
-            var uriBuilder = new UriBuilder(resolveUri);
+            var originalUri = new Uri(baseUri, "resolve");
+            var uriBuilder = new UriBuilder(originalUri);
             var queryBuilder = HttpUtility.ParseQueryString(string.Empty);
             queryBuilder.Add("url", url);
             uriBuilder.Query = queryBuilder.ToString();
             var uri = uriBuilder.Uri;
 
-            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            request.Headers.Authorization = new("OAuth", _token);
-            request.Headers.Accept.Add(new("application/json"));
-
-
-            var response = await httpClient.SendAsync(request);
-
-            var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<ResolveResponse>(content);
+            var resolveResponse = await GetInner<ResolveResponse>(uri);
+            return await GetInner<T>(resolveResponse.location);
         }
 
-        public async Task<T> Get<T>(string url)
+        public async Task<List<Track>> Search(string query)
+        {
+            var originalUri = new Uri(baseUri, "tracks");
+            var uriBuilder = new UriBuilder(originalUri);
+            var queryBuilder = HttpUtility.ParseQueryString(string.Empty);
+            queryBuilder.Add("q", query);
+            uriBuilder.Query = queryBuilder.ToString();
+            var uri = uriBuilder.Uri;
+
+            var resolveResponse = await GetInner<ResolveResponse>(uri);
+            return await GetInner<List<Track>>(resolveResponse.location);
+        }
+
+        private Task<T> GetInner<T>(string url)
+        {
+            return GetInner<T>(new Uri(url));
+        }
+
+        private async Task<T> GetInner<T>(Uri uri)
         {
             await EnsureAuthenticated();
 
-            var uri = new Uri(url);
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Authorization = new("OAuth", _token);
             request.Headers.Accept.Add(new("application/json"));
@@ -124,11 +109,6 @@ namespace MagicConchBot.Services
             var response = await httpClient.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<T>(content);
-        }
-
-        internal static IAuthorizedSoundCloudClient AuthorizedConnect(string clientId, string clientSecret)
-        {
-            return new UnauthorizedSoundCloudClient(clientId, clientSecret);
         }
     }
 }

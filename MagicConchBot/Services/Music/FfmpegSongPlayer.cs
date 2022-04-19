@@ -220,7 +220,7 @@ namespace MagicConchBot.Services.Music
         private static Process StartFfmpeg(Song song)
         {
             var seek = song.Time.StartTime.Map(totalSeconds => $"-ss {totalSeconds}").GetValueOrDefault(string.Empty);
-            var arguments = $"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1 -loglevel error";
+            var arguments = $"-re -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1 -loglevel error";
 
             Log.Debug(arguments);
 

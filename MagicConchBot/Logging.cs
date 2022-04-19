@@ -2,12 +2,7 @@
 using NLog;
 using NLog.Conditions;
 using NLog.Config;
-using NLog.Fluent;
 using NLog.Targets;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MagicConchBot
 {

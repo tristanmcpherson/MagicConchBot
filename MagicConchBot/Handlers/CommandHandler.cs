@@ -72,6 +72,9 @@ namespace MagicConchBot.Handlers
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
+                var ownerUser = await _client.GetUserAsync(Configuration.Owners.First());
+                await ownerUser.SendMessageAsync(ex.ToString());
+
 
                 // If a Slash Command execution fails it is most likely that the original interaction acknowledgement will persist. It is a good idea to delete the original
                 // response, or at least let the user know that something went wrong during the command execution.
@@ -117,7 +120,12 @@ namespace MagicConchBot.Handlers
         }
 
         public async Task LogAsync(LogMessage logMessage) {
-            if (logMessage.Exception is CommandException cmdException) {
+            if (logMessage.Exception is Exception exception)
+            {
+                var ownerUser = await _client.GetUserAsync(Configuration.Owners.First());
+                await ownerUser.SendMessageAsync(exception.ToString());
+            }
+            else if (logMessage.Exception is CommandException cmdException) {
                 // We can tell the user that something unexpected has happened
                 await cmdException.Context.Channel.SendMessageAsync("Something went catastrophically wrong!");
 

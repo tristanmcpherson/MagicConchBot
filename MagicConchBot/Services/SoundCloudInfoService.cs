@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
@@ -10,27 +12,40 @@ namespace MagicConchBot.Services
 {
     public class SoundCloudInfoService : ISongInfoService
     {
+        private readonly SoundCloudClient _client;
+
         public SoundCloudInfoService()
         {
-            Client = SoundCloudConnector.AuthorizedConnect(Configuration.SoundCloudClientId, Configuration.SoundCloudClientSecret);
+            _client = new SoundCloudClient(Configuration.SoundCloudClientId, Configuration.SoundCloudClientSecret);
         }
-
-        public IAuthorizedSoundCloudClient Client { get; set; }
 
         public Regex Regex { get; } = new Regex(@"(?:https?:\/\/)?soundcloud\.com\/(?:[a-z0-9-]+\/?)+",
             RegexOptions.IgnoreCase);
         
-        public async Task<Song> GetSongInfoAsync(string url)
+        private static Song TrackToSong(Track track)
         {
-            var track = await Client.Resolve.GetTrack(url);
-            Console.WriteLine(track.stream_url);
             return new Song(
                 track.title,
                 new SongTime(Length: new TimeSpan(0, 0, 0, 0, track.duration)),
                 track.artwork_url ?? track.user?.avatar_url,
-                url,
-                url,
+                track.uri,
+                track.uri,
                 MusicType.SoundCloud);
+        }
+
+        public async Task<Song> GetSongInfoAsync(string url)
+        {
+            var track = await _client.Get<Track>(url);
+            Console.WriteLine(track.stream_url);
+
+            return TrackToSong(track);
+        }
+
+        public async Task<List<Song>> Search(string query)
+        {
+            var tracks = await _client.Search(query);
+
+            return tracks.Select(TrackToSong).ToList();
         }
     }
 }
