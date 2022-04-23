@@ -18,7 +18,10 @@ namespace MagicConchBot.Common.Types
         }
     }
 
-    public readonly record struct Song(string Name, SongTime Time, string ThumbnailUrl = "", string OriginalUrl = "", string Identifier = "", MusicType MusicType = MusicType.Other, string StreamUri = null);
+    public readonly record struct Song(string Name, SongTime Time, string ThumbnailUrl = "", string OriginalUrl = "", string Identifier = "", MusicType MusicType = MusicType.Other, string StreamUri = null)
+    {
+        public Song(string url) : this(url, new SongTime(), OriginalUrl: url, StreamUri: url) { }
+    }
 
     public static class SongExtensions {
         public static string GetLengthPretty(this Song song)

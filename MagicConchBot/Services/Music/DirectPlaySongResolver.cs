@@ -1,14 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
-using NLog;
-using YoutubeExplode;
-using YoutubeExplode.Videos;
 
 namespace MagicConchBot.Services.Music
 {
@@ -18,13 +11,13 @@ namespace MagicConchBot.Services.Music
 
         public Task<Song> GetSongInfoAsync(string url)
         {
-            return Task.FromResult(new Song(url, new SongTime(), OriginalUrl: url));
+            return Task.FromResult(new Song(url));
         }
 
         // Output 
         public Task<Song> ResolveStreamUri(Song song)
         {
-            return Task.FromResult(song with { StreamUri = song.Identifier });
+            return Task.FromResult(song with { StreamUri = song.OriginalUrl });
         }
     }
 }

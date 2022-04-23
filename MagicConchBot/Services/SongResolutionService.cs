@@ -24,7 +24,7 @@ namespace MagicConchBot.Services
             var resolver = _musicInfoServices.FirstOrDefault(service => service.Regex.IsMatch(url));
             if (resolver == null)
             {
-                return new Song(url, new SongTime(TimeSpan.Zero), url);
+                return new Song(url);
             }
 
             var song = await resolver.GetSongInfoAsync(url);
