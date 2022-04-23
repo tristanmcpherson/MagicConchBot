@@ -113,14 +113,7 @@ namespace MagicConchBot.Services.Music
                 _songList[_songIndex] = resolvedSong;
 
                 _tokenSource.Token.ThrowIfCancellationRequested();
-            } 
-            catch
-            {
-                _songList.RemoveAt(_songIndex);
-            }
 
-            try
-            {
                 Log.Info($"Playing song {resolvedSong.Name} at {channel.Name}");
                 _songPlayer.PlaySong(audioClient, channel, resolvedSong, bitrate);
                 await StatusUpdater(channel).ConfigureAwait(false);
@@ -128,6 +121,7 @@ namespace MagicConchBot.Services.Music
             catch (Exception ex)
             {
                 Log.Debug(ex.ToString());
+                _songList.RemoveAt(_songIndex);
             }
         }
 
