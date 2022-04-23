@@ -1,4 +1,0 @@
-namespace MagicConchBot.Common.Enums
-{
-
-}
