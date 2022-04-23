@@ -18,7 +18,7 @@ namespace MagicConchBot.Services.Music
 
         public Task<Song> GetSongInfoAsync(string url)
         {
-            return Task.FromResult(new Song(url, new SongTime()));
+            return Task.FromResult(new Song(url, new SongTime(), OriginalUrl: url));
         }
 
         // Output 
