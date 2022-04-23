@@ -21,22 +21,23 @@ namespace MagicConchBot.Helpers
             return Task.FromResult(query);
         }
 
-        public static async Task DisplaySongsClean(Song[] songs, IInteractionContext context)
+        public static async Task<List<string>> DisplaySongsClean(Song[] songs, IInteractionContext context)
         {
+            var output = new List<string>();
             var sb = new StringBuilder();
 
             for (var i = 0; i < songs.Length; i++)
             {
                 if (sb.Length > 1500)
                 {
-                    await context.Interaction.RespondAsync(sb.ToString());
+                    output.Add(sb.ToString());
                     sb.Clear();
                 }
 
                 sb.Append($"`{(i + 1).ToString().PadLeft((int)Math.Log(songs.Length, 10) + 1)}.` : {songs[i].GetInfo()}");
             }
 
-            await context.Interaction.RespondAsync(sb.ToString());
+            return output;
         }
     }
 }

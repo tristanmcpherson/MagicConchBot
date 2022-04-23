@@ -33,7 +33,11 @@ namespace MagicConchBot.Modules
             }
             else
             {
-                await SongHelper.DisplaySongsClean(songs.ToArray(), Context);
+
+                foreach (var text in await SongHelper.DisplaySongsClean(songs.ToArray(), Context))
+                {
+                    await ReplyAsync(text);
+                }
             }
         }
 

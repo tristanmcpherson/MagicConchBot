@@ -70,7 +70,10 @@ namespace MagicConchBot.Modules
 
                 var songs = await Task.WhenAll(tasks);
 
-                await SongHelper.DisplaySongsClean(songs, Context);
+                foreach (var text in await SongHelper.DisplaySongsClean(songs, Context))
+                {
+                    await ReplyAsync(text);
+                }
 
                 foreach (var song in songs)
                 {
@@ -133,8 +136,6 @@ namespace MagicConchBot.Modules
                     return;
                 }
 
-                await RespondAsync("Resolving songs from playlist. This may take awhile.");
-
                 var tasks = new Task<Song>[playlist.Songs.Count];
 
                 for (var i = 0; i < playlist.Songs.Count; i++)
@@ -144,7 +145,11 @@ namespace MagicConchBot.Modules
 
                 var songs = await Task.WhenAll(tasks);
 
-                await SongHelper.DisplaySongsClean(songs, Context);
+
+                foreach (var text in await SongHelper.DisplaySongsClean(songs, Context))
+                {
+                    await ReplyAsync(text);
+                }
             }
 
             [SlashCommand("all", "Show all playlists")]
