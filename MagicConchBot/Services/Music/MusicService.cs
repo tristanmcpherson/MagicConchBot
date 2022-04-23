@@ -107,10 +107,17 @@ namespace MagicConchBot.Services.Music
                 _tokenSource = new CancellationTokenSource();
             }
 
-            var resolvedSong = await ResolveSong(song);
-            _songList[_songIndex] = resolvedSong;
+            try
+            {
+                var resolvedSong = await ResolveSong(song);
+                _songList[_songIndex] = resolvedSong;
 
-            _tokenSource.Token.ThrowIfCancellationRequested();
+                _tokenSource.Token.ThrowIfCancellationRequested();
+            } 
+            catch
+            {
+                _songList.RemoveAt(_songIndex);
+            }
 
             try
             {
