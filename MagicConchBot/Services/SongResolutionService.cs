@@ -35,11 +35,15 @@ namespace MagicConchBot.Services
                 song.Time.StartTime = startTime;
             }
 
-            // too slow, must update later with extra info instead
             if (song.Time.Length == TimeSpan.Zero)
             {
-                var songWithUri = await resolver.ResolveStreamUri(song);
-                song.Time.Length = await GetStreamLength(songWithUri.StreamUri);
+                // too slow, must update later with extra info instead most likely...
+                if (song.StreamUri == null)
+                {
+                    song = await resolver.ResolveStreamUri(song);
+                }
+
+                song.Time.Length = await GetStreamLength(song.StreamUri);
             }
 
             return song;

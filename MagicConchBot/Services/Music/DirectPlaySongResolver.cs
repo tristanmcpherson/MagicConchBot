@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MagicConchBot.Common.Interfaces;
 using MagicConchBot.Common.Types;
@@ -11,7 +12,7 @@ namespace MagicConchBot.Services.Music
 
         public Task<Song> GetSongInfoAsync(string url)
         {
-            return Task.FromResult(new Song(url));
+            return Task.FromResult(new Song(url.Split("/").Last(), new SongTime(), OriginalUrl: url, StreamUri: url));
         }
 
         // Output 

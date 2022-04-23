@@ -6,7 +6,7 @@ using MagicConchBot.Resources;
 
 namespace MagicConchBot.Common.Types
 {
-    public record class SongTime
+    public class SongTime
     {
         public TimeSpan Length { get; set; }
         public Maybe<TimeSpan> StartTime { get; set; }
