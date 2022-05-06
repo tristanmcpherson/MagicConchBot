@@ -65,6 +65,7 @@ namespace MagicConchBot.Services.Music
                 .OnEntry(CancelToken)
                 .OnEntryFrom(PlayerAction.Stop, OnStop)
                 .OnEntryFromAsync(PlayerAction.SongFinished, HandleSongCompleted)
+                .InternalTransition(changeVolume, (volume, _) => this.volume = volume)
                 .Permit(PlayerAction.Play, PlayerState.Playing)
                 .PermitReentry(PlayerAction.SongFinished);
 
@@ -73,6 +74,7 @@ namespace MagicConchBot.Services.Music
                 .Ignore(PlayerAction.SongFinished)
                 .OnEntry(CancelToken)
                 .OnEntryAsync(SaveTimeAndDisconnect)
+                .InternalTransition(changeVolume, (volume, _) => this.volume = volume)
                 .Permit(PlayerAction.Play, PlayerState.Playing)
                 .Permit(PlayerAction.Stop, PlayerState.Stopped);
 
@@ -210,6 +212,7 @@ namespace MagicConchBot.Services.Music
 
             }
 
+            await outStream.WriteAsync(await File.ReadAllBytesAsync("goodbye.pcm"));
             await outStream.FlushAsync(tokenSource.Token);
         }
 
