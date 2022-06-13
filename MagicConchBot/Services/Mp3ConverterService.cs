@@ -163,12 +163,14 @@ namespace MagicConchBot.Services
                 var tokenSource = new CancellationTokenSource();
                 // just let ffmpeg stream the file, no need to download it separately
                 // on second thought, this allows us to stream the file down as to not saturate our download bandwidth
-                await WebHelper.ThrottledFileDownload(_httpClient, downloadFile, request.Url, tokenSource.Token);
+                Log.Info($"Downloading file for conversion: {request.Url}");
+                //await WebHelper.ThrottledFileDownload(_httpClient, downloadFile, request.Url, tokenSource.Token);
+                Log.Info($"Converting mp3: {outputFile}");
 
                 var convert = Process.Start(new ProcessStartInfo
                 {
                     FileName = "ffmpeg",
-                    Arguments = $@"-i ""{downloadFile}"" -vn -ab 128k -ar 44100 -y ""{outputFile}""",
+                    Arguments = $@"-i -re ""{request.Url}"" -vn -q:a 0 -y ""{outputFile}""",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = false,

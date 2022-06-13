@@ -156,7 +156,10 @@ namespace MagicConchBot.Services.Music
                 using var outStream = audioClient.CreatePCMStream(AudioApplication.Music, bitrate);
 
                 tokenSource.Token.Register(() => {
-                    process.CloseMainWindow();
+                    if (!process.HasExited)
+                    {
+                        process.CloseMainWindow();
+                    }
                 });
 
                 await StreamAudio(currentSong, inStream, outStream, tokenSource);
