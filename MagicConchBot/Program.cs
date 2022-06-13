@@ -21,8 +21,8 @@ namespace MagicConchBot
 {
     public class Program
     {
-        // Release: https://discordapp.com/oauth2/authorize?client_id=267000484420780045&scope=bot&permissions=540048384
-        // Debug:   https://discordapp.com/oauth2/authorize?client_id=295020167732396032&scope=bot&permissions=540048384
+        // Release: https://discord.com/api/oauth2/authorize?client_id=267000484420780045&permissions=8&scope=applications.commands%20bot
+        // Debug:   https://discord.com/api/oauth2/authorize?client_id=295020167732396032&permissions=8&scope=applications.commands%20bot
 
         private static CancellationTokenSource _cts;
         private static DiscordSocketClient _client;
