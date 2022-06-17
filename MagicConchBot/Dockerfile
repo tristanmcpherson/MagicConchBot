@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/runtime:6.0-focal AS base
 WORKDIR /app
 
+RUN apt-get install software-properties-common
 RUN add-apt-repository ppa:savoury1/ffmpeg5
 RUN add-apt-repository ppa:savoury1/ffmpeg4
 
