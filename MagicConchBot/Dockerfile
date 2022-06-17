@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:6.0-focal AS base
 WORKDIR /app
 
 RUN sudo add-apt-repository ppa:savoury1/ffmpeg5
