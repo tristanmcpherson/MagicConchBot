@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/dotnet/runtime:6.0-focal AS base
 WORKDIR /app
 
-RUN sudo add-apt-repository ppa:savoury1/ffmpeg5
-RUN sudo add-apt-repository ppa:savoury1/ffmpeg4
+RUN add-apt-repository ppa:savoury1/ffmpeg5
+RUN add-apt-repository ppa:savoury1/ffmpeg4
 
 RUN apt-get clean && apt-get update && apt-get install -y \
 	libopus0 \
