@@ -170,7 +170,7 @@ namespace MagicConchBot.Services
                 var convert = Process.Start(new ProcessStartInfo
                 {
                     FileName = "ffmpeg",
-                    Arguments = $@"'-readrate 1.5' -i ""{request.Url}"" -vn -q:a 0 -y ""{outputFile}""",
+                    Arguments = $@"-readrate 1.5 -i ""{request.Url}"" -vn -q:a 0 -y ""{outputFile}""",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = false,

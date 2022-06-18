@@ -225,7 +225,7 @@ namespace MagicConchBot.Services.Music
         private static Process StartFfmpeg(Song song)
         {
             var seek = song.Time.StartTime.Map(totalSeconds => $"-ss {totalSeconds}").GetValueOrDefault(string.Empty);
-            var arguments = $"-hide_banner -loglevel panic '-readrate 1.25' -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1";
+            var arguments = $"-hide_banner -loglevel panic -readrate 1.25 -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1";
 
             Log.Debug(arguments);
 
