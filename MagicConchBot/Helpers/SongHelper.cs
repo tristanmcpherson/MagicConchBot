@@ -21,7 +21,7 @@ namespace MagicConchBot.Helpers
             return Task.FromResult(query);
         }
 
-        public static async Task<List<string>> DisplaySongsClean(Song[] songs, IInteractionContext context)
+        public static Task<List<string>> DisplaySongsClean(Song[] songs, IInteractionContext context)
         {
             var output = new List<string>();
             var sb = new StringBuilder();
@@ -37,7 +37,7 @@ namespace MagicConchBot.Helpers
                 sb.Append($"`{(i + 1).ToString().PadLeft((int)Math.Log(songs.Length, 10) + 1)}.` : {songs[i].GetInfo()}");
             }
 
-            return output;
+            return Task.FromResult(output);
         }
     }
 }
