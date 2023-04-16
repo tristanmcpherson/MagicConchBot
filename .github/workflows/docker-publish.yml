@@ -5,9 +5,8 @@ name: Docker
 # separate terms of service, privacy policy, and support
 # documentation.
 
-on:
-  schedule:
-    - cron: '24 4 * * *'
+on: 
+  workflow_dispatch:
   push:
     branches: [ master ]
     # Publish semver tags as releases.
