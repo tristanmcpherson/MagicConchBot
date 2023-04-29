@@ -33,7 +33,7 @@ namespace MagicConchBot.Services.Games
 
         private async Task Client_Ready()
         {
-            await ResumeTimers(941776898298609725);
+            await ResumeTimers(1101360116235767888);
         }
 
         public async Task ResumeTimers(ulong guildId)
