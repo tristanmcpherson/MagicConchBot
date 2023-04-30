@@ -148,8 +148,7 @@ namespace MagicConchBot
         {
             var config = new DiscordSocketConfig
             {
-                LogLevel = LogSeverity.Info,
-
+                LogLevel = LogSeverity.Info
 
             };
 

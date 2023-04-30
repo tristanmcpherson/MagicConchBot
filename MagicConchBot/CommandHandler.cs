@@ -48,7 +48,7 @@ namespace MagicConchBot.Handlers
         private async Task ClientReady()
         {
 #if DEBUG
-            await _interactionService.RegisterCommandsToGuildAsync(820144843396612127);
+            await _interactionService.RegisterCommandsToGuildAsync(1101360116235767888);
 #else
             await _interactionService.RegisterCommandsGloballyAsync();
 #endif

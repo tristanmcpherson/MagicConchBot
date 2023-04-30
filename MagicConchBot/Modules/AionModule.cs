@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using MagicConchBot.Modules;
 using System;
@@ -13,7 +14,8 @@ namespace MagicConchBot.Services.Games
 {
     record TimerEvent(Timer Timer, DateTime StartTime);
 
-    public class AionModule : ModuleBase
+
+    public class AionModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
         private static readonly Dictionary<string, TimerEvent> Timers = new();
         private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)(-\d+)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
@@ -92,7 +94,7 @@ namespace MagicConchBot.Services.Games
 
                 timer.Stop();
                 timer.Start();
-                Timers[name] = new(timer, Context.Message.Timestamp.LocalDateTime);
+                Timers[name] = new(timer, Context.Interaction.CreatedAt.LocalDateTime);
             }
             else
             {
@@ -116,11 +118,11 @@ namespace MagicConchBot.Services.Games
                 Timers.Add(name, new(newTimer, DateTime.Now));
             }
 
-            if (emitMessage) await textChannel?.SendMessageAsync($"{name} has been killed. Timer set");
+            if (emitMessage) await RespondAsync($"{name} has been killed. Timer set");
         }
 
      
-        [Command("dead")]
+        [SlashCommand("dead", "Reports the channel's npc as dead")]
         public async Task Dead(TimeSpan? offset = null)
         {
             var match = ChannelRegex.Match(Context.Channel.Name);
@@ -130,21 +132,27 @@ namespace MagicConchBot.Services.Games
                 var name = match.Groups["name"].Value;
 
                 var hours = Convert.ToInt32(match.Groups["hours"].Value);
-                var timeSinceMessage = DateTime.Now - Context.Message.Timestamp;
+                var timeSinceMessage = DateTime.Now - Context.Interaction.CreatedAt;
+                Console.WriteLine(timeSinceMessage);
                 var defaultInterval = TimeSpan.FromHours(hours - 0.5);
                 var hoursMillis = (defaultInterval - timeSinceMessage - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
                 var emitMessage = timeSinceMessage < TimeSpan.FromMinutes(1);
 
                 await GetOrSetTimer(Context.Channel, name, hoursMillis, emitMessage);
+            } 
+            else
+            {
+                await RespondAsync("Channel name invalid. Please fix the name and try again. The format is: " + ChannelRegex);
             }
         }
     
-        [Command("checktimers")]
+        [SlashCommand("checktimers", "Checks the timers")]
         public async Task CheckTimers()
         {
             if (Timers.Count == 0) { 
                 await Context.Channel.SendMessageAsync("No timers set.");
+                await RespondAsync();
                 return;
             }
 
@@ -153,7 +161,7 @@ namespace MagicConchBot.Services.Games
                 var formatted = FormatTimeSpan(time);
                 return kv.Key + ": " + formatted;
             }));
-            await Context.Channel.SendMessageAsync(text);
+            await RespondAsync(text);
         }
 
         private static string FormatTimeSpan(TimeSpan timeSpan)
