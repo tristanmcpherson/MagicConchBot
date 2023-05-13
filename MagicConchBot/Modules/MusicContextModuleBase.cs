@@ -10,14 +10,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MagicConchBot.Modules
 {
-    public class ConchInteractionCommandContext : InteractionContext
+    public class ConchInteractionCommandContext : SocketInteractionContext
     {
         private readonly GuildServiceProvider _provider;
         private readonly GuildSettingsProvider _settingsProvider;
 
         public ConchInteractionCommandContext(
             DiscordSocketClient client, 
-            IDiscordInteraction interaction, 
+            SocketInteraction interaction, 
             IServiceProvider map) : base(client, interaction)
         {
             _provider = map.GetService<GuildServiceProvider>();
