@@ -22,6 +22,7 @@ namespace MagicConchBot.Services.Games
         public string Name { get; set; }
         public DateTime StartTime { get; set; }
         public TimeSpan Interval { get; set; }
+        public TimeSpan EndTime { get; set; }
         public ulong TextChannelId { get; set; }
         public ulong GuildId { get; set; } 
     }
@@ -29,7 +30,7 @@ namespace MagicConchBot.Services.Games
     public class AionModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
         private static readonly Dictionary<(ulong, string), TimerEvent> Timers = new();
-        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)-?(?<hoursEnd>\d+)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
+        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)-?(?<hoursEnd>\d+)?h(?<minutesEnd>\d+)?m?(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
 
         public DiscordSocketClient Client { get; }
         public FirestoreDb Firestore { get; }
@@ -149,19 +150,22 @@ namespace MagicConchBot.Services.Games
 
                 var hours = Convert.ToInt32(match.Groups["hours"].Value);
                 var hoursEndMatch = match.Groups["hoursEnd"];
+                var minutesEndMatch = match.Groups["minutesEnd"];
                 var timeSinceMessage = DateTime.Now - Context.Interaction.CreatedAt;
                 Console.WriteLine(timeSinceMessage);
                 var defaultInterval = TimeSpan.FromHours(hours - 0.5);
                 var hoursMillis = (defaultInterval - timeSinceMessage - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
                 var hoursEnd = hoursEndMatch.Success ? Convert.ToInt32(hoursEndMatch.Value) : hours;
-                var hoursEndTimeSpan = (TimeSpan.FromHours(hoursEnd) - timeSinceMessage) - (offset ?? TimeSpan.Zero);
+                var minutesEnd = minutesEndMatch.Success ? TimeSpan.FromMinutes(Convert.ToInt32(minutesEndMatch.Value)) : TimeSpan.Zero;
+                var hoursEndTimeSpan = (TimeSpan.FromHours(hoursEnd) + minutesEnd - timeSinceMessage) - (offset ?? TimeSpan.Zero);
+                var windowTimeSpan = hoursEndTimeSpan - TimeSpan.FromHours(hours);
 
-                var hoursEndTime = DateTime.Now + hoursEndTimeSpan;
+                var windowTime = DateTime.Now + windowTimeSpan;
 
                 var emitMessage = timeSinceMessage < TimeSpan.FromMinutes(1);
 
-                await GetOrSetTimer(Context.Channel, name, hoursMillis, hoursEndTime, emitMessage);
+                await GetOrSetTimer(Context.Channel, name, hoursMillis, windowTime, emitMessage);
             } 
             else
             {
