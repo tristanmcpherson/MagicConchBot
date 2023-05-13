@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using System.Net.Http;
 using Discord.Interactions;
+using Google.Cloud.Firestore;
 
 namespace MagicConchBot
 {
@@ -157,6 +158,7 @@ namespace MagicConchBot
                 .AddMemoryCache()
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<InteractionService>()
+                .AddSingleton<FirestoreDb>(FirestoreDb.Create("magicconchbot"))
                 .AddSingleton<HttpClient>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()

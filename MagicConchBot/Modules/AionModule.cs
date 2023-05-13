@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Google.Cloud.Firestore;
 using MagicConchBot.Modules;
 using MongoDB.Driver.Linq;
 using System;
@@ -15,19 +16,28 @@ namespace MagicConchBot.Services.Games
 {
     record TimerEvent(Timer Timer, DateTime StartTime);
 
+    public class FirestoreTimerEvent
+    {
+        public string TimerId { get; set; }
+        public string Name { get; set; }
+        public DateTime StartTime { get; set; }
+        public TimeSpan Interval { get; set; }
+        public ulong TextChannelId { get; set; }
+        public ulong GuildId { get; set; } 
+    }
 
     public class AionModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
-        private static readonly Dictionary<string, TimerEvent> Timers = new();
+        private static readonly Dictionary<(ulong, string), TimerEvent> Timers = new();
         private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)-?(?<hoursEnd>\d+)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
 
-        public CommandService CommandService { get; }
         public DiscordSocketClient Client { get; }
+        public FirestoreDb Firestore { get; }
         public IServiceProvider Services { get; }
 
-        public AionModule(CommandService commandService, IServiceProvider services, DiscordSocketClient client)
+        public AionModule(FirestoreDb firestore, IServiceProvider services, DiscordSocketClient client)
         {
-            CommandService = commandService;
+            Firestore = firestore;
             Services = services;
             Client = client;
 
@@ -36,87 +46,92 @@ namespace MagicConchBot.Services.Games
 
         private async Task Client_Ready()
         {
-            await ResumeTimers(1101360116235767888);
+            await LoadTimers();
         }
 
-        public async Task ResumeTimers(ulong guildId)
+        private async Task LoadTimers()
         {
-            var guild = Client.Guilds.FirstOrDefault(guild => guild.Id == guildId);
-            if (guild == null) { return; }
-            var matches = new List<Match>();
-            var channels = new List<ITextChannel>();
+            // get the timers collection
+            var timersCollection = Firestore.Collection("timers");
 
-            foreach (var channel in guild.TextChannels)
+            // get all documents
+            var snapshot = await timersCollection.GetSnapshotAsync();
+
+            foreach (var document in snapshot.Documents)
             {
-                var match = ChannelRegex.Match(channel.Name);
-                if (match.Success)
+                var timerEvent = document.ConvertTo<FirestoreTimerEvent>();
+
+                // calculate how much time is left
+                var timeLeft = timerEvent.Interval - (DateTime.Now - timerEvent.StartTime);
+                if (timeLeft.TotalMilliseconds <= 0) continue;
+
+                // create and start the timer
+                var newTimer = new Timer
                 {
-                    matches.Add(match);
-                    channels.Add(channel);
-                }
-            }
+                    AutoReset = false,
+                    Interval = timeLeft.TotalMilliseconds
+                };
 
-            var channelMatch = matches.Zip(channels);
-
-            foreach (var kv in channelMatch)
-            {
-                var (match, channel) = kv;
-
-                var hours = Convert.ToInt32(match.Groups["hours"].Value);
-                var defaultInterval = TimeSpan.FromHours(hours - 0.5);
-
-                var nowMinusInterval = DateTime.Now - defaultInterval;
-
-                var messages = await channel.GetMessagesAsync().TakeWhile(m => m.Any(m => m.Timestamp > nowMinusInterval)).ToListAsync();
-
-                var allMessages = messages.SelectMany(a => a).Where(m => m.Timestamp > nowMinusInterval);
-                var deadMessage = allMessages.FirstOrDefault(m => m.Content.StartsWith("!dead"));
-
-                if (deadMessage == null)
+                newTimer.Elapsed += async (sender, args) =>
                 {
-                    continue;
-                }
+                    await (Client.GetChannel(timerEvent.TextChannelId) as ITextChannel).SendMessageAsync($"@here 30 minutes before {timerEvent.Name} window. The window will end at {timerEvent.StartTime + timerEvent.Interval}");
+                    await timersCollection.Document(timerEvent.TimerId).DeleteAsync();
+                };
 
-                // re-execute command
-                var context = new ConchCommandContext(Client, deadMessage as IUserMessage, Services);
-                await CommandService.ExecuteAsync(context, 1, Services, MultiMatchHandling.Best);
+                newTimer.Start();
+
+                // add the timer to the in-memory dictionary
+                Timers[(timerEvent.GuildId, timerEvent.TimerId)] = new TimerEvent(newTimer, timerEvent.StartTime);
             }
         }
+
 
         private async Task GetOrSetTimer(IMessageChannel textChannel, string name, double hoursMillis, DateTime hoursEndTime, bool emitMessage = true)
         {
-            if (Timers.TryGetValue(name, out var timerEvent))
+            var guildId = (textChannel as IGuildChannel).GuildId;
+            if (Timers.TryGetValue((guildId, name), out var timer))
             {
-                var (timer, _) = timerEvent;
-                if (timer.Interval != hoursMillis)
-                {
-                    timer.Interval = hoursMillis;
-                }
+                timer.Timer.Stop();  // stop the existing timer
 
-                timer.Stop();
-                timer.Start();
-                Timers[name] = new(timer, Context.Interaction.CreatedAt.LocalDateTime);
+                // remove timer from Firestore
+                var timersCollection = Firestore.Collection("timers");
+                await timersCollection.Document(name).DeleteAsync();
             }
             else
             {
+                // Creating a new timer
                 var newTimer = new Timer
                 {
                     AutoReset = false,
                     Interval = hoursMillis
                 };
 
-
                 var textChannelId = textChannel.Id;
 
                 newTimer.Elapsed += async (sender, args) =>
                 {
                     await (Client.GetChannel(textChannelId) as ITextChannel).SendMessageAsync($"@here 30 minutes before {name} window. The window will end at {hoursEndTime.ToShortTimeString()} EST");
-                    Timers[name].Timer.Dispose();
-                    Timers.Remove(name);
+
+                    // remove timer from Firestore when it expires
+                    var timersCollection = Firestore.Collection("timers");
+                    await timersCollection.Document(name).DeleteAsync();
                 };
 
                 newTimer.Start();
-                Timers.Add(name, new(newTimer, DateTime.Now));
+
+                // save new timer to Firestore
+                var newTimerEvent = new FirestoreTimerEvent
+                {
+                    TimerId = name,
+                    Name = name,
+                    StartTime = DateTime.Now,
+                    Interval = TimeSpan.FromMilliseconds(hoursMillis),
+                    TextChannelId = textChannelId,
+                    GuildId = (textChannel as IGuildChannel).GuildId
+                };
+
+                var timersCollection = Firestore.Collection("timers");
+                await timersCollection.Document(newTimerEvent.TimerId).SetAsync(newTimerEvent);
             }
 
             if (emitMessage) await RespondAsync($"{name} has been killed. Timer set");
@@ -153,21 +168,26 @@ namespace MagicConchBot.Services.Games
                 await RespondAsync("Channel name invalid. Please fix the name and try again. The format is: " + ChannelRegex);
             }
         }
-    
+
         [SlashCommand("checktimers", "Checks the timers")]
         public async Task CheckTimers()
         {
-            if (Timers.Count == 0) { 
+            var guildId = (Context.Channel as IGuildChannel).GuildId;
+            var guildTimers = Timers.Where(kv => kv.Key.Item1 == guildId).ToList();
+
+            if (!guildTimers.Any())
+            {
                 await Context.Channel.SendMessageAsync("No timers set.");
                 await RespondAsync();
                 return;
             }
 
-            var text = string.Join('\n', Timers.Select((kv) => {
+            var text = string.Join('\n', guildTimers.Select((kv) => {
                 var time = TimeSpan.FromMilliseconds(kv.Value.Timer.Interval) - (DateTime.Now - kv.Value.StartTime);
                 var formatted = FormatTimeSpan(time);
-                return kv.Key + ": " + formatted;
+                return kv.Key.Item2 + ": " + formatted;
             }));
+
             await RespondAsync(text);
         }
 
