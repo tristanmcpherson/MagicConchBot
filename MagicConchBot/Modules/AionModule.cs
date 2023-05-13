@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using MagicConchBot.Modules;
+using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace MagicConchBot.Services.Games
     public class AionModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
         private static readonly Dictionary<string, TimerEvent> Timers = new();
-        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)(-\d+)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
+        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)-?(?<hoursEnd>\d+)?h(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
 
         public CommandService CommandService { get; }
         public DiscordSocketClient Client { get; }
@@ -82,7 +83,7 @@ namespace MagicConchBot.Services.Games
             }
         }
 
-        private async Task GetOrSetTimer(IMessageChannel textChannel, string name, double hoursMillis, bool emitMessage = true)
+        private async Task GetOrSetTimer(IMessageChannel textChannel, string name, double hoursMillis, DateTime hoursEndTime, bool emitMessage = true)
         {
             if (Timers.TryGetValue(name, out var timerEvent))
             {
@@ -109,7 +110,7 @@ namespace MagicConchBot.Services.Games
 
                 newTimer.Elapsed += async (sender, args) =>
                 {
-                    await (Client.GetChannel(textChannelId) as ITextChannel).SendMessageAsync($"@here 30 minutes before {name} window");
+                    await (Client.GetChannel(textChannelId) as ITextChannel).SendMessageAsync($"@here 30 minutes before {name} window. The window will end at {hoursEndTime.ToShortTimeString()} EST");
                     Timers[name].Timer.Dispose();
                     Timers.Remove(name);
                 };
@@ -132,14 +133,20 @@ namespace MagicConchBot.Services.Games
                 var name = match.Groups["name"].Value;
 
                 var hours = Convert.ToInt32(match.Groups["hours"].Value);
+                var hoursEndMatch = match.Groups["hoursEnd"];
                 var timeSinceMessage = DateTime.Now - Context.Interaction.CreatedAt;
                 Console.WriteLine(timeSinceMessage);
                 var defaultInterval = TimeSpan.FromHours(hours - 0.5);
                 var hoursMillis = (defaultInterval - timeSinceMessage - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
+                var hoursEnd = hoursEndMatch.Success ? Convert.ToInt32(hoursEndMatch.Value) : hours;
+                var hoursEndTimeSpan = (TimeSpan.FromHours(hoursEnd) - timeSinceMessage) - (offset ?? TimeSpan.Zero);
+
+                var hoursEndTime = DateTime.Now + hoursEndTimeSpan;
+
                 var emitMessage = timeSinceMessage < TimeSpan.FromMinutes(1);
 
-                await GetOrSetTimer(Context.Channel, name, hoursMillis, emitMessage);
+                await GetOrSetTimer(Context.Channel, name, hoursMillis, hoursEndTime, emitMessage);
             } 
             else
             {
