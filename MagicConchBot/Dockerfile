@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/runtime:6.0-focal AS base
+FROM mcr.microsoft.com/dotnet/runtime:7.0-focal AS base
 WORKDIR /app
 
 RUN apt-get clean && apt-get update
@@ -12,7 +12,7 @@ RUN apt-get install -y \
 	ffmpeg \
 	python
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-focal AS build
 WORKDIR /src
 
 COPY MagicConchBot.csproj MagicConchBot.csproj
