@@ -64,6 +64,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="creds\magicconchbot-8a7bbd18f601.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Dependencies\x64\libsodium.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
