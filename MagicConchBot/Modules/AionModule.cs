@@ -42,6 +42,7 @@ namespace MagicConchBot.Services.Games
     {
         private static readonly Dictionary<(ulong, string), TimerEvent> Timers = new();
         private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)-?(?<hoursEnd>\d+)?h(?<minutesEnd>\d+)?m?(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
+        private static readonly TimeSpan DefaultOffset = TimeSpan.FromMinutes(30);
 
         public DiscordSocketClient Client { get; }
         public FirestoreDb Firestore { get; }
@@ -146,8 +147,8 @@ namespace MagicConchBot.Services.Games
             var startTime = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval) + TimeSpan.FromMinutes(30);
             await (Client.GetChannel(timerEvent.TextChannelId) as ITextChannel).SendMessageAsync(
                 $"@here 30 minutes before {timerEvent.TimerId} window. " +
-                $"The window will start at {startTime.ToLocalTime().ToShortTimeString()} EST. " +
-                $"The window will end at {timerEvent.EndTime.ToDateTime().ToLocalTime().ToShortTimeString()} EST.");
+                $"The window will start at {startTime.ToShortEST()} EST. " +
+                $"The window will end at {timerEvent.EndTime.ToDateTime().ToShortEST()} EST.");
 
             // remove timer from Firestore when it expires
             var timersCollection = Firestore.Collection("timers");
@@ -168,7 +169,7 @@ namespace MagicConchBot.Services.Games
                 var hoursEndMatch = match.Groups["hoursEnd"];
                 var minutesEndMatch = match.Groups["minutesEnd"];
                 var timeSinceMessage = DateTime.UtcNow - Context.Interaction.CreatedAt;
-                var defaultInterval = TimeSpan.FromHours(hours - 0.5);
+                var defaultInterval = TimeSpan.FromHours(hours) - DefaultOffset;
                 var hoursMillis = (defaultInterval - timeSinceMessage - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
                 if (hoursMillis < 0)
@@ -220,9 +221,9 @@ namespace MagicConchBot.Services.Games
                 var timeLeft = TimeSpan.Parse(timerEvent.Interval) - (DateTime.UtcNow - timerEvent.StartTime.ToDateTime());
                 var formatted = FormatTimeSpan(timeLeft);
 
-                var windowStart = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval);
+                var windowStart = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval) + DefaultOffset;
                 var windowEnd = timerEvent.EndTime.ToDateTime();
-                var windowText = $"The window start at: {windowStart.ToLocalTime().ToShortTimeString()} EST and ends at: {windowEnd.ToLocalTime().ToShortTimeString()} EST.";
+                var windowText = $"The window start at: {windowStart.ToShortEST()} EST and ends at: {windowEnd.ToShortEST()} EST.";
 
                 return $"{timerEvent.TimerId}: {formatted} - {windowText}";
             }));
@@ -239,11 +240,21 @@ namespace MagicConchBot.Services.Games
                 (timeSpan.Minutes, "m"),
             };
 
-
-
             components.RemoveAll(i => i.Item1 == 0);
 
             return components.Count == 0 ? "less than 1m" : string.Join(" ", components.Select((a) => a.Item1 + a.Item2));
+        }
+
+
+    }
+
+    public static class DateTimeExtensions
+    {
+        public static string ToShortEST(this DateTime date)
+        {
+            var estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            var estTime = TimeZoneInfo.ConvertTimeFromUtc(date, estZone);
+            return estTime.ToString("h:mm tt");
         }
     }
 }
