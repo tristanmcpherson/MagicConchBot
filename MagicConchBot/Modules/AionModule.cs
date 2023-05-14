@@ -214,7 +214,7 @@ namespace MagicConchBot.Services.Games
             if (snapshot.Count == 0)
             {
                 await Context.Channel.SendMessageAsync("No timers set.");
-                await RespondAsync();
+                await DeferAsync();
                 return;
             }
 
