@@ -146,8 +146,8 @@ namespace MagicConchBot.Services.Games
             var startTime = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval) + TimeSpan.FromMinutes(30);
             await (Client.GetChannel(timerEvent.TextChannelId) as ITextChannel).SendMessageAsync(
                 $"@here 30 minutes before {timerEvent.TimerId} window. " +
-                $"The window will start at {startTime.ToShortTimeString()} EST. " +
-                $"The window will end at {timerEvent.EndTime.ToDateTime().ToShortTimeString()} EST.");
+                $"The window will start at {startTime.ToLocalTime().ToShortTimeString()} EST. " +
+                $"The window will end at {timerEvent.EndTime.ToDateTime().ToLocalTime().ToShortTimeString()} EST.");
 
             // remove timer from Firestore when it expires
             var timersCollection = Firestore.Collection("timers");
@@ -222,7 +222,7 @@ namespace MagicConchBot.Services.Games
 
                 var windowStart = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval);
                 var windowEnd = timerEvent.EndTime.ToDateTime();
-                var windowText = $"The window start at: {windowStart.ToShortTimeString()} EST and ends at: {windowEnd.ToShortTimeString()} EST.";
+                var windowText = $"The window start at: {windowStart.ToLocalTime().ToShortTimeString()} EST and ends at: {windowEnd.ToLocalTime().ToShortTimeString()} EST.";
 
                 return $"{timerEvent.TimerId}: {formatted} - {windowText}";
             }));
