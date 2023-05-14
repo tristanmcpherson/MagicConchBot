@@ -10,7 +10,7 @@ RUN apt-get install -y \
 	libsodium-dev \
 	youtube-dl \
 	ffmpeg \
-	python3.10 \
+	python3.10
 
 RUN DEBIAN_FRONTEND=noninteractive TZ="America/New_York" apt-get -y install tzdata
 
