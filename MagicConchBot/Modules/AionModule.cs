@@ -233,19 +233,17 @@ namespace MagicConchBot.Services.Games
 
         private static string FormatTimeSpan(TimeSpan timeSpan)
         {
-            var components = new List<(int, string)>
+            var components = new List<(int value, string suffix)>
             {
                 ((int) timeSpan.TotalDays, "d"),
                 (timeSpan.Hours, "h"),
                 (timeSpan.Minutes, "m"),
             };
 
-            components.RemoveAll(i => i.Item1 == 0);
+            var nonZeroComponents = components.Where(i => i.value != 0).ToList();
 
-            return components.Count == 0 ? "less than 1m" : string.Join(" ", components.Select((a) => a.Item1 + a.Item2));
+            return nonZeroComponents.Count == 0 ? "less than 1m" : string.Join(" ", nonZeroComponents.Select((a) => a.value + a.suffix));
         }
-
-
     }
 
     public static class DateTimeExtensions
