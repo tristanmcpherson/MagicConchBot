@@ -7,6 +7,7 @@ using MagicConchBot.Modules;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -59,6 +60,8 @@ namespace MagicConchBot.Services.Games
 
         private async Task Client_Ready()
         {
+            PrintTimeZones();
+
             await LoadTimers();
         }
 
@@ -243,6 +246,15 @@ namespace MagicConchBot.Services.Games
             var nonZeroComponents = components.Where(i => i.value != 0).ToList();
 
             return nonZeroComponents.Count == 0 ? "less than 1m" : string.Join(" ", nonZeroComponents.Select((a) => a.value + a.suffix));
+        }
+
+        private static void PrintTimeZones()
+        {
+            ReadOnlyCollection<TimeZoneInfo> timeZones = TimeZoneInfo.GetSystemTimeZones();
+            foreach (var tz in timeZones)
+            {
+                Console.WriteLine(tz.DisplayName + " : " + tz.Id);
+            }
         }
     }
 
