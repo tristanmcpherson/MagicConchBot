@@ -219,7 +219,12 @@ namespace MagicConchBot.Services.Games
                 var timerEvent = doc.ConvertTo<FirestoreTimerEvent>();
                 var timeLeft = TimeSpan.Parse(timerEvent.Interval) - (DateTime.UtcNow - timerEvent.StartTime.ToDateTime());
                 var formatted = FormatTimeSpan(timeLeft);
-                return timerEvent.TimerId + ": " + formatted;
+
+                var windowStart = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval);
+                var windowEnd = timerEvent.EndTime.ToDateTime();
+                var windowText = $"The window start at: {windowStart.ToShortTimeString()} EST and ends at: {windowEnd.ToShortTimeString()} EST.";
+
+                return $"{timerEvent.TimerId}: {formatted} - {windowText}";
             }));
 
             await RespondAsync(text);
