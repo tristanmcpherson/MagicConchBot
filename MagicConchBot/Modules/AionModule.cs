@@ -252,7 +252,7 @@ namespace MagicConchBot.Services.Games
     {
         public static string ToShortEST(this DateTime date)
         {
-            var estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            var estZone = TimeZoneConverter.TZConvert.GetTimeZoneInfo("America/New_York");
             var estTime = TimeZoneInfo.ConvertTimeFromUtc(date, estZone);
             return estTime.ToString("h:mm tt");
         }
