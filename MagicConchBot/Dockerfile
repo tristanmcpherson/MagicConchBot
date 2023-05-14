@@ -11,7 +11,8 @@ RUN apt-get install -y \
 	youtube-dl \
 	ffmpeg \
 	python3.10 \
-	tzdata
+
+RUN DEBIAN_FRONTEND=noninteractive TZ="America/New_York" apt-get -y install tzdata
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0-jammy AS build
 WORKDIR /src
