@@ -218,7 +218,7 @@ namespace MagicConchBot.Services.Music
 
             }
 
-            await outStream.WriteAsync(await File.ReadAllBytesAsync("goodbye.pcm"));
+            //await outStream.WriteAsync(await File.ReadAllBytesAsync("goodbye.pcm"));
             await outStream.FlushAsync(tokenSource.Token);
         }
 

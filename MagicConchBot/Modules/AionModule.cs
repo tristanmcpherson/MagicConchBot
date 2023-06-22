@@ -39,20 +39,20 @@ namespace MagicConchBot.Services.Games
         public ulong GuildId { get; set; }
     }
 
-    public class AionModule : InteractionModuleBase<ConchInteractionCommandContext>
+    public partial class AionModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
         private static readonly Dictionary<(ulong, string), TimerEvent> Timers = new();
-        private readonly Regex ChannelRegex = new(@"💀(ㅣ|\|)(?<hours>\d+)-?(?<hoursEnd>\d+)?h(?<minutesEnd>\d+)?m?(ㅣ|\|)(?<name>\w+(-\w+)?)💀?");
+        private static readonly Regex ChannelRegex = GenerateChannelRegex();
         private static readonly TimeSpan DefaultOffset = TimeSpan.FromMinutes(30);
 
+        [GeneratedRegex("💀(ㅣ|\\|)(?<hours>\\d+)-?(?<hoursEnd>\\d+)?h(?<minutesEnd>\\d+)?m?(ㅣ|\\|)(?<name>\\w+(-\\w+)?)💀?")]
+        private static partial Regex GenerateChannelRegex();
         public DiscordSocketClient Client { get; }
         public FirestoreDb Firestore { get; }
-        public IServiceProvider Services { get; }
 
-        public AionModule(FirestoreDb firestore, IServiceProvider services, DiscordSocketClient client)
+        public AionModule(FirestoreDb firestore, DiscordSocketClient client)
         {
             Firestore = firestore;
-            Services = services;
             Client = client;
 
             Client.Ready += Client_Ready;
@@ -183,7 +183,7 @@ namespace MagicConchBot.Services.Games
 
                 var hoursEnd = hoursEndMatch.Success ? Convert.ToInt32(hoursEndMatch.Value) : hours;
                 var minutesEnd = minutesEndMatch.Success ? TimeSpan.FromMinutes(Convert.ToInt32(minutesEndMatch.Value)) : TimeSpan.Zero;
-                var hoursEndTimeSpan = (TimeSpan.FromHours(hoursEnd) + minutesEnd - timeSinceMessage) - (offset ?? TimeSpan.Zero);
+                var hoursEndTimeSpan = TimeSpan.FromHours(hoursEnd) + minutesEnd - timeSinceMessage - (offset ?? TimeSpan.Zero);
 
                 var windowTime = DateTime.UtcNow + hoursEndTimeSpan;
 
