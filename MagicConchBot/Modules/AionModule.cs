@@ -247,15 +247,6 @@ namespace MagicConchBot.Services.Games
 
             return nonZeroComponents.Count == 0 ? "less than 1m" : string.Join(" ", nonZeroComponents.Select((a) => a.value + a.suffix));
         }
-
-        private static void PrintTimeZones()
-        {
-            ReadOnlyCollection<TimeZoneInfo> timeZones = TimeZoneInfo.GetSystemTimeZones();
-            foreach (var tz in timeZones)
-            {
-                Console.WriteLine(tz.DisplayName + " : " + tz.Id);
-            }
-        }
     }
 
     public static class DateTimeExtensions
