@@ -9,8 +9,8 @@ namespace MagicConchBot.Services.Music
 {
     public class GuildServiceProvider : IGuildServiceProvider<GuildServiceProvider> {
         private readonly ConcurrentDictionary<ulong, IServiceCollection> _musicServices =
-            new ConcurrentDictionary<ulong, IServiceCollection>();
-        private readonly ConcurrentDictionary<ulong, IServiceProvider> _musicServiceProviders = new ConcurrentDictionary<ulong, IServiceProvider>();
+            new();
+        private readonly ConcurrentDictionary<ulong, IServiceProvider> _musicServiceProviders = new();
 
         //private readonly ConcurrentDictionary<ulong, Mp3ConverterService> _mp3Services =
         //    new ConcurrentDictionary<ulong, Mp3ConverterService>();

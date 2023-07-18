@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using CSharpFunctionalExtensions;
 using Discord;
 using MagicConchBot.Common.Interfaces;
@@ -18,7 +19,7 @@ namespace MagicConchBot.Common.Types
         }
     }
 
-    public readonly record struct Song(string Name, SongTime Time, string ThumbnailUrl = "", string OriginalUrl = "", string Identifier = "", MusicType MusicType = MusicType.Other, string StreamUri = null)
+    public readonly record struct Song(string Name, SongTime Time, string ThumbnailUrl = "", string OriginalUrl = "", string Identifier = "", MusicType MusicType = MusicType.Other, string StreamUri = null, Stream Stream = null, long Bitrate = 0)
     {
         public Song(string url) : this(url, new SongTime(), OriginalUrl: url, StreamUri: url) { }
     }

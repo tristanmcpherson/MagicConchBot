@@ -37,7 +37,7 @@ namespace MagicConchBot.Services
             Log.Info("Looking up song by id");
             try
             {
-                var video = await _youtubeClient.Videos.GetAsync(VideoId.Parse(id)).ConfigureAwait(false);
+                var video = await _youtubeClient.Videos.GetAsync(VideoId.Parse(id));
 
                 Log.Info("Song info found.");
                 return ParseVideo(video, startTime);
@@ -87,7 +87,11 @@ namespace MagicConchBot.Services
             var streams = manifest.GetAudioOnlyStreams();
             var streamInfo = streams.OrderByDescending(s => s.Bitrate).FirstOrDefault();
 
-            return song with { StreamUri = streamInfo.Url };
+
+            var stream = await _youtubeClient.Videos.Streams.GetAsync(streamInfo);
+            
+
+            return song with { Stream = stream, Bitrate = streamInfo.Bitrate.BitsPerSecond };
         }
     }
 }

@@ -151,7 +151,10 @@ namespace MagicConchBot.Services.Music
         {
             try
             {
-                using var process = StartFfmpeg(currentSong);
+                using var process = currentSong.Stream != null ?
+                    StartFfmpegFromStream(currentSong) :
+                    StartFfmpegFromUri(currentSong);
+
                 using var inStream = process.StandardOutput.BaseStream;
                 using var outStream = audioClient.CreatePCMStream(AudioApplication.Music, bitrate);
 
@@ -160,9 +163,18 @@ namespace MagicConchBot.Services.Music
                     {
                         if (!process.HasExited)
                         {
-                            process.CloseMainWindow();
+                            // Grace period for the process to exit on its own
+                            if (!process.WaitForExit(3000))  // Wait for up to 3 seconds
+                            {
+                                // If the process hasn't exited after 3 seconds, kill it
+                                process.Kill();
+                            }
                         }
-                    } catch { }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Error while closing FFmpeg process: " + ex.Message);
+                    }
                 });
 
                 await StreamAudio(currentSong, inStream, outStream, tokenSource);
@@ -222,10 +234,11 @@ namespace MagicConchBot.Services.Music
             await outStream.FlushAsync(tokenSource.Token);
         }
 
-        private static Process StartFfmpeg(Song song)
+        private static Process StartFfmpegFromUri(Song song)
         {
+
             var seek = song.Time.StartTime.Map(totalSeconds => $"-ss {totalSeconds}").GetValueOrDefault(string.Empty);
-            var arguments = $"-hide_banner -loglevel panic -re -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1";
+            var arguments = $"-hide_banner -loglevel panic -re -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 10 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1";
 
             Log.Debug(arguments);
 
@@ -233,6 +246,7 @@ namespace MagicConchBot.Services.Music
             {
                 FileName = "ffmpeg",
                 Arguments = arguments,
+                RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true,
@@ -251,6 +265,80 @@ namespace MagicConchBot.Services.Music
             try
             {
                 process.Start();
+                process.BeginErrorReadLine();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+            }
+
+            if (process == null)
+            {
+                throw new Exception("Could not start FFMPEG");
+            }
+
+            if (process.StandardOutput.BaseStream == null)
+            {
+                throw new Exception("FFMPEG stream was not created.");
+            }
+
+            return process;
+        }
+
+        private static Process StartFfmpegFromStream(Song song)
+        {
+
+            var seek = song.Time.StartTime.GetValueOrDefault();
+            song.Stream.Position = song.Bitrate * (long)seek.TotalSeconds;
+            var arguments = $"-hide_banner -loglevel error -re -err_detect ignore_err -f webm -i pipe:0 -ac 2 -f s16le -vn -ar 48000 pipe:1";
+
+            Log.Debug(arguments);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = arguments,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            };
+            var process = new Process()
+            {
+                StartInfo = startInfo
+            };
+
+            process.ErrorDataReceived += (sender, data) =>
+            {
+                Log.Error(data.Data);
+            };
+
+            try
+            {
+                process.Start();
+
+                Task.Run(async () =>
+                {
+                    using var ffmpegInput = process.StandardInput.BaseStream;
+                    try
+                    {
+                        await song.Stream.CopyToAsync(ffmpegInput);
+                    }
+                    catch (IOException ex)
+                    {
+                        Log.Error("Error while copying stream to FFmpeg: " + ex.Message);
+                        if (!process.HasExited)
+                        {
+                            // FFmpeg process is still running, so something else caused the error.
+                            throw;
+                        }
+                        var exitCode = process.ExitCode;
+                        var errorMessage = process.StandardError.ReadToEnd();
+                        Log.Error($"FFmpeg exited with code {exitCode}. Error message: {errorMessage}");
+                    }
+                });
+
                 process.BeginErrorReadLine();
             }
             catch (Exception ex)

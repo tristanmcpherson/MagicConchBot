@@ -60,8 +60,6 @@ namespace MagicConchBot.Services.Games
 
         private async Task Client_Ready()
         {
-            PrintTimeZones();
-
             await LoadTimers();
         }
 
