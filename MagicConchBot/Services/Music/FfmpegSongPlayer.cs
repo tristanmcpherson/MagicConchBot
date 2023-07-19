@@ -290,7 +290,7 @@ namespace MagicConchBot.Services.Music
 
             var seek = song.Time.StartTime.GetValueOrDefault();
             song.Stream.Position = song.Bitrate * (long)seek.TotalSeconds;
-            var arguments = $"-hide_banner -loglevel error -re -err_detect ignore_err -f webm -i pipe:0 -ac 2 -f s16le -vn -ar 48000 pipe:1";
+            var arguments = $"-hide_banner -loglevel error -re -err_detect ignore_err -i pipe:0 -ac 2 -f s16le -vn -ar 48000 pipe:1";
 
             Log.Debug(arguments);
 
