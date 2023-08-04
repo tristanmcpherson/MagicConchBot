@@ -252,6 +252,7 @@ namespace MagicConchBot.Services.Music
                 CreateNoWindow = true,
                 UseShellExecute = false,
             };
+
             var process = new Process()
             {
                 StartInfo = startInfo
@@ -287,7 +288,6 @@ namespace MagicConchBot.Services.Music
 
         private static Process StartFfmpegFromStream(Song song)
         {
-
             var seek = song.Time.StartTime.GetValueOrDefault();
             song.Stream.Position = song.Bitrate * (long)seek.TotalSeconds;
             var arguments = $"-hide_banner -loglevel error -re -err_detect ignore_err -i pipe:0 -ac 2 -f s16le -vn -ar 48000 pipe:1";

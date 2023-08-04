@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Google.Cloud.Firestore;
@@ -7,7 +6,6 @@ using MagicConchBot.Modules;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -35,6 +33,9 @@ namespace MagicConchBot.Services.Games
         [FirestoreProperty("textChannelId")]
         public ulong TextChannelId { get; set; }
 
+        [FirestoreProperty("channelOffset")]
+        public string ChannelOffset { get; set;}
+
         [FirestoreProperty("guildId")]
         public ulong GuildId { get; set; }
     }
@@ -45,7 +46,7 @@ namespace MagicConchBot.Services.Games
         private static readonly Regex ChannelRegex = GenerateChannelRegex();
         private static readonly TimeSpan DefaultOffset = TimeSpan.FromMinutes(30);
 
-        [GeneratedRegex("💀(ㅣ|\\|)(?<hours>\\d+)-?(?<hoursEnd>\\d+)?h(?<minutesEnd>\\d+)?m?(ㅣ|\\|)(?<name>\\w+(-\\w+)?)💀?")]
+        [GeneratedRegex("💀(ㅣ|\\|)(?<hours>\\d+)h?-?(?<hoursEnd>\\d+)?h?(?<minutesEnd>\\d+)?m?(ㅣ|\\|)(?<name>\\w+(-\\w+)?)💀?(?<reminderTimeHours>\\d+)?h?(?<reminderTimeMinutes>\\d+)?m?")]
         private static partial Regex GenerateChannelRegex();
         public DiscordSocketClient Client { get; }
         public FirestoreDb Firestore { get; }
@@ -78,13 +79,17 @@ namespace MagicConchBot.Services.Games
 
                 // calculate how much time is left
                 var timeLeft = TimeSpan.Parse(timerEvent.Interval) - (DateTime.UtcNow - timerEvent.StartTime.ToDateTime());
-                if (timeLeft.TotalMilliseconds <= 0) continue;
+                if (timeLeft.TotalMilliseconds <= 0)
+                {
+                    // time has passed, alert is outdated
+                    // log this event to the console
+                }
 
                 // create and start the timer
                 var newTimer = new Timer
                 {
                     AutoReset = false,
-                    Interval = timeLeft.TotalMilliseconds
+                    Interval = timeLeft.TotalMilliseconds > 0 ? timeLeft.TotalMilliseconds : 1
                 };
 
                 newTimer.Elapsed += async (obj, e) => await TimerElapsed(timerEvent);
@@ -97,7 +102,7 @@ namespace MagicConchBot.Services.Games
         }
 
 
-        private async Task GetOrSetTimer(IMessageChannel textChannel, string timerId, double hoursMillis, DateTime hoursEndTime, bool emitMessage = true)
+        private async Task GetOrSetTimer(IMessageChannel textChannel, string timerId, double hoursMillis, DateTime hoursEndTime, TimeSpan channelOffset, bool emitMessage = true)
         {
 
             var guildId = (textChannel as IGuildChannel).GuildId;
@@ -128,6 +133,7 @@ namespace MagicConchBot.Services.Games
                 EndTime = Timestamp.FromDateTime(hoursEndTime),
                 Interval = TimeSpan.FromMilliseconds(hoursMillis).ToString(),
                 TextChannelId = textChannelId,
+                ChannelOffset = channelOffset.ToString(),
                 GuildId = (textChannel as IGuildChannel).GuildId
             };
 
@@ -170,7 +176,16 @@ namespace MagicConchBot.Services.Games
                 var hoursEndMatch = match.Groups["hoursEnd"];
                 var minutesEndMatch = match.Groups["minutesEnd"];
                 var timeSinceMessage = DateTime.UtcNow - Context.Interaction.CreatedAt;
-                var defaultInterval = TimeSpan.FromHours(hours) - DefaultOffset;
+
+                var channelOffsetHoursMatch = match.Groups["reminderTimeHours"];
+                var channelOffsetMinutesMatch = match.Groups["reminderTimeMinutes"];
+
+                var channelOffsetHours = channelOffsetHoursMatch.Success ? Convert.ToInt32(channelOffsetHoursMatch.Value) : DefaultOffset.Hours;
+                var channelOffsetMinutes = channelOffsetMinutesMatch.Success ? Convert.ToInt32(channelOffsetMinutesMatch.Value) : DefaultOffset.Minutes;
+
+                var channelOffset = new TimeSpan(channelOffsetHours, channelOffsetMinutes, 0);
+
+                var defaultInterval = TimeSpan.FromHours(hours) - channelOffset;
                 var hoursMillis = (defaultInterval - timeSinceMessage - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
                 if (hoursMillis < 0)
@@ -222,7 +237,9 @@ namespace MagicConchBot.Services.Games
                 var timeLeft = TimeSpan.Parse(timerEvent.Interval) - (DateTime.UtcNow - timerEvent.StartTime.ToDateTime());
                 var formatted = FormatTimeSpan(timeLeft);
 
-                var windowStart = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval) + DefaultOffset;
+                var channelOffset = string.IsNullOrEmpty(timerEvent.ChannelOffset) ? DefaultOffset : TimeSpan.Parse(timerEvent.ChannelOffset);
+
+                var windowStart = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval) + channelOffset;
                 var windowEnd = timerEvent.EndTime.ToDateTime();
                 var windowText = $"The window start at: {windowStart.ToShortEST()} EST and ends at: {windowEnd.ToShortEST()} EST.";
 
