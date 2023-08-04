@@ -152,8 +152,10 @@ namespace MagicConchBot.Services.Games
         private async Task TimerElapsed(FirestoreTimerEvent timerEvent)
         {
             var startTime = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval) + TimeSpan.FromMinutes(30);
+            var channelOffset = string.IsNullOrEmpty(timerEvent.ChannelOffset) ? DefaultOffset : TimeSpan.Parse(timerEvent.ChannelOffset);
+
             await (Client.GetChannel(timerEvent.TextChannelId) as ITextChannel).SendMessageAsync(
-                $"@here 30 minutes before {timerEvent.TimerId} window. " +
+                $"@here ${FormatTimeSpan(channelOffset)} before {timerEvent.TimerId} window. " +
                 $"The window will start at {startTime.ToShortEST()} EST. " +
                 $"The window will end at {timerEvent.EndTime.ToDateTime().ToShortEST()} EST.");
 
