@@ -155,7 +155,7 @@ namespace MagicConchBot.Services.Games
             var startTime = timerEvent.StartTime.ToDateTime() + TimeSpan.Parse(timerEvent.Interval) + channelOffset;
 
             await (Client.GetChannel(timerEvent.TextChannelId) as ITextChannel).SendMessageAsync(
-                $"@here ${FormatTimeSpan(channelOffset)} before {timerEvent.TimerId} window. " +
+                $"@here {FormatTimeSpan(channelOffset)} before {timerEvent.TimerId} window. " +
                 $"The window will start at {startTime.ToShortEST()} EST. " +
                 $"The window will end at {timerEvent.EndTime.ToDateTime().ToShortEST()} EST.");
 

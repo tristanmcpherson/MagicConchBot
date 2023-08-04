@@ -16,7 +16,7 @@ namespace MagicConchBot.Modules
             var uptime = DateTimeOffset.Now - Process.GetCurrentProcess().StartTime;
             var uptimeString = $"{uptime.Days}d {uptime.Hours}h {uptime.Minutes}m {uptime.Seconds}s";
 
-            await ReplyAsync($"Bot uptime: {uptimeString}");
+            await RespondAsync($"Bot uptime: {uptimeString}");
         }
     }
 }
