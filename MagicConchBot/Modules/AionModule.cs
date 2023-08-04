@@ -46,7 +46,7 @@ namespace MagicConchBot.Services.Games
         private static readonly Regex ChannelRegex = GenerateChannelRegex();
         private static readonly TimeSpan DefaultOffset = TimeSpan.FromMinutes(30);
 
-        [GeneratedRegex("💀(ㅣ|\\|)(?<hours>\\d+)h?-?(?<hoursEnd>\\d+)?h?(?<minutesEnd>\\d+)?m?(ㅣ|\\|)(?<name>\\w+(-\\w+)?)💀?(?<reminderTimeHours>\\d+)?h?(?<reminderTimeMinutes>\\d+)?m?")]
+        [GeneratedRegex("💀(ㅣ|\\|)(?<hours>\\d+)h?-?(?<hoursEnd>\\d+)?h?(?<minutesEnd>\\d+)?m?(ㅣ|\\|)(?<name>\\w+(-\\w+)?)💀?(?:(?<reminderTimeHours>\\d+)h)?(?:(?<reminderTimeMinutes>\\d+)m)?")]
         private static partial Regex GenerateChannelRegex();
         public DiscordSocketClient Client { get; }
         public FirestoreDb Firestore { get; }
@@ -173,11 +173,19 @@ namespace MagicConchBot.Services.Games
             if (match.Success)
             {
                 var name = match.Groups["name"].Value;
+                var timeSinceMessage = DateTime.UtcNow - Context.Interaction.CreatedAt;
+
 
                 var hours = Convert.ToInt32(match.Groups["hours"].Value);
+
+
                 var hoursEndMatch = match.Groups["hoursEnd"];
                 var minutesEndMatch = match.Groups["minutesEnd"];
-                var timeSinceMessage = DateTime.UtcNow - Context.Interaction.CreatedAt;
+                var hoursEnd = hoursEndMatch.Success ? TimeSpan.FromHours(Convert.ToInt32(hoursEndMatch.Value)) : TimeSpan.FromHours(hours);
+
+                var minutesEnd = minutesEndMatch.Success ? TimeSpan.FromMinutes(Convert.ToInt32(minutesEndMatch.Value)) : TimeSpan.Zero;
+                var hoursEndTimeSpan = hoursEnd + minutesEnd - timeSinceMessage - (offset ?? TimeSpan.Zero);
+
 
                 var channelOffsetHoursMatch = match.Groups["reminderTimeHours"];
                 var channelOffsetMinutesMatch = match.Groups["reminderTimeMinutes"];
@@ -187,18 +195,17 @@ namespace MagicConchBot.Services.Games
 
                 var channelOffset = new TimeSpan(channelOffsetHours, channelOffsetMinutes, 0);
 
+
                 var defaultInterval = TimeSpan.FromHours(hours) - channelOffset;
                 var hoursMillis = (defaultInterval - timeSinceMessage - (offset ?? TimeSpan.Zero)).TotalMilliseconds;
 
                 if (hoursMillis < 0)
                 {
-                    await RespondAsync("Offset is bigger than timer window - 30m. Bot should prob be updated to just say the current window.");
+                    await RespondAsync($"Offset is bigger than timer window - {FormatTimeSpan(channelOffset)}. Bot should prob be updated to just say the current window.");
                     return;
                 }
 
-                var hoursEnd = hoursEndMatch.Success ? Convert.ToInt32(hoursEndMatch.Value) : hours;
-                var minutesEnd = minutesEndMatch.Success ? TimeSpan.FromMinutes(Convert.ToInt32(minutesEndMatch.Value)) : TimeSpan.Zero;
-                var hoursEndTimeSpan = TimeSpan.FromHours(hoursEnd) + minutesEnd - timeSinceMessage - (offset ?? TimeSpan.Zero);
+
 
                 var windowTime = DateTime.UtcNow + hoursEndTimeSpan;
 
