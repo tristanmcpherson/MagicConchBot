@@ -202,7 +202,7 @@ namespace MagicConchBot.Services.Games
 
                 var emitMessage = timeSinceMessage < TimeSpan.FromMinutes(1);
 
-                await GetOrSetTimer(Context.Channel, name, hoursMillis, windowTime, emitMessage);
+                await GetOrSetTimer(Context.Channel, name, hoursMillis, windowTime, channelOffset, emitMessage);
             } 
             else
             {
