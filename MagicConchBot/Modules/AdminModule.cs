@@ -6,7 +6,7 @@ using MagicConchBot.Attributes;
 
 namespace MagicConchBot.Modules
 {
-    [RequireBotOwner]
+    [RequireBotOwner(Group = "admin")]
 	[Group("admin", "Admin commands")]
 	public class AdminModule : InteractionModuleBase<ConchInteractionCommandContext>
     {
