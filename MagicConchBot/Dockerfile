@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/runtime:7.0-jammy AS base
+FROM mcr.microsoft.com/dotnet/runtime:8.0-jammy AS base
 WORKDIR /app
 
 RUN apt-get clean && apt-get update
@@ -14,7 +14,7 @@ RUN apt-get install -y \
 
 RUN DEBIAN_FRONTEND=noninteractive TZ="America/New_York" apt-get -y install tzdata
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0-jammy AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
 WORKDIR /src
 
 COPY MagicConchBot.csproj MagicConchBot.csproj
