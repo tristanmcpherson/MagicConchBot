@@ -8,7 +8,7 @@ on:
     branches: [ master ]
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/magicconchbot
 
 jobs:
   build:
