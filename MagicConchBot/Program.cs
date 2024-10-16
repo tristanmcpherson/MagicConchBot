@@ -17,6 +17,9 @@ using NLog;
 using System.Net.Http;
 using Discord.Interactions;
 using Google.Cloud.Firestore;
+using System.Collections.Generic;
+using System.Net;
+using YoutubeExplode;
 
 namespace MagicConchBot
 {
@@ -144,6 +147,47 @@ namespace MagicConchBot
             }
         }
 
+        private static readonly List<Cookie> cookies = ParseCookiesFromJson(Environment.GetEnvironmentVariable("YOUTUBE_COOKIE"));
+        public class CookieData
+        {
+            public string Name { get; set; }
+            public string Value { get; set; }
+            public string Domain { get; set; }
+            public string Path { get; set; }
+            public bool Secure { get; set; }
+            public bool HttpOnly { get; set; }
+            public double? ExpirationDate { get; set; } // Nullable for session cookies
+        }
+        public static List<Cookie> ParseCookiesFromJson(string json)
+        {
+            var cookieData = JsonSerializer.Deserialize<List<CookieData>>(json);
+            var cookies = new List<Cookie>();
+
+            foreach (var data in cookieData)
+            {
+                var cookie = new Cookie
+                {
+                    Name = data.Name,
+                    Value = data.Value,
+                    Domain = data.Domain,
+                    Path = data.Path,
+                    Secure = data.Secure,
+                    HttpOnly = data.HttpOnly
+                };
+
+                // Set expiration if available and not a session cookie
+                if (data.ExpirationDate.HasValue)
+                {
+                    cookie.Expires = DateTimeOffset.FromUnixTimeSeconds((long)data.ExpirationDate.Value).UtcDateTime;
+                }
+
+                cookies.Add(cookie);
+            }
+
+            return cookies;
+        }
+
+
 
         public static ServiceProvider ConfigureServices()
         {
@@ -162,6 +206,7 @@ namespace MagicConchBot
                 .AddSingleton<HttpClient>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
+                .AddSingleton(new YoutubeClient(cookies))
                 .AddSingleton<YoutubeInfoService>()
                 .AddSingleton<IMp3ConverterService, Mp3ConverterService>()
                 .AddSingleton<ISongInfoService, YoutubeInfoService>()
