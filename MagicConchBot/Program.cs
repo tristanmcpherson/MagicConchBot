@@ -20,6 +20,7 @@ using Google.Cloud.Firestore;
 using System.Collections.Generic;
 using System.Net;
 using YoutubeExplode;
+using System.Text.Json;
 
 namespace MagicConchBot
 {
