@@ -82,7 +82,7 @@ namespace MagicConchBot.Services
             return await GetVideoInfoByIdAsync(videoId, startTime);
         }
 
-        static string GetAudioStreamUrl(string videoUrl)
+        static async Task<string> GetAudioStreamUrl(string videoUrl)
         {
             string ytDlpPath = "yt-dlp";  // Path to yt-dlp if not in environment variables
             string arguments = $"-f bestaudio --get-url --no-warnings -q \"{videoUrl}\"";
@@ -99,17 +99,15 @@ namespace MagicConchBot.Services
             };
 
             // Start the process
-            using (Process process = new Process { StartInfo = startInfo })
-            {
-                process.Start();
+            using Process process = new Process { StartInfo = startInfo };
+            process.Start();
 
-                // Capture the output (URL)
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
+            // Capture the output (URL)
+            string output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
 
-                // Return the audio stream URL
-                return output.Trim();
-            }
+            // Return the audio stream URL
+            return output.Trim();
         }
 
         public async Task<Song> ResolveStreamUri(Song song)
@@ -127,7 +125,7 @@ namespace MagicConchBot.Services
             
             
 
-            return song with { StreamUri = GetAudioStreamUrl(song.OriginalUrl) };
+            return song with { StreamUri = await GetAudioStreamUrl(song.OriginalUrl) };
         }
     }
 }
