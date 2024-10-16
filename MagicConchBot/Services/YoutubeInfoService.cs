@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace MagicConchBot.Services
 
         public YoutubeInfoService(YoutubeClient youtubeClient)
         {
-            this._youtubeClient = youtubeClient;
+            _youtubeClient = youtubeClient;
         }
 
         public async Task<string> GetFirstVideoByKeywordsAsync(string keywords)
@@ -81,17 +82,52 @@ namespace MagicConchBot.Services
             return await GetVideoInfoByIdAsync(videoId, startTime);
         }
 
+        static string GetAudioStreamUrl(string videoUrl)
+        {
+            string ytDlpPath = "yt-dlp";  // Path to yt-dlp if not in environment variables
+            string arguments = $"-f bestaudio --get-url --no-warnings -q \"{videoUrl}\"";
+
+            // Create the process start info
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = ytDlpPath,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            // Start the process
+            using (Process process = new Process { StartInfo = startInfo })
+            {
+                process.Start();
+
+                // Capture the output (URL)
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                // Return the audio stream URL
+                return output.Trim();
+            }
+        }
+
         public async Task<Song> ResolveStreamUri(Song song)
         {
-            var manifest = await _youtubeClient.Videos.Streams.GetManifestAsync(VideoId.Parse(song.Identifier));
-            var streams = manifest.GetAudioOnlyStreams();
-            var streamInfo = streams.OrderByDescending(s => s.Bitrate).FirstOrDefault();
-
-
-            var stream = await _youtubeClient.Videos.Streams.GetAsync(streamInfo);
+            //var songData = await _dlSharp.RunVideoDataFetch(song.OriginalUrl);
             
 
-            return song with { Stream = stream, Bitrate = streamInfo.Bitrate.BitsPerSecond };
+            //var manifest = await _youtubeClient.Videos.Streams.GetManifestAsync(VideoId.Parse(song.Identifier));
+            //var streams = manifest.GetAudioOnlyStreams();
+            //var streamInfo = streams.OrderByDescending(s => s.Bitrate).FirstOrDefault();
+
+
+            //var stream = await _youtubeClient.Videos.Streams.GetAsync(streamInfo);
+
+            
+            
+
+            return song with { StreamUri = GetAudioStreamUrl(song.OriginalUrl) };
         }
     }
 }
