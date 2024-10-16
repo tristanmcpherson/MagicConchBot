@@ -16,7 +16,7 @@ name: Build and Deploy to Google Compute Engine
 
 on:
   workflow_run:
-    workflows: [Docker]
+    workflows: [Build and Push .NET Docker Image]
     types:
       - completed
 
