@@ -20,7 +20,7 @@ using Google.Cloud.Firestore;
 using System.Collections.Generic;
 using System.Net;
 using YoutubeExplode;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace MagicConchBot
 {
@@ -149,19 +149,11 @@ namespace MagicConchBot
         }
 
         private static readonly List<Cookie> cookies = ParseCookiesFromJson(Environment.GetEnvironmentVariable("YOUTUBE_COOKIE"));
-        public class CookieData
-        {
-            public string Name { get; set; }
-            public string Value { get; set; }
-            public string Domain { get; set; }
-            public string Path { get; set; }
-            public bool Secure { get; set; }
-            public bool HttpOnly { get; set; }
-            public double? ExpirationDate { get; set; } // Nullable for session cookies
-        }
+        public record CookieData(string Name, string Value, string Domain, string Path, bool Secure, bool HttpOnly, double? ExpirationDate);
+
         public static List<Cookie> ParseCookiesFromJson(string json)
         {
-            var cookieData = JsonSerializer.Deserialize<List<CookieData>>(json);
+            var cookieData = JsonConvert.DeserializeObject<CookieData[]>(json);
             var cookies = new List<Cookie>();
 
             foreach (var data in cookieData)
@@ -207,7 +199,7 @@ namespace MagicConchBot
                 .AddSingleton<HttpClient>()
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<CommandService>()
-                .AddSingleton(new YoutubeClient(cookies))
+                .AddSingleton<YoutubeClient>(new YoutubeClient(cookies))
                 .AddSingleton<YoutubeInfoService>()
                 .AddSingleton<IMp3ConverterService, Mp3ConverterService>()
                 .AddSingleton<ISongInfoService, YoutubeInfoService>()
