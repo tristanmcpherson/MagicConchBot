@@ -148,38 +148,6 @@ namespace MagicConchBot
             }
         }
 
-        private static readonly List<Cookie> cookies = ParseCookiesFromJson(Environment.GetEnvironmentVariable("YOUTUBE_COOKIE"));
-        public record CookieData(string Name, string Value, string Domain, string Path, bool Secure, bool HttpOnly, double? ExpirationDate);
-
-        public static List<Cookie> ParseCookiesFromJson(string json)
-        {
-            var cookieData = JsonConvert.DeserializeObject<CookieData[]>(json);
-            var cookies = new List<Cookie>();
-
-            foreach (var data in cookieData)
-            {
-                var cookie = new Cookie
-                {
-                    Name = data.Name,
-                    Value = data.Value,
-                    Domain = data.Domain,
-                    Path = data.Path,
-                    Secure = data.Secure,
-                    HttpOnly = data.HttpOnly
-                };
-
-                // Set expiration if available and not a session cookie
-                if (data.ExpirationDate.HasValue)
-                {
-                    cookie.Expires = DateTimeOffset.FromUnixTimeSeconds((long)data.ExpirationDate.Value).UtcDateTime;
-                }
-
-                cookies.Add(cookie);
-            }
-
-            return cookies;
-        }
-
 
 
         public static ServiceProvider ConfigureServices()
@@ -197,9 +165,7 @@ namespace MagicConchBot
                 .AddSingleton<InteractionService>()
                 .AddSingleton<FirestoreDb>(FirestoreDb.Create("magicconchbot"))
                 .AddSingleton<HttpClient>()
-                .AddSingleton<CommandHandler>()
-                .AddSingleton<CommandService>()
-                .AddSingleton<YoutubeClient>(new YoutubeClient(cookies))
+                .AddSingleton<YoutubeClient, YoutubeClient>()
                 .AddSingleton<YoutubeInfoService>()
                 .AddSingleton<IMp3ConverterService, Mp3ConverterService>()
                 .AddSingleton<ISongInfoService, YoutubeInfoService>()
@@ -212,6 +178,8 @@ namespace MagicConchBot
                 .AddSingleton<GuildServiceProvider>()
                 .AddSingleton<SoundCloudInfoService>()
                 .AddSingleton<GuildSettingsProvider>()
+                .AddSingleton<CommandHandler>()
+                .AddSingleton<CommandService>()
                 .BuildServiceProvider();
         }
     }

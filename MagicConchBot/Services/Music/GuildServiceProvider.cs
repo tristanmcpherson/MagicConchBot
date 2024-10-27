@@ -22,7 +22,15 @@ namespace MagicConchBot.Services.Music
             _musicServices[guildId].AddSingleton<TInterface, TImplementation>();
             return this;
         }
-        
+
+        public GuildServiceProvider AddService<TInterface, TImplementation>(ulong guildId, TImplementation implementation) where TInterface : class where TImplementation : class, TInterface
+        {
+            if (!_musicServices.ContainsKey(guildId))
+                _musicServices.TryAdd(guildId, new ServiceCollection());
+            _musicServices[guildId].AddSingleton<TInterface, TImplementation>((provider) => implementation);
+            return this;
+        }
+
 
         public T GetService<T>(ulong guildId) where T : class 
         {
