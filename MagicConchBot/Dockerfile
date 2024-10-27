@@ -8,7 +8,6 @@ RUN apt-get install -y \
 	libopus-dev \
 	libsodium23 \
 	libsodium-dev \
-        libicu68 \
 	youtube-dl \
 	ffmpeg \
 	python3.10
