@@ -19,6 +19,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - name: Get workflow run information
+        id: workflow-run
+        uses: potiuk/get-workflow-origin@v1_5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sourceRunId: ${{ github.event.workflow_run.id }}
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
@@ -31,8 +38,9 @@ jobs:
           
       - name: Update deployment image
         run: |
-          # Replace placeholder with actual GitHub username
+          # Replace placeholders with actual values
           sed -i "s|GITHUB_USERNAME|${{ github.repository_owner }}|g" k8s/deployment.yaml
+          sed -i "s|GITHUB_SHA|${{ steps.workflow-run.outputs.sourceHeadSha }}|g" k8s/deployment.yaml
           
       - name: Deploy to Kubernetes
         run: |

@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: magicconchbot
-        image: ghcr.io/GITHUB_USERNAME/magicconchbot:latest
-        imagePullPolicy: Always
+        image: ghcr.io/GITHUB_USERNAME/magicconchbot:GITHUB_SHA
+        imagePullPolicy: IfNotPresent
         resources:
           requests:
             memory: "256Mi"

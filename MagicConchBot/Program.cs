@@ -51,6 +51,7 @@ namespace MagicConchBot
 
             try
             {
+                Log.Info("Starting Main...");
                 _cts = new CancellationTokenSource();
                 Task.Factory.StartNew(async () => await MainAsync(_cts.Token), _cts.Token).Wait();
 
