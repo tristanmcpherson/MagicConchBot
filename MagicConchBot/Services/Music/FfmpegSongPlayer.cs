@@ -233,6 +233,11 @@ namespace MagicConchBot.Services.Music
 
         private static Process StartFfmpegFromUri(Song song)
         {
+            if (string.IsNullOrEmpty(song.StreamUri))
+            {
+                Log.Error($"Stream URI is empty for song: {song.Name} (ID: {song.Identifier})");
+                throw new InvalidOperationException("Cannot play song with empty stream URI");
+            }
 
             var seek = song.Time.StartTime.Map(totalSeconds => $"-ss {totalSeconds}").GetValueOrDefault(string.Empty);
             var arguments = $"-hide_banner -loglevel panic -re -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 10 -err_detect ignore_err -i \"{song.StreamUri}\" {seek} -ac 2 -f s16le -vn -ar 48000 pipe:1";
@@ -250,37 +255,15 @@ namespace MagicConchBot.Services.Music
                 UseShellExecute = false,
             };
 
-            var process = new Process()
-            {
-                StartInfo = startInfo
-            };
-
-            process.ErrorDataReceived += (sender, data) =>
-            {
-                Log.Error(data.Data);
-            };
-
             try
             {
-                process.Start();
-                process.BeginErrorReadLine();
+                return Process.Start(startInfo);
             }
             catch (Exception ex)
             {
-                Log.Error(ex);
+                Log.Error(ex, $"Failed to start FFmpeg process: {ex.Message}");
+                throw;
             }
-
-            if (process == null)
-            {
-                throw new Exception("Could not start FFMPEG");
-            }
-
-            if (process.StandardOutput.BaseStream == null)
-            {
-                throw new Exception("FFMPEG stream was not created.");
-            }
-
-            return process;
         }
 
         private static Process StartFfmpegFromStream(Song song)

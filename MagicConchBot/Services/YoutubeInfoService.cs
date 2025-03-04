@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -84,48 +85,105 @@ namespace MagicConchBot.Services
 
         static async Task<string> GetAudioStreamUrl(string videoUrl)
         {
-            string ytDlpPath = "yt-dlp";  // Path to yt-dlp if not in environment variables
+            Log.Info($"Getting audio stream URL for: {videoUrl}");
+            
+            // Try multiple yt-dlp paths in case one doesn't work
+            string[] ytDlpPaths = new[] { "yt-dlp", "/usr/local/bin/yt-dlp", "/usr/bin/yt-dlp" };
             string arguments = $"-f bestaudio --get-url --no-warnings -q \"{videoUrl}\"";
-
-            // Create the process start info
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            
+            // Add cookies if available
+            string cookiesPath = Environment.GetEnvironmentVariable("YOUTUBE_COOKIE_FILE");
+            if (!string.IsNullOrEmpty(cookiesPath) && File.Exists(cookiesPath))
             {
-                FileName = ytDlpPath,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+                Log.Info($"Using cookies file: {cookiesPath}");
+                arguments += $" --cookies \"{cookiesPath}\"";
+            }
 
-            // Start the process
-            using Process process = new Process { StartInfo = startInfo };
-            process.Start();
+            int maxRetries = 3;
+            for (int retry = 0; retry < maxRetries; retry++)
+            {
+                foreach (string ytDlpPath in ytDlpPaths)
+                {
+                    try
+                    {
+                        // Create the process start info
+                        ProcessStartInfo startInfo = new ProcessStartInfo
+                        {
+                            FileName = ytDlpPath,
+                            Arguments = arguments,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
 
-            // Capture the output (URL)
-            string output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
+                        Log.Debug($"Executing: {ytDlpPath} {arguments}");
 
-            // Return the audio stream URL
-            return output.Trim();
+                        // Start the process
+                        using Process process = new Process { StartInfo = startInfo };
+                        process.Start();
+
+                        // Capture the output (URL)
+                        string output = await process.StandardOutput.ReadToEndAsync();
+                        string error = await process.StandardError.ReadToEndAsync();
+                        await process.WaitForExitAsync();
+
+                        if (process.ExitCode != 0)
+                        {
+                            Log.Error($"yt-dlp failed with exit code {process.ExitCode}. Error: {error}");
+                            continue; // Try next path
+                        }
+
+                        string url = output.Trim();
+                        if (string.IsNullOrEmpty(url))
+                        {
+                            Log.Error("yt-dlp returned empty URL despite exit code 0");
+                            continue; // Try next path
+                        }
+
+                        Log.Info($"Got audio URL: {url.Substring(0, Math.Min(url.Length, 50))}...");
+                        return url;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"Error executing yt-dlp at path {ytDlpPath}: {ex.Message}");
+                        // Continue to next path
+                    }
+                }
+                
+                if (retry < maxRetries - 1)
+                {
+                    Log.Info($"Retrying yt-dlp (attempt {retry + 2}/{maxRetries})...");
+                    await Task.Delay(1000); // Wait before retrying
+                }
+            }
+            
+            // If we get here, all attempts failed
+            Log.Error($"All yt-dlp attempts failed for URL: {videoUrl}");
+            return string.Empty;
         }
 
         public async Task<Song> ResolveStreamUri(Song song)
         {
-            //var songData = await _dlSharp.RunVideoDataFetch(song.OriginalUrl);
+            Log.Info($"Resolving stream URI for song: {song.Name} (ID: {song.Identifier})");
             
-
-            //var manifest = await _youtubeClient.Videos.Streams.GetManifestAsync(VideoId.Parse(song.Identifier));
-            //var streams = manifest.GetAudioOnlyStreams();
-            //var streamInfo = streams.OrderByDescending(s => s.Bitrate).FirstOrDefault();
-
-
-            //var stream = await _youtubeClient.Videos.Streams.GetAsync(streamInfo);
-
-            
-            
-
-            return song with { StreamUri = await GetAudioStreamUrl(song.OriginalUrl) };
+            try
+            {
+                string streamUrl = await GetAudioStreamUrl(song.OriginalUrl);
+                
+                if (string.IsNullOrEmpty(streamUrl))
+                {
+                    Log.Error($"Failed to get stream URL for {song.OriginalUrl}");
+                    return song;
+                }
+                
+                return song with { StreamUri = streamUrl };
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error resolving stream URI: {ex.Message}");
+                return song;
+            }
         }
     }
 }
