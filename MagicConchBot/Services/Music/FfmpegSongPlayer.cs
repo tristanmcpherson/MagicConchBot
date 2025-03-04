@@ -161,14 +161,11 @@ namespace MagicConchBot.Services.Music
                 tokenSource.Token.Register(() => {
                     try
                     {
-                        if (!process.HasExited)
+                        // Grace period for the process to exit on its own
+                        if (!process.WaitForExit(3000))  // Wait for up to 3 seconds
                         {
-                            // Grace period for the process to exit on its own
-                            if (!process.WaitForExit(3000))  // Wait for up to 3 seconds
-                            {
-                                // If the process hasn't exited after 3 seconds, kill it
-                                process.Kill();
-                            }
+                            // If the process hasn't exited after 3 seconds, kill it
+                            process.Kill();
                         }
                     }
                     catch (Exception ex)

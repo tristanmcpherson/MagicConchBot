@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magicconchbot
+  labels:
+    app: magicconchbot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magicconchbot
+  template:
+    metadata:
+      labels:
+        app: magicconchbot
+    spec:
+      containers:
+      - name: magicconchbot
+        image: ghcr.io/GITHUB_USERNAME/magicconchbot:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+        - name: TZ
+          value: "America/New_York"
+        # Application secrets from Kubernetes secret
+        - name: DISCORD_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: magicconchbot-secrets
+              key: DISCORD_TOKEN
+        - name: DISCORD_BOT_OWNER
+          valueFrom:
+            secretKeyRef:
+              name: magicconchbot-secrets
+              key: DISCORD_BOT_OWNER
+        - name: SOUNDCLOUD_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: magicconchbot-secrets
+              key: SOUNDCLOUD_CLIENTSECRET
+        - name: SOUNDCLOUD_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: magicconchbot-secrets
+              key: SOUNDCLOUD_CLIENTID  
+        - name: SPOTIFY_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: magicconchbot-secrets
+              key: SPOTIFY_CLIENTID
+        - name: SPOTIFY_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: magicconchbot-secrets
+              key: SPOTIFY_CLIENTSECRET
+      imagePullSecrets:
+      - name: ghcr-auth-tmcp 

@@ -1,0 +1,43 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows: [Build and Push .NET Docker Image]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      contents: 'read'
+      packages: 'read'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+          
+      - name: Update deployment image
+        run: |
+          # Replace placeholder with actual GitHub username
+          sed -i "s|GITHUB_USERNAME|${{ github.repository_owner }}|g" k8s/deployment.yaml
+          
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/
+          
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/magicconchbot 
