@@ -28,6 +28,8 @@ spec:
         env:
         - name: TZ
           value: "America/New_York"
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/etc/gcp/service-account.json"
         # Application secrets from Kubernetes secret
         - name: DISCORD_TOKEN
           valueFrom:
@@ -59,5 +61,13 @@ spec:
             secretKeyRef:
               name: magicconchbot-secrets
               key: SPOTIFY_CLIENTSECRET
+        volumeMounts:
+        - name: gcp-credentials
+          mountPath: /etc/gcp
+          readOnly: true
+      volumes:
+      - name: gcp-credentials
+        secret:
+          secretName: gcp-credentials
       imagePullSecrets:
       - name: ghcr-auth-tmcp 
