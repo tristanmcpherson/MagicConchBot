@@ -25,25 +25,22 @@ namespace MagicConchBot.Handlers
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
         private readonly DiscordSocketClient _client;
 
-        private readonly CommandService _commands;
         private readonly InteractionService _interactionService;
         private readonly IServiceProvider _services;
 
-        public CommandHandler(InteractionService interactionService, DiscordSocketClient client, CommandService commands, IServiceProvider services)
+        public CommandHandler(InteractionService interactionService, DiscordSocketClient client, IServiceProvider services)
         {
             _interactionService = interactionService;
             _client = client;
-            _commands = commands;
             _services = services;
         }
 
         public void SetupEvents()
         {
-            _commands.Log += LogAsync;
             _interactionService.Log += LogAsync;
 
             _client.InteractionCreated += HandleInteraction;
-            _client.MessageReceived += HandleCommandAsync;
+            //_client.MessageReceived += HandleCommandAsync;
             _client.GuildAvailable += HandleGuildAvailableAsync;
             _client.JoinedGuild += HandleJoinedGuildAsync;
             _client.Ready += ClientReady;
@@ -51,76 +48,142 @@ namespace MagicConchBot.Handlers
 
         private async Task ClientReady()
         {
+            try
+            {
 #if DEBUG
-            await _interactionService.RegisterCommandsToGuildAsync(1101360116235767888);
+                try
+                {
+                    // Try to register commands to a specific guild for faster testing
+                    // This requires the bot to have the applications.commands scope in that guild
+                    const ulong testGuildId = 1101360116235767888; // Your test guild ID
+                    
+                    await _interactionService.RegisterCommandsToGuildAsync(testGuildId);
+                    Log.Info($"Registered commands to test guild {testGuildId} in debug mode");
+                }
+                catch (Discord.Net.HttpException ex) when (ex.DiscordCode == DiscordErrorCode.MissingPermissions) // Missing Access
+                {
+                    Log.Warn("Could not register commands to test guild due to missing permissions.");
+                    Log.Warn("Make sure the bot has the 'applications.commands' scope in the guild.");
+                    Log.Warn("Falling back to global command registration...");
+                    
+                    // Fall back to global registration
+                    await _interactionService.RegisterCommandsGloballyAsync();
+                    Log.Info("Registered commands globally as fallback");
+                }
 #else
-            await _interactionService.RegisterCommandsGloballyAsync();
+                // Register commands globally in production
+                await _interactionService.RegisterCommandsGloballyAsync();
+                Log.Info("Registered commands globally");
 #endif
+
+                Log.Info($"Connected as -> {_client.CurrentUser}");
+                Log.Info($"We are on {_client.Guilds.Count} servers");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during command registration");
+            }
         }
 
         public async Task InstallAsync()
         {
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            //await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
-        private async Task HandleInteraction(SocketInteraction arg)
+        private async Task HandleInteraction(SocketInteraction interaction)
         {
             try
             {
-                // Create an execution context that matches the generic type parameter of your InteractionModuleBase<T> modules
-                var ctx = new ConchInteractionCommandContext(_client, arg, _services);
-                await _interactionService.ExecuteCommandAsync(ctx, _services);
+                // Create an execution context
+                var ctx = new ConchInteractionCommandContext(_client, interaction, _services);
+                
+                // Execute the command directly with our custom context
+                var result = await _interactionService.ExecuteCommandAsync(ctx, _services);
+                
+                if (!result.IsSuccess)
+                {
+                    switch (result.Error)
+                    {
+                        case InteractionCommandError.UnmetPrecondition:
+                            await interaction.RespondAsync($"Unmet Precondition: {result.ErrorReason}", ephemeral: true);
+                            break;
+                        case InteractionCommandError.UnknownCommand:
+                            await interaction.RespondAsync("Unknown command", ephemeral: true);
+                            break;
+                        case InteractionCommandError.BadArgs:
+                            await interaction.RespondAsync("Invalid arguments", ephemeral: true);
+                            break;
+                        case InteractionCommandError.Exception:
+                            await interaction.RespondAsync($"Command exception: {result.ErrorReason}", ephemeral: true);
+                            break;
+                        case InteractionCommandError.Unsuccessful:
+                            await interaction.RespondAsync("Command could not be executed", ephemeral: true);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                var ownerUser = await _client.GetUserAsync(Configuration.Owners.First());
-                await ownerUser.SendMessageAsync(ex.ToString());
+                
+                // Try to notify the bot owner
+                try
+                {
+                    var ownerUser = await _client.GetUserAsync(Configuration.Owners.First());
+                    await ownerUser.SendMessageAsync($"Error handling interaction: {ex}");
+                }
+                catch { /* Ignore errors in error handling */ }
 
-
-                // If a Slash Command execution fails it is most likely that the original interaction acknowledgement will persist. It is a good idea to delete the original
-                // response, or at least let the user know that something went wrong during the command execution.
-                if (arg.Type == InteractionType.ApplicationCommand)
-                    await arg.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+                // If a Slash Command execution fails it is most likely that the original interaction acknowledgement will persist.
+                if (interaction.Type == InteractionType.ApplicationCommand)
+                {
+                    try
+                    {
+                        await interaction.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+                    }
+                    catch { /* Ignore errors in cleanup */ }
+                }
             }
         }
 
-        private async Task HandleCommandAsync(SocketMessage parameterMessage)
-        {
-            // Don't handle the command if it is a system message
-            if (parameterMessage is not SocketUserMessage message)
-                return;
-            if (message.Source != MessageSource.User)
-                return;
+        //private async Task HandleCommandAsync(SocketMessage parameterMessage)
+        //{
+        //    // Don't handle the command if it is a system message
+        //    if (parameterMessage is not SocketUserMessage message)
+        //        return;
+        //    if (message.Source != MessageSource.User)
+        //        return;
 
-            // Mark where the prefix ends and the command begins
-            var argPos = 0;
+        //    // Mark where the prefix ends and the command begins
+        //    var argPos = 0;
 
-            // Determine if the message has a valid prefix, adjust argPos 
-            if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasCharPrefix('!', ref argPos)))
-                return;
+        //    // Determine if the message has a valid prefix, adjust argPos 
+        //    if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasCharPrefix('!', ref argPos)))
+        //        return;
 
-            // Handle case of !! or !!! (some prefixes for other bots)
-            if (message.Content.Split('!').Length > 2)
-                return;
+        //    // Handle case of !! or !!! (some prefixes for other bots)
+        //    if (message.Content.Split('!').Length > 2)
+        //        return;
 
-            // Create a Command Context
-            var context = new ConchCommandContext(_client, message, _services);
+        //    // Create a Command Context
+        //    var context = new ConchCommandContext(_client, message, _services);
 
-            await Task.Factory.StartNew(async () =>
-            {
-                // Execute the Command, store the result
-                var result = await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
+        //    await Task.Factory.StartNew(async () =>
+        //    {
+        //        // Execute the Command, store the result
+        //        //var result = await _commands.ExecuteAsync(context, argPos, _services, MultiMatchHandling.Best);
 
-                // If the command failed, notify the user
-                if (!result.IsSuccess)
-                    if (result.ErrorReason == Configuration.WrongChannelError)
-                        await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
-                    else
-                        await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
-            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
-        }
+        //        // If the command failed, notify the user
+        //        if (!result.IsSuccess)
+        //            if (result.ErrorReason == Configuration.WrongChannelError)
+        //                await message.Channel.SendMessageAsync($"{result.ErrorReason}", true);
+        //            else
+        //                await message.Channel.SendMessageAsync($"**Error:** {result.ErrorReason}");
+        //    }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
+        //}
 
         public async Task LogAsync(LogMessage logMessage) {
             if (logMessage.Exception is Exception exception)

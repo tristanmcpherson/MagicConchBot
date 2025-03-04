@@ -112,7 +112,6 @@ namespace MagicConchBot
         {
             using var services = ConfigureServices();
             _client = services.GetService<DiscordSocketClient>();
-            var _interactionService = services.GetService<InteractionService>();
 
             try
             {
@@ -122,15 +121,9 @@ namespace MagicConchBot
                 commandHandler.SetupEvents();
                 await commandHandler.InstallAsync();
 
-
-
-
                 // Configuration.Load().Token
                 await _client.LoginAsync(TokenType.Bot, Configuration.Token);
                 await _client.StartAsync();
-
-
-
 
                 await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
             }
@@ -148,21 +141,26 @@ namespace MagicConchBot
             }
         }
 
-
-
         public static ServiceProvider ConfigureServices()
         {
             var config = new DiscordSocketConfig
             {
-                LogLevel = LogSeverity.Info
+                LogLevel = LogSeverity.Info,
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent,
+                AlwaysDownloadUsers = true
+            };
 
+            var interactionServiceConfig = new InteractionServiceConfig
+            {
+                DefaultRunMode = Discord.Interactions.RunMode.Async,
+                LogLevel = LogSeverity.Info
             };
 
             return new ServiceCollection()
                 .AddSingleton(config)
                 .AddMemoryCache()
                 .AddSingleton<DiscordSocketClient>()
-                .AddSingleton<InteractionService>()
+                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), interactionServiceConfig))
                 .AddSingleton<FirestoreDb>(FirestoreDb.Create("magicconchbot"))
                 .AddSingleton<HttpClient>()
                 .AddSingleton<YoutubeClient, YoutubeClient>()

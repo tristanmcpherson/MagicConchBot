@@ -34,27 +34,39 @@ namespace MagicConchBot.Modules
         [SlashCommand(
             "resume",
             "Plays a song from YouTube or SoundCloud or search for a song on YouTube",
-            runMode: RunMode.Async), Alias("p")]
-        public async Task Resume() {
-            if (Context.MusicService.IsPlaying) {
-                await RespondAsync("Song already playing.");
-            } else if (Context.MusicService.GetSongs().Count > 0) {
+            runMode: RunMode.Async)]
+        public async Task Resume() 
+        {
+            // Defer the response to give us time to process
+            await DeferAsync();
+            
+            if (Context.MusicService.IsPlaying) 
+            {
+                await FollowupAsync("Song already playing.");
+            } 
+            else if (Context.MusicService.GetSongs().Count > 0) 
+            {
                 await Context.MusicService.Play(Context, Context.Settings);
-                await RespondAsync("Resuming queue.");
-            } else {
-                await RespondAsync("No songs currently in the queue.");
+                await FollowupAsync("Resuming queue.");
+            } 
+            else 
+            {
+                await FollowupAsync("No songs currently in the queue.");
             }
         }
 
         [SlashCommand(
             "play",
             "Plays a song from YouTube or SoundCloud or search for a song on YouTube",
-            runMode: RunMode.Async), Alias("p")]
+            runMode: RunMode.Async)]
         public async Task Play(
             string queryOrUrl,
             TimeSpan? startTime = null)
         {
-            if (queryOrUrl == null)
+            // Defer the response to give us time to process
+            await DeferAsync();
+            
+            if (string.IsNullOrEmpty(queryOrUrl))
             {
                 await Resume();
                 return;
@@ -64,7 +76,6 @@ namespace MagicConchBot.Modules
 
             if (!WebHelper.UrlRegex.IsMatch(queryOrUrl))
             {
-
                 url = await _googleApiInfoService.GetFirstVideoByKeywordsAsync(queryOrUrl);
             }
             else
@@ -75,7 +86,7 @@ namespace MagicConchBot.Modules
             // url invalid
             if (string.IsNullOrEmpty(url))
             {
-                await RespondAsync($"Could not find any videos for: {queryOrUrl}");
+                await FollowupAsync($"Could not find any videos for: {queryOrUrl}");
                 return;
             }
 
@@ -83,12 +94,12 @@ namespace MagicConchBot.Modules
             var playlistId = youtubeMatch.Groups["PlaylistId"].Value;
             if (playlistId != "")
             {
-                await RespondAsync("Queueing songs from playlist. This may take a while, please wait.");
+                await FollowupAsync("Queueing songs from playlist. This may take a while, please wait.");
                 var songs = await _googleApiInfoService.GetSongsByPlaylistAsync(playlistId);
 
                 songs.ForEach(Context.MusicService.QueueSong);
 
-                await ReplyAsync($"Queued {songs.Count} songs from playlist.");
+                await FollowupAsync($"Queued {songs.Count} songs from playlist.");
             }
             else
             {
@@ -101,9 +112,13 @@ namespace MagicConchBot.Modules
 
                 try
                 {
-                    await RespondAsync(embed: song.GetEmbed());
+                    await FollowupAsync(embed: song.GetEmbed());
                 }
-                catch { }
+                catch (Exception ex) 
+                {
+                    Log.Error(ex, "Error sending song embed");
+                    await FollowupAsync("Added song to queue, but couldn't display details.");
+                }
             }
 
             // if not playing, start playing and then the player service
@@ -117,15 +132,17 @@ namespace MagicConchBot.Modules
         [SlashCommand("stop", "Stops the bot if it is playing music and disconnects it from the voice channel.")]
         public async Task StopAsync()
         {
+            await DeferAsync();
             await Context.MusicService.Stop();
-            await RespondAsync("Music stopped playing.");
+            await FollowupAsync("Music stopped playing.");
         }
 
         [SlashCommand("pause", "Pauses the current song.")]
         public async Task PauseAsync()
         {
+            await DeferAsync();
             await Context.MusicService.Pause();
-            await RespondAsync("Music paused successfully.");
+            await FollowupAsync("Music paused successfully.");
         }
 
         [SlashCommand("skip", "Skips the current song if one is playing.")]

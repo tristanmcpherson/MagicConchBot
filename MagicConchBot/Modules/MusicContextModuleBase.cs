@@ -24,18 +24,27 @@ namespace MagicConchBot.Modules
             _settingsProvider = map.GetService<GuildSettingsProvider>();
         }
 
-        public IMusicService MusicService => _provider.GetService<IMusicService>(Guild.Id) ?? SetMusicService();
+        public IMusicService MusicService => _provider.GetService<IMusicService>(Guild?.Id ?? 0) ?? SetMusicService();
 
         private IMusicService SetMusicService()
         {
+            if (Guild == null) return null;
+            
             _provider.AddService<IMusicService, MusicService>(Guild.Id);
             return _provider.GetService<IMusicService>(Guild.Id);
         }
 
         private GuildSettings _settings;
-        public GuildSettings Settings => _settings ??= _settingsProvider.GetSettings(Guild.Id);
+        public GuildSettings Settings => _settings ??= Guild != null ? _settingsProvider.GetSettings(Guild.Id) : null;
 
-        public void SaveSettings() => _settingsProvider.UpdateSettings(Guild.Id, _settings);
+        public void SaveSettings()
+        {
+            if (Guild != null && _settings != null)
+                _settingsProvider.UpdateSettings(Guild.Id, _settings);
+        }
+        
+        // Add InteractionType property for compatibility with newer Discord.NET
+        public InteractionType InteractionType => Interaction.Type;
     }
 
     public class ConchCommandContext : CommandContext
@@ -49,11 +58,15 @@ namespace MagicConchBot.Modules
             _settingsProvider = map.GetService<GuildSettingsProvider>();
         }
 
-        public IMusicService MusicService => _provider.GetService<IMusicService>(Guild.Id);
+        public IMusicService MusicService => _provider.GetService<IMusicService>(Guild?.Id ?? 0);
 
         private GuildSettings _settings;
-        public GuildSettings Settings => _settings ?? (_settings = _settingsProvider.GetSettings(Guild.Id));
+        public GuildSettings Settings => _settings ??= Guild != null ? _settingsProvider.GetSettings(Guild.Id) : null;
 
-        public void SaveSettings() => _settingsProvider.UpdateSettings(Guild.Id, _settings);
+        public void SaveSettings()
+        {
+            if (Guild != null && _settings != null)
+                _settingsProvider.UpdateSettings(Guild.Id, _settings);
+        }
     }
 }
