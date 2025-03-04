@@ -211,46 +211,13 @@ namespace MagicConchBot.Handlers
             await arg.DefaultChannel.SendMessageAsync($"All hail the Magic Conch. In order to use the Music functions of this bot, please create a role named '{Configuration.RequiredRole}' and add that role to the users whom you want to be able to control the Music functions of this bot. Type !help for help.");
         }
 
-        private static readonly List<Cookie> cookies = ParseCookiesFromJson(Environment.GetEnvironmentVariable("YOUTUBE_COOKIE"));
-        public record CookieData(string Name, string Value, string Domain, string Path, bool Secure, bool HttpOnly, double? ExpirationDate);
-
-        public static List<Cookie> ParseCookiesFromJson(string json)
-        {
-            var cookieData = JsonConvert.DeserializeObject<CookieData[]>(json);
-            var cookies = new List<Cookie>();
-
-            foreach (var data in cookieData)
-            {
-                var cookie = new Cookie
-                {
-                    Name = data.Name,
-                    Value = data.Value,
-                    Domain = data.Domain,
-                    Path = data.Path,
-                    Secure = data.Secure,
-                    HttpOnly = data.HttpOnly
-                };
-
-                // Set expiration if available and not a session cookie
-                if (data.ExpirationDate.HasValue)
-                {
-                    cookie.Expires = DateTimeOffset.FromUnixTimeSeconds((long)data.ExpirationDate.Value).UtcDateTime;
-                }
-
-                cookies.Add(cookie);
-            }
-
-            return cookies;
-        }
-
         private Task HandleGuildAvailableAsync(SocketGuild guild)
         {
             return Task.Run(() =>
             {
                 var guildServiceProvider = _services.GetService<GuildServiceProvider>();
                 guildServiceProvider
-                    //.AddService<YoutubeClient>(new YoutubeClient(cookies))
-                    .AddService<YoutubeClient, YoutubeClient>(guild.Id, new YoutubeClient(cookies))
+                    .AddService<YoutubeClient, YoutubeClient>(guild.Id)
                     .AddService<ISongInfoService, YoutubeInfoService>(guild.Id)
                     .AddService<ISongInfoService, SoundCloudInfoService>(guild.Id)
                     .AddService<ISongInfoService, SpotifyResolveService>(guild.Id)
