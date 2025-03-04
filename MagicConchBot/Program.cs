@@ -110,75 +110,133 @@ namespace MagicConchBot
 
         private static async Task MainAsync(CancellationToken cancellationToken)
         {
-            using var services = ConfigureServices();
-            _client = services.GetService<DiscordSocketClient>();
-
             try
             {
+                Log.Info("Configuring services...");
+                using var services = ConfigureServices();
+                
+                Log.Info("Initializing Discord client...");
+                _client = services.GetService<DiscordSocketClient>();
+
+                // Set up logging before anything else
                 _client.Log += a => { Log.WriteToLog(a); return Task.CompletedTask; };
-                var commandHandler = services.GetService<CommandHandler>();
+                
+                try
+                {
+                    Log.Info("Setting up command handler...");
+                    var commandHandler = services.GetService<CommandHandler>();
+                    commandHandler.SetupEvents();
+                    await commandHandler.InstallAsync();
 
-                commandHandler.SetupEvents();
-                await commandHandler.InstallAsync();
+                    // Check if token is valid
+                    if (string.IsNullOrEmpty(Configuration.Token))
+                    {
+                        throw new InvalidOperationException("Discord token is null or empty. Please check your configuration.");
+                    }
+                    
+                    Log.Info("Logging in to Discord...");
+                    await _client.LoginAsync(TokenType.Bot, Configuration.Token);
+                    
+                    Log.Info("Starting Discord client...");
+                    await _client.StartAsync();
 
-                // Configuration.Load().Token
-                await _client.LoginAsync(TokenType.Bot, Configuration.Token);
-                await _client.StartAsync();
-
-                await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
+                    Log.Info("Bot startup complete!");
+                    await Task.Delay(-1, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error during bot initialization");
+                    throw; // Re-throw to be caught by outer try/catch
+                }
             }
             catch (TaskCanceledException)
             {
+                Log.Info("Bot shutdown requested via cancellation token");
             }
             catch (Exception ex)
             {
-                Log.WriteToLog(new LogMessage(LogSeverity.Critical, string.Empty, ex.ToString(), ex));
+                Log.Error(ex, "Critical error in MainAsync");
+                Console.WriteLine($"CRITICAL ERROR: {ex}");
             }
             finally
             {
-                //services.GetService<GuildServiceProvider>().StopAll();
-                await _client.StopAsync();
+                Log.Info("Shutting down Discord client...");
+                if (_client != null)
+                {
+                    try
+                    {
+                        await _client.StopAsync();
+                        Log.Info("Discord client stopped successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error stopping Discord client");
+                    }
+                }
+                Log.Info("Bot shutdown complete");
             }
         }
 
         public static ServiceProvider ConfigureServices()
         {
-            var config = new DiscordSocketConfig
+            try
             {
-                LogLevel = LogSeverity.Info,
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent,
-                AlwaysDownloadUsers = true
-            };
+                Log.Info("Configuring Discord client...");
+                var config = new DiscordSocketConfig
+                {
+                    LogLevel = LogSeverity.Info,
+                    GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent,
+                    AlwaysDownloadUsers = true
+                };
 
-            var interactionServiceConfig = new InteractionServiceConfig
+                Log.Info("Configuring interaction service...");
+                var interactionServiceConfig = new InteractionServiceConfig
+                {
+                    DefaultRunMode = Discord.Interactions.RunMode.Async,
+                    LogLevel = LogSeverity.Info
+                };
+
+                Log.Info("Building service provider...");
+                var serviceCollection = new ServiceCollection()
+                    .AddSingleton(config)
+                    .AddMemoryCache()
+                    .AddSingleton<DiscordSocketClient>();
+                    
+                Log.Info("Adding interaction service...");
+                serviceCollection.AddSingleton(x => 
+                {
+                    Log.Info("Creating interaction service instance...");
+                    return new InteractionService(x.GetRequiredService<DiscordSocketClient>(), interactionServiceConfig);
+                });
+                    
+                Log.Info("Adding remaining services...");
+                serviceCollection
+                    .AddSingleton<FirestoreDb>(FirestoreDb.Create("magicconchbot"))
+                    .AddSingleton<HttpClient>()
+                    .AddSingleton<YoutubeClient, YoutubeClient>()
+                    .AddSingleton<YoutubeInfoService>()
+                    .AddSingleton<IMp3ConverterService, Mp3ConverterService>()
+                    .AddSingleton<ISongInfoService, YoutubeInfoService>()
+                    .AddSingleton<ISongInfoService, SoundCloudInfoService>()
+                    .AddSingleton<ISongInfoService, SpotifyResolveService>()
+                    .AddSingleton<ISongInfoService, BandcampResolveService>()
+                    .AddSingleton<ISongInfoService, DirectPlaySongResolver>()
+                    //.AddSingleton<ISongInfoService, YoutubeDlResolver>()
+                    .AddSingleton<ISongResolutionService, SongResolutionService>()
+                    .AddSingleton<GuildServiceProvider>()
+                    .AddSingleton<SoundCloudInfoService>()
+                    .AddSingleton<GuildSettingsProvider>()
+                    .AddSingleton<CommandHandler>()
+                    .AddSingleton<CommandService>();
+                    
+                Log.Info("Building service provider...");
+                return serviceCollection.BuildServiceProvider();
+            }
+            catch (Exception ex)
             {
-                DefaultRunMode = Discord.Interactions.RunMode.Async,
-                LogLevel = LogSeverity.Info
-            };
-
-            return new ServiceCollection()
-                .AddSingleton(config)
-                .AddMemoryCache()
-                .AddSingleton<DiscordSocketClient>()
-                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), interactionServiceConfig))
-                .AddSingleton<FirestoreDb>(FirestoreDb.Create("magicconchbot"))
-                .AddSingleton<HttpClient>()
-                .AddSingleton<YoutubeClient, YoutubeClient>()
-                .AddSingleton<YoutubeInfoService>()
-                .AddSingleton<IMp3ConverterService, Mp3ConverterService>()
-                .AddSingleton<ISongInfoService, YoutubeInfoService>()
-                .AddSingleton<ISongInfoService, SoundCloudInfoService>()
-                .AddSingleton<ISongInfoService, SpotifyResolveService>()
-                .AddSingleton<ISongInfoService, BandcampResolveService>()
-                .AddSingleton<ISongInfoService, DirectPlaySongResolver>()
-                //.AddSingleton<ISongInfoService, YoutubeDlResolver>()
-                .AddSingleton<ISongResolutionService, SongResolutionService>()
-                .AddSingleton<GuildServiceProvider>()
-                .AddSingleton<SoundCloudInfoService>()
-                .AddSingleton<GuildSettingsProvider>()
-                .AddSingleton<CommandHandler>()
-                .AddSingleton<CommandService>()
-                .BuildServiceProvider();
+                Log.Error(ex, "Error configuring services");
+                throw; // Re-throw to be caught by MainAsync
+            }
         }
     }
 }
