@@ -8,7 +8,7 @@ namespace MagicConchBot.Services.Music
 {
     public class DirectPlaySongResolver : ISongInfoService
     {
-        public Regex Regex => new(@"(.+)\.(webm|mp3|avi|wav|mp4|flac)$");
+        public Regex Regex => new(@"(.+)\.(webm|mp3|avi|wav|mp4|flac)");
 
         public Task<Song> GetSongInfoAsync(string url)
         {
